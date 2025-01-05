@@ -2,6 +2,10 @@ import { useContext, useState, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import api from "../axios/axios";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
+
+const websocket = "http://localhost:5174";
+const socket = io.connect(websocket);
 
 const UserHome = () => {
   const { user, setUser, setToken, token } = useContext(AppContext);
@@ -46,6 +50,7 @@ const UserHome = () => {
       if (response.status === 200) {
         alert("Joined room successfully");
         console.log("Join room response:", response.data);
+        socket.emit("user_added", user);
         navigate(`/room/${roomId}`);
       }
     } catch (error) {

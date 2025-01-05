@@ -4,12 +4,7 @@ import { io } from "socket.io-client";
 import api from "../axios/axios";
 import { AppContext } from "../context/AppContext";
 
-// const websocket = "https://api2.slg.petra.ac.id";
 const websocket = "http://localhost:5174";
-
-// const api = "https://api.slg.petra.ac.id";
-// const api = "http://127.0.0.1:8000";
-
 const socket = io.connect(websocket);
 
 const Room = () => {
@@ -18,7 +13,7 @@ const Room = () => {
   const { token } = useContext(AppContext);
 
   useEffect(() => {
-    const res = api
+    api
       .get(`/rooms/${roomId}/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -31,9 +26,6 @@ const Room = () => {
         console.error("There was an error fetching the room users!", error);
       });
 
-    console.log(res.data);
-
-    // Listen for user updates
     socket.on("user_added", (newUser) => {
       setUsers((prevUsers) => [...prevUsers, newUser]);
     });
@@ -46,7 +38,7 @@ const Room = () => {
       socket.off("user_added");
       socket.off("user_kicked");
     };
-  }, [roomId]);
+  }, [roomId, token]);
 
   const handleKickUser = (userId) => {
     api
