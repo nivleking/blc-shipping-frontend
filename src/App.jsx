@@ -7,6 +7,7 @@ import AdminLogin from "./pages/AdminLogin";
 import { AppContext } from "./context/AppContext";
 import { useContext } from "react";
 import Room from "./pages/Room";
+import AdminConfigureAccounts from "./pages/AdminConfigureAccounts";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -22,6 +23,7 @@ const App = () => {
         {/* Admin Routes */}
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin-home" element={user ? <AdminHome /> : <AdminLogin />} />
+        <Route path="/admin-configure-accounts" element={user ? <AdminConfigureAccounts /> : <AdminLogin />} />
       </Routes>
     </BrowserRouter>
   );

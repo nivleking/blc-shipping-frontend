@@ -59,6 +59,30 @@ const Room = () => {
       });
   };
 
+  const handleBack = () => {
+    if (user.is_admin === 1) {
+      navigate("/admin-home");
+    } else {
+      api
+        .post(
+          `room/${roomId}/leave`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+        .then(() => {
+          socket.emit("user_kicked", user.id);
+          navigate("/user-home");
+        })
+        .catch((error) => {
+          console.error("There was an error leaving the room!", error);
+        });
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-6 bg-white rounded shadow-md">
@@ -81,6 +105,9 @@ const Room = () => {
               </li>
             ))}
         </ul>
+        <button onClick={handleBack} className="mt-4 p-2 text-white bg-blue-500 rounded">
+          Back to Home
+        </button>
       </div>
     </div>
   );
