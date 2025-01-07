@@ -15,7 +15,7 @@ export default function AppProvider({ children }) {
         },
       });
 
-      console.log("API response:", res);
+      console.log("This user is:", res);
 
       setUser(res.data);
     } catch (error) {
@@ -24,7 +24,7 @@ export default function AppProvider({ children }) {
   }
 
   useEffect(() => {
-    console.log("Token in useEffect:", token);
+    console.log("User token:", token);
     if (token) {
       getUser();
     }

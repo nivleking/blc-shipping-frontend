@@ -17,7 +17,7 @@ const AdminHome = () => {
   useEffect(() => {
     async function fetchRooms() {
       try {
-        const response = await api.get("rooms", {
+        const response = await api.get("room", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -37,7 +37,7 @@ const AdminHome = () => {
     e.preventDefault();
     try {
       await api.post(
-        "admin/logout",
+        "user/logout",
         {},
         {
           headers: {
@@ -58,7 +58,7 @@ const AdminHome = () => {
     e.preventDefault();
     try {
       const response = await api.post(
-        "rooms",
+        "room",
         {
           id: formData.id,
           name: formData.name,

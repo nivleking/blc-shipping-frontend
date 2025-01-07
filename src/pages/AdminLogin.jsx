@@ -5,7 +5,7 @@ import { AppContext } from "../context/AppContext";
 
 const AdminLogin = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    name: "",
     password: "",
   });
   const navigate = useNavigate();
@@ -13,8 +13,8 @@ const AdminLogin = () => {
 
   async function handleLogin(e) {
     e.preventDefault();
-    const response = await api.post("admin/login", {
-      username: formData.username,
+    const response = await api.post("user/login", {
+      name: formData.name,
       password: formData.password,
     });
 
@@ -38,7 +38,7 @@ const AdminLogin = () => {
       <div className="p-6 bg-white rounded shadow-md">
         <h2 className="mb-4 text-2xl font-bold text-center">Admin Login</h2>
         <form onSubmit={handleLogin}>
-          <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} className="w-full p-2 mb-4 border rounded" />
+          <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleChange} className="w-full p-2 mb-4 border rounded" />
           <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full p-2 mb-4 border rounded" />
           <button type="submit" className="w-full p-2 text-white bg-blue-500 rounded">
             Login

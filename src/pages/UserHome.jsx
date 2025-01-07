@@ -38,7 +38,7 @@ const UserHome = () => {
     e.preventDefault();
     try {
       const response = await api.post(
-        `user/rooms/${roomId}/join`,
+        `room/${roomId}/join`,
         {},
         {
           headers: {
@@ -48,14 +48,12 @@ const UserHome = () => {
       );
 
       if (response.status === 200) {
-        alert("Joined room successfully");
         console.log("Join room response:", response.data);
         socket.emit("user_added", user);
         navigate(`/room/${roomId}`);
       }
     } catch (error) {
       console.error("Error joining room:", error);
-      alert("An error occurred while joining the room");
     }
   }
 
@@ -72,14 +70,7 @@ const UserHome = () => {
           <button className="w-full p-2 mt-4 text-white bg-red-500 rounded">Logout</button>
         </form>
         <form onSubmit={handleJoinRoom} className="mt-4">
-          <input
-            type="text"
-            name="roomId"
-            placeholder="Room ID"
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            className="w-full p-2 mb-4 border rounded"
-          />
+          <input type="text" name="roomId" placeholder="Room ID" value={roomId} onChange={(e) => setRoomId(e.target.value)} className="w-full p-2 mb-4 border rounded" />
           <button type="submit" className="w-full p-2 text-white bg-blue-500 rounded">
             Join Room
           </button>
