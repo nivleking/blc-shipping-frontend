@@ -10,6 +10,7 @@ import Room from "./pages/Room";
 import AdminCreateAdmin from "./pages/AdminCreateAdmin";
 import AdminCreateUser from "./pages/AdminCreateUser";
 import AdminLayout from "./pages/AdminLayout";
+import UserLayout from "./pages/UserLayout";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -17,10 +18,23 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Other Routes */}
+        <Route path="/room/:roomId" element={<Room />} />
+
         {/* User Routes */}
         <Route path="/" element={<UserLogin />} />
-        <Route path="/user-home" element={user ? <UserHome /> : <UserLogin />} />
-        <Route path="/room/:roomId" element={<Room />} />
+        <Route
+          path="/user-home"
+          element={
+            user ? (
+              <UserLayout>
+                <UserHome />
+              </UserLayout>
+            ) : (
+              <UserLogin />
+            )
+          }
+        />
 
         {/* Admin Routes */}
         <Route path="/admin-login" element={<AdminLogin />} />

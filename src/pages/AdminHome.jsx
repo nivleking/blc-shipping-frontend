@@ -106,33 +106,32 @@ const AdminHome = () => {
   }
 
   return (
-    <>
-      <h2 className="mb-4 text-2xl font-bold text-center">Admin Home</h2>
-      <p>Welcome {user && user.email}</p>
-      <form onSubmit={createRoom} className="mt-4">
-        <input type="text" name="id" placeholder="Room ID" value={formData.id} onChange={handleChange} className="w-full p-2 mb-4 border rounded" />
-        <input type="text" name="name" placeholder="Room Name" value={formData.name} onChange={handleChange} className="w-full p-2 mb-4 border rounded" />
-        <input type="text" name="description" placeholder="Room Description" value={formData.description} onChange={handleChange} className="w-full p-2 mb-4 border rounded" />
-        <button type="submit" className="w-full p-2 text-white bg-blue-500 rounded">
+    <div className="container mx-auto p-4">
+      <h2 className="mb-4 text-3xl font-bold text-center text-gray-800">Admin Home</h2>
+      <p className="text-center text-gray-600">Welcome {user && user.email}</p>
+      <form onSubmit={createRoom} className="mt-6 max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
+        <input type="text" name="id" placeholder="Room ID" value={formData.id} onChange={handleChange} className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        <input type="text" name="name" placeholder="Room Name" value={formData.name} onChange={handleChange} className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        <input type="text" name="description" placeholder="Room Description" value={formData.description} onChange={handleChange} className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        <button type="submit" className="w-full p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600">
           Create Room
         </button>
       </form>
-      <div className="mt-6">
-        <h3 className="mb-4 text-xl font-bold text-center">Rooms</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8">
+        <h3 className="mb-4 text-2xl font-bold text-center text-gray-800">Rooms</h3>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {rooms.map((room) => (
-            <div key={room.id} className="p-4 bg-white rounded shadow-md">
-              <h4 className="mb-2 text-lg font-bold">
+            <div key={room.id} className="p-6 bg-white rounded-lg shadow-md">
+              <h4 className="mb-2 text-xl font-bold text-gray-800">
                 {room.id} - {room.name}
               </h4>
-              <p>{room.description}</p>
-              <div className="flex space-x-2">
-                <Link to={`/room/${room.id}`} className="mt-4 block p-2 text-center text-white bg-blue-500 rounded">
+              <p className="text-gray-600">{room.description}</p>
+              <div className="flex space-x-2 mt-4">
+                <Link to={`/room/${room.id}`} className="flex-1 p-2 text-center text-white bg-blue-500 rounded-lg hover:bg-blue-600">
                   View
                 </Link>
-
-                <form action="" onSubmit={handleDeleteRoom(room.id)}>
-                  <button className="mt-4 block p-2 text-center text-white bg-red-500 rounded" type="submit">
+                <form action="" onSubmit={handleDeleteRoom(room.id)} className="flex-1">
+                  <button className="w-full p-2 text-center text-white bg-red-500 rounded-lg hover:bg-red-600" type="submit">
                     Delete
                   </button>
                 </form>
@@ -141,7 +140,7 @@ const AdminHome = () => {
           ))}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -1,8 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import api from "../axios/axios";
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
 
 const AdminCreateUser = () => {
   const { token } = useContext(AppContext);

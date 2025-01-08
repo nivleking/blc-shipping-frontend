@@ -19,7 +19,7 @@ const UserLogin = () => {
     });
 
     if (response.status === 200) {
-      localStorage.setItem("token", response.data.token);
+      sessionStorage.setItem("token", response.data.token);
       setToken(response.data.token);
       navigate("/user-home");
     }

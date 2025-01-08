@@ -4,7 +4,7 @@ import api from "../axios/axios";
 export const AppContext = createContext();
 
 export default function AppProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token, setToken] = useState(sessionStorage.getItem("token"));
   const [user, setUser] = useState(null);
 
   async function getUser() {
@@ -27,6 +27,14 @@ export default function AppProvider({ children }) {
     console.log("User token:", token);
     if (token) {
       getUser();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      sessionStorage.setItem("token", token);
+    } else {
+      sessionStorage.removeItem("token");
     }
   }, [token]);
 

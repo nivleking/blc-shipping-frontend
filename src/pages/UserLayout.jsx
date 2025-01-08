@@ -1,8 +1,8 @@
 import { useState } from "react";
-import AdminSidebar from "../components/AdminSidebar";
-import AdminNavbar from "../components/AdminNavbar";
+import UserSidebar from "./../components/UserSidebar";
+import UserNavbar from "./../components/UserNavbar";
 
-const AdminLayout = ({ children }) => {
+const UserLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
@@ -11,13 +11,13 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className="flex">
-      {isSidebarOpen && <AdminSidebar />}
+      {isSidebarOpen && <UserSidebar />}
       <div className="flex-1">
-        <AdminNavbar toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <UserNavbar toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="p-6 bg-gray-100 min-h-screen">{children}</div>
       </div>
     </div>
   );
 };
 
-export default AdminLayout;
+export default UserLayout;
