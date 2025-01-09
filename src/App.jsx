@@ -11,6 +11,7 @@ import AdminCreateAdmin from "./pages/AdminCreateAdmin";
 import AdminCreateUser from "./pages/AdminCreateUser";
 import AdminLayout from "./pages/AdminLayout";
 import UserLayout from "./pages/UserLayout";
+import Simulation from "./pages/Simulation";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -20,6 +21,7 @@ const App = () => {
       <Routes>
         {/* Other Routes */}
         <Route path="/room/:roomId" element={<Room />} />
+        <Route path="/simulation" element={<Simulation />} />
 
         {/* User Routes */}
         <Route path="/" element={<UserLogin />} />

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { FaHome, FaUserShield, FaUsers } from "react-icons/fa";
+import { FaClapperboard } from "react-icons/fa6";
 
 const AdminSidebar = () => {
   return (
@@ -25,6 +26,13 @@ const AdminSidebar = () => {
             <Link to="/admin-create-user" className="flex items-center p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors">
               <FaUsers className="mr-3" />
               User Accounts
+            </Link>
+          </li>
+
+          <li>
+            <Link to="/admin-create-cards" className="flex items-center p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors">
+              <FaClapperboard className="mr-3" />
+              Sales Calls
             </Link>
           </li>
         </ul>
