@@ -12,6 +12,8 @@ import AdminCreateUser from "./pages/AdminCreateUser";
 import AdminLayout from "./pages/AdminLayout";
 import UserLayout from "./pages/UserLayout";
 import Simulation from "./pages/Simulation";
+import AdminCreateSalesCallCards from "./pages/AdminCreateSalesCallCards";
+import Simulation2 from "./pages/Simulation2";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -20,8 +22,9 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         {/* Other Routes */}
-        <Route path="/room/:roomId" element={<Room />} />
+        <Route path="/room/:roomId" element={<Room adminName={user ? user.name : ""} />} />
         <Route path="/simulation" element={<Simulation />} />
+        <Route path="/simulation2" element={<Simulation2 />} />
 
         {/* User Routes */}
         <Route path="/" element={<UserLogin />} />
@@ -61,6 +64,14 @@ const App = () => {
           element={
             <AdminLayout>
               <AdminCreateUser />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin-create-sales-call-cards"
+          element={
+            <AdminLayout>
+              <AdminCreateSalesCallCards />
             </AdminLayout>
           }
         />

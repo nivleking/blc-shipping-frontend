@@ -30,9 +30,9 @@ const AdminSidebar = () => {
           </li>
 
           <li>
-            <Link to="/admin-create-cards" className="flex items-center p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors">
+            <Link to="/admin-create-sales-call-cards" className="flex items-center p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors">
               <FaClapperboard className="mr-3" />
-              Sales Calls
+              Sales Calls & Decks
             </Link>
           </li>
         </ul>

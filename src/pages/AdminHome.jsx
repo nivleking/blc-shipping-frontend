@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../axios/axios";
 import { io } from "socket.io-client";
 
@@ -15,8 +15,6 @@ const AdminHome = () => {
     name: "",
     description: "",
   });
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchRooms() {

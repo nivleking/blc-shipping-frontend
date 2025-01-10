@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes marquee-top {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes marquee-bottom {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-marquee-top {
+  animation: marquee-top 15s linear infinite;
+}
+
+.animate-marquee-bottom {
+  animation: marquee-bottom 15s linear infinite;
+}
+
+.marquee-container {
+  width: 100%;
+}
