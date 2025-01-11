@@ -1,7 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { DndContext, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core";
 import api from "./../axios/axios";
+import { io } from "socket.io-client";
 import { CSS } from "@dnd-kit/utilities";
+import { useParams, useNavigate } from "react-router-dom";
+import { AppContext } from "../context/AppContext";
+
+const websocket = "http://localhost:5174";
+const socket = io.connect(websocket);
 
 const DraggableContainer = ({ id, text, style, isDragging }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -57,6 +63,9 @@ const ContainerDocks = ({ id, children }) => {
 };
 
 const Simulation2 = () => {
+  const { roomId } = useParams();
+  const { user } = useContext(AppContext);
+  const navigate = useNavigate();
   const [droppedItems, setDroppedItems] = useState([
     { id: "box1", area: "docks-0" },
     { id: "box2", area: "docks-1" },
@@ -97,6 +106,58 @@ const Simulation2 = () => {
   const [draggingItem, setDraggingItem] = useState(null); // State to track the dragging item
   const itemsPerPage = 15;
 
+  useEffect(() => {
+    const fetchArenaData = async () => {
+      if (!user || !user.id) {
+        console.log("User not available yet");
+        return;
+      }
+
+      console.log("User:", user);
+      console.log("Room ID:", roomId);
+      try {
+        const response = await api.get(
+          `ship-bays/${roomId}/${user.id}`,
+          {
+            user_id: user.id,
+            room_id: roomId,
+          },
+          {}
+        );
+        const savedArena = JSON.parse(response.data.arena);
+        console.log("Saved Arena:", savedArena);
+
+        // Flatten the saved arena data and update droppedItems state
+        const newDroppedItems = [];
+        savedArena.forEach((bay, bayIndex) => {
+          bay.forEach((row, rowIndex) => {
+            row.forEach((item, colIndex) => {
+              if (item) {
+                newDroppedItems.push({
+                  id: item,
+                  area: `bay-${bayIndex}-${rowIndex * bay[0].length + colIndex}`,
+                });
+              }
+            });
+          });
+        });
+        setDroppedItems((prevItems) => [...prevItems.filter((item) => item.area.startsWith("docks")), ...newDroppedItems]);
+      } catch (error) {
+        console.error("Error fetching arena data:", error);
+      }
+    };
+
+    fetchArenaData();
+
+    socket.on("swap_bays", () => {
+      fetchArenaData();
+    });
+
+    return () => {
+      socket.off("swap_bays");
+    };
+  }, [roomId, baySize.columns, user]);
+
   const handleDragStart = (event) => {
     setDraggingItem(event.active.id);
   };
@@ -114,14 +175,28 @@ const Simulation2 = () => {
         return;
       }
 
-      setDroppedItems((prevItems) => prevItems.map((item) => (item.id === active.id ? { ...item, area: over.id } : item)));
-      console.log(`Dropped item: ${active.id} into ${over.id}`);
+      const updatedDroppedItems = droppedItems.map((item) => (item.id === active.id ? { ...item, area: over.id } : item));
+      setDroppedItems(updatedDroppedItems);
+
+      const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
+        return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
+          return Array.from({ length: baySize.columns }).map((_, colIndex) => {
+            const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
+            const item = updatedDroppedItems.find((item) => item.area === cellId);
+            return item ? item.id : null;
+          });
+        });
+      });
+      setBayData(newBayData);
+
+      console.log("User:", user);
+      console.log("Room ID:", roomId);
 
       try {
-        const res = await api.get("/moveDragMe", {
-          // itemId: active.id,
-          // from: activeItem.area,
-          // to: over.id,
+        const res = await api.post("/ship-bays", {
+          arena: newBayData,
+          user_id: user.id,
+          room_id: roomId,
         });
         console.log("API call successful", res.data);
       } catch (error) {
@@ -156,6 +231,18 @@ const Simulation2 = () => {
     setBayData(newBayData);
     console.log("Bay Data:", newBayData);
   }, [droppedItems, baySize, bayCount]);
+
+  useEffect(() => {
+    socket.on("end_simulation", (endedRoomId) => {
+      if (endedRoomId === roomId) {
+        navigate("/user-home");
+      }
+    });
+
+    return () => {
+      socket.off("end_simulation");
+    };
+  }, [roomId, navigate]);
 
   const paginatedItems = droppedItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 

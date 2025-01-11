@@ -22,9 +22,9 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         {/* Other Routes */}
-        <Route path="/room/:roomId" element={<Room adminName={user ? user.name : ""} />} />
+        <Route path="/room/:roomId" element={<Room />} />
         <Route path="/simulation" element={<Simulation />} />
-        <Route path="/simulation2" element={<Simulation2 />} />
+        <Route path="/simulation2/:roomId" element={<Simulation2 />} />
 
         {/* User Routes */}
         <Route path="/" element={<UserLogin />} />
