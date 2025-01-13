@@ -23,7 +23,7 @@ const UserNavbar = ({ toggleSidebar, isSidebarOpen }) => {
       sessionStorage.removeItem("token");
       setToken(null);
       setUser({});
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       console.error("Logout error:", error);
     }

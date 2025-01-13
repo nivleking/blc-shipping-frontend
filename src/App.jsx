@@ -1,9 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminHome from "./pages/AdminHome";
 import UserHome from "./pages/UserHome";
-import UserLogin from "./pages/UserLogin";
 import "./App.css";
-import AdminLogin from "./pages/AdminLogin";
 import { AppContext } from "./context/AppContext";
 import { useContext } from "react";
 import Room from "./pages/Room";
@@ -14,6 +12,9 @@ import UserLayout from "./pages/UserLayout";
 import Simulation from "./pages/Simulation";
 import AdminCreateSalesCallCards from "./pages/AdminCreateSalesCallCards";
 import Simulation2 from "./pages/Simulation2";
+import LandingPage from "./pages/LandingPage";
+import Login from "./pages/Login";
+import AdminDecks from "./pages/AdminDecks";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -22,12 +23,13 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         {/* Other Routes */}
+        <Route path="/login" element={<Login />} />
         <Route path="/room/:roomId" element={<Room />} />
         <Route path="/simulation" element={<Simulation />} />
         <Route path="/simulation2/:roomId" element={<Simulation2 />} />
 
         {/* User Routes */}
-        <Route path="/" element={<UserLogin />} />
+        <Route path="/" element={<LandingPage />} />
         <Route
           path="/user-home"
           element={
@@ -36,13 +38,12 @@ const App = () => {
                 <UserHome />
               </UserLayout>
             ) : (
-              <UserLogin />
+              <Login />
             )
           }
         />
 
         {/* Admin Routes */}
-        <Route path="/admin-login" element={<AdminLogin />} />
         <Route
           path="/admin-home"
           element={
@@ -68,10 +69,19 @@ const App = () => {
           }
         />
         <Route
-          path="/admin-create-sales-call-cards"
+          path="/admin-create-sales-call-cards/:deckId"
           element={
             <AdminLayout>
               <AdminCreateSalesCallCards />
+            </AdminLayout>
+          }
+        />
+
+        <Route
+          path="/admin-decks"
+          element={
+            <AdminLayout>
+              <AdminDecks />
             </AdminLayout>
           }
         />

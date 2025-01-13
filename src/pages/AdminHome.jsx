@@ -15,6 +15,7 @@ const AdminHome = () => {
     name: "",
     description: "",
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     async function fetchRooms() {
@@ -57,6 +58,7 @@ const AdminHome = () => {
         console.log("Room created:", response.data);
       }
     } catch (error) {
+      setErrors(error.response.data.errors);
       console.error("Error creating room:", error);
     }
   }
@@ -107,10 +109,13 @@ const AdminHome = () => {
     <div className="container mx-auto p-4">
       <h2 className="mb-4 text-3xl font-bold text-center text-gray-800">Admin Home</h2>
       <p className="text-center text-gray-600">Welcome {user && user.email}</p>
-      <form onSubmit={createRoom} className="mt-6 max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
-        <input type="text" name="id" placeholder="Room ID" value={formData.id} onChange={handleChange} className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
-        <input type="text" name="name" placeholder="Room Name" value={formData.name} onChange={handleChange} className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
-        <input type="text" name="description" placeholder="Room Description" value={formData.description} onChange={handleChange} className="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+      <form onSubmit={createRoom} className="mt-6 space-y-4 max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
+        <input type="text" name="id" placeholder="Room ID" value={formData.id} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        {errors.id && <p className="text-red-500">{errors.id[0]}</p>}
+        <input type="text" name="name" placeholder="Room Name" value={formData.name} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        {errors.name && <p className="text-red-500">{errors.name[0]}</p>}
+        <input type="text" name="description" placeholder="Room Description" value={formData.description} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        {errors.description && <p className="text-red-500">{errors.description[0]}</p>}
         <button type="submit" className="w-full p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600">
           Create Room
         </button>

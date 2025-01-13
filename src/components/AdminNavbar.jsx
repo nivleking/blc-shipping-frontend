@@ -23,7 +23,7 @@ const AdminNavbar = ({ toggleSidebar, isSidebarOpen }) => {
       sessionStorage.removeItem("token");
       setToken(null);
       setUser({});
-      navigate("/admin-login");
+      navigate("/login");
     } catch (error) {
       console.error("Logout error:", error);
     }

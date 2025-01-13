@@ -103,7 +103,7 @@ const Simulation2 = () => {
   const [bayCount, setBayCount] = useState(2);
   const [bayData, setBayData] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [draggingItem, setDraggingItem] = useState(null); // State to track the dragging item
+  const [draggingItem, setDraggingItem] = useState(null);
   const itemsPerPage = 15;
 
   useEffect(() => {
