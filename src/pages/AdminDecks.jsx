@@ -5,8 +5,6 @@ import { Link } from "react-router-dom";
 const AdminDecks = () => {
   const [decks, setDecks] = useState([]);
   const [formData, setFormData] = useState({ name: "" });
-  const [selectedDeck, setSelectedDeck] = useState(null);
-  const [cardId, setCardId] = useState("");
 
   useEffect(() => {
     fetchDecks();
@@ -17,7 +15,6 @@ const AdminDecks = () => {
       const response = await api.get("/decks");
       const decksData = response.data;
 
-      // Fetch sales call cards for each deck
       const decksWithCards = await Promise.all(
         decksData.map(async (deck) => {
           const cardsResponse = await api.get(`/decks/${deck.id}/cards`);
@@ -61,13 +58,9 @@ const AdminDecks = () => {
       return { totalPorts: 0 };
     }
     const totalPorts = new Set(cards.map((card) => card.origin)).size;
-    // const totalRevenueEachPort = cards.reduce((acc, card) => acc + card.revenue, 0);
-    // const totalQuantityEachPort = cards.reduce((acc, card) => acc + card.quantity, 0);
-    // const totalSalesCall = cards.length;
 
     return {
       totalPorts,
-      // , totalRevenueEachPort, totalQuantityEachPort, totalSalesCall
     };
   };
 
@@ -85,20 +78,23 @@ const AdminDecks = () => {
         </button>
       </form>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         {decks.map((deck) => {
-          const { totalPorts, totalRevenueEachPort, totalQuantityEachPort, totalSalesCall } = calculateDeckStats(deck.cards);
+          const { totalPorts } = calculateDeckStats(deck.cards);
           return (
-            <div key={deck.id} className="bg-white p-6 rounded shadow">
-              <h3 className="text-xl font-bold mb-2">{deck.name}</h3>
-              <p className="mb-2">Total Port: {totalPorts}</p>
-              <div className="flex flex-row space-x-2">
-                <button onClick={() => handleDeleteDeck(deck.id)} className="p-2 bg-red-500 text-white rounded mb-2">
-                  Delete Deck
-                </button>
-                <Link to={`/admin-create-sales-call-cards/${deck.id}`} className="p-2 bg-blue-500 text-white rounded mb-2">
-                  View
-                </Link>
+            <div key={deck.id} className="relative bg-white rounded shadow overflow-hidden">
+              <img src={`https://picsum.photos/seed/containers/1200/400`} alt="Deck" className="w-full h-48 object-cover" />
+              <div className="p-4">
+                <h3 className="text-xl font-bold">{deck.name}</h3>
+                <p className="text-sm mb-2 text-gray-500">Total Ports: {totalPorts}</p>
+                <div className="flex flex-row justify-items-start space-x-2">
+                  <Link to={`/admin-create-sales-call-cards/${deck.id}`} className="p-2 bg-blue-500 text-white rounded mb-2">
+                    View
+                  </Link>
+                  <button onClick={() => handleDeleteDeck(deck.id)} className="p-2 bg-red-500 text-white rounded mb-2">
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           );

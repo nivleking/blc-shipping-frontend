@@ -12,10 +12,10 @@ const AdminCreateUser = () => {
   });
   const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
   const { token } = useContext(AppContext);
 
   useEffect(() => {
-    // Fetch users from the backend
     const fetchUsers = async () => {
       try {
         const response = await api.get("/all-users", {
@@ -29,11 +29,17 @@ const AdminCreateUser = () => {
       }
     };
 
-    fetchUsers();
+    if (token) {
+      fetchUsers();
+    }
   }, [token]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -55,11 +61,11 @@ const AdminCreateUser = () => {
       setFormData({
         name: "",
         email: "",
+        is_admin: false,
         password: "",
         password_confirmation: "",
       });
       setEditingUser(null);
-      // Refresh users list
       const response = await api.get("/all-users", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -67,6 +73,7 @@ const AdminCreateUser = () => {
       });
       setUsers(response.data);
     } catch (error) {
+      setFormErrors(error.response.data.errors);
       console.error("Error creating/updating user:", error);
     }
   };
@@ -75,6 +82,7 @@ const AdminCreateUser = () => {
     setFormData({
       name: user.name,
       email: user.email,
+      is_admin: false,
       password: "",
       password_confirmation: "",
     });
@@ -101,9 +109,44 @@ const AdminCreateUser = () => {
   };
 
   return (
-    <div className="container mx-auto mt-10 p-6 bg-white rounded shadow-md flex">
-      <div className="w-1/2 pr-6">
-        <h3 className="mb-4 text-2xl font-bold text-center">Users</h3>
+    <div className="container mx-auto mt-10 p-6">
+      <div className="mb-6 p-6 bg-white rounded shadow-md">
+        <h2 className="mb-6 text-2xl font-bold text-center">{editingUser ? "Edit User" : "Create User"}</h2>
+        <form onSubmit={handleSubmit} className="mb-6">
+          <div className="mb-4">
+            <label htmlFor="name" className="block text-gray-700">
+              Name
+            </label>
+            <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="w-full p-3 border rounded" />
+            {formErrors.name && <p className="text-red-500">{formErrors.name[0]}</p>}
+          </div>
+          <div className="mb-4">
+            <label htmlFor="email" className="block text-gray-700">
+              Email
+            </label>
+            <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-3 border rounded" />
+            {formErrors.email && <p className="text-red-500">{formErrors.email[0]}</p>}
+          </div>
+          <div className="mb-4">
+            <label htmlFor="password" className="block text-gray-700">
+              Password
+            </label>
+            <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} className="w-full p-3 border rounded" />
+            {formErrors.password && <p className="text-red-500">{formErrors.password[0]}</p>}
+          </div>
+          <div className="mb-4">
+            <label htmlFor="password_confirmation" className="block text-gray-700">
+              Confirm Password
+            </label>
+            <input type="password" id="password_confirmation" name="password_confirmation" value={formData.password_confirmation} onChange={handleChange} className="w-full p-3 border rounded" />
+          </div>
+          <button type="submit" className="w-full p-3 text-white bg-blue-500 rounded">
+            {editingUser ? "Update" : "Create"}
+          </button>
+        </form>
+      </div>
+      <div className="p-6 bg-white rounded shadow-md">
+        <h2 className="mb-4 text-2xl font-bold text-center">Users</h2>
         <table className="min-w-full bg-white border border-gray-300">
           <thead>
             <tr>
@@ -131,18 +174,6 @@ const AdminCreateUser = () => {
             ))}
           </tbody>
         </table>
-      </div>
-      <div className="w-1/2 pl-6">
-        <h2 className="mb-6 text-3xl font-bold text-center">Create User</h2>
-        <form onSubmit={handleSubmit} className="mb-6">
-          <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleChange} className="w-full p-3 mb-4 border rounded" />
-          <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full p-3 mb-4 border rounded" />
-          <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full p-3 mb-4 border rounded" />
-          <input type="password" name="password_confirmation" placeholder="Confirm Password" value={formData.password_confirmation} onChange={handleChange} className="w-full p-3 mb-4 border rounded" />
-          <button type="submit" className="w-full p-3 text-white bg-blue-500 rounded">
-            {editingUser ? "Update" : "Register"}
-          </button>
-        </form>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import api from "../axios/axios";
@@ -12,6 +12,9 @@ const Room = () => {
   const [users, setUsers] = useState([]);
   const [adminName, setAdminName] = useState("");
   const [roomStatus, setRoomStatus] = useState("");
+  const [showPortPopup, setShowPortPopup] = useState(false);
+  const [ports, setPorts] = useState({});
+  const [origins, setOrigins] = useState([]);
   const { user, token } = useContext(AppContext);
   const navigate = useNavigate();
 
@@ -42,6 +45,15 @@ const Room = () => {
           },
         });
         setUsers(usersResponse.data || []);
+
+        // Deck Origins
+        const originsResponse = await api.get(`/room/${roomId}/deck-origins`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("Origins: ", originsResponse.data);
+        setOrigins(originsResponse.data);
       } catch (error) {
         console.error("There was an error fetching the room details!", error);
       }
@@ -183,6 +195,24 @@ const Room = () => {
     }
   }
 
+  const handleSetPorts = async () => {
+    try {
+      const res = await api.put(
+        `/room/${roomId}/set-ports`,
+        { ports },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log(res);
+      setShowPortPopup(false);
+    } catch (error) {
+      console.error("There was an error setting the ports!", error);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-gray-100">
       <div className="w-full bg-yellow-600 py-2">
@@ -239,9 +269,14 @@ const Room = () => {
             </button>
 
             {user && user.is_admin === 1 && roomStatus !== "active" && roomStatus !== "finished" && (
-              <button onClick={handleStartSimulation} className="mt-6 w-full p-3 text-white bg-green-500 rounded-lg hover:bg-green-600" disabled={users.length < 1}>
-                START!
-              </button>
+              <>
+                <button onClick={() => setShowPortPopup(true)} className="mt-6 w-full p-3 text-white bg-yellow-500 rounded-lg hover:bg-yellow-600">
+                  SET PORTS
+                </button>
+                <button onClick={handleStartSimulation} className="mt-6 w-full p-3 text-white bg-green-500 rounded-lg hover:bg-green-600" disabled={users.length < 1}>
+                  START!
+                </button>
+              </>
             )}
 
             {user && user.is_admin === 1 && roomStatus === "active" && (
@@ -263,6 +298,35 @@ const Room = () => {
           <div className="absolute whitespace-nowrap animate-marquee-bottom text-white text-lg font-bold marquee-container italic">===WAITING ROOM===</div>
         </div>
       </div>
+
+      {showPortPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Set Ports for Users</h2>
+            {users.map((singleUser) => (
+              <div key={singleUser.id} className="mb-4">
+                <label className="block text-gray-700">{singleUser.name}</label>
+                <select className="w-full p-2 border border-gray-300 rounded" value={ports[singleUser.id] || ""} onChange={(e) => setPorts({ ...ports, [singleUser.id]: e.target.value })}>
+                  <option value="">Select a port</option>
+                  {Object.values(origins).map((origin) => (
+                    <option key={origin} value={origin}>
+                      {origin}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowPortPopup(false)} className="p-2 bg-gray-500 text-white rounded">
+                Cancel
+              </button>
+              <button onClick={handleSetPorts} className="p-2 bg-blue-500 text-white rounded">
+                Set Ports
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

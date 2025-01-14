@@ -14,6 +14,7 @@ const AdminCreateSalesCallCards = () => {
     revenueStandardDeviation: 500_000,
   });
   const [generateErrors, setGenerateErrors] = useState({});
+  const [deck, setDeck] = useState({});
   const [salesCallCards, setSalesCallCards] = useState([]);
   const [containers, setContainers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,26 +22,24 @@ const AdminCreateSalesCallCards = () => {
   const [portStats, setPortStats] = useState({});
 
   useEffect(() => {
-    fetchSalesCallCards();
+    fetchDeck();
     fetchContainers();
   }, []);
 
-  const fetchSalesCallCards = async () => {
+  const fetchDeck = async () => {
     try {
-      const response = await api.get(`/decks/${deckId}/cards`);
-      setSalesCallCards(response.data.salesCalls); // Adjusted to access 'cards' from the response
-      calculateDeckStats(response.data.salesCalls);
-      console.log(response.data);
+      const res = await api.get(`/decks/${deckId}`);
+      setDeck(res.data);
+      setSalesCallCards(res.data.cards);
+      calculateDeckStats(res.data.cards);
     } catch (error) {
-      console.error("Error fetching sales call cards:", error);
-      setSalesCallCards([]);
+      console.error("Error fetching deck:", error);
     }
   };
 
   const fetchContainers = async () => {
     try {
       const response = await api.get("/containers");
-      // console.log(response.data);
       setContainers(response.data);
     } catch (error) {
       console.error("Error fetching containers:", error);
@@ -62,9 +61,9 @@ const AdminCreateSalesCallCards = () => {
     try {
       const response = await api.post(`/generate-cards/${deckId}`, generateFormData);
       console.log(response.data);
-      setSalesCallCards(response.data.salesCalls);
+      setSalesCallCards(response.data.cards);
       fetchContainers();
-      calculateDeckStats(response.data.salesCalls);
+      calculateDeckStats(response.data.cards);
 
       setGenerateFormData({
         maxTotalRevenueEachPort: 250_000_000,
@@ -116,7 +115,9 @@ const AdminCreateSalesCallCards = () => {
       <button onClick={() => navigate(-1)} className="mb-4 p-2 bg-blue-500 text-white rounded">
         Back
       </button>
-      <h3 className="mb-4 text-2xl font-bold text-center text-gray-800">Deck: {deckId}</h3>
+      <h3 className="mb-4 text-2xl font-bold text-gray-800">
+        {deck.name} - ID: {deck.id}
+      </h3>
 
       <div className="flex flex-col lg:flex-row">
         <div className="w-full lg:w-1/2 pr-4">
