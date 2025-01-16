@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from "react";
-import { AppContext } from "../context/AppContext";
-import api from "../axios/axios";
+import { AppContext } from "../../context/AppContext";
+import api from "../../axios/axios";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 

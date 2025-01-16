@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import api from "../axios/axios";
+import api from "../../axios/axios";
 import { useNavigate, useParams } from "react-router-dom";
 
-const AdminCreateSalesCallCards = () => {
+const AdminCreateCards = () => {
   const { deckId } = useParams();
   const navigate = useNavigate();
   const [generateFormData, setGenerateFormData] = useState({
@@ -297,4 +297,4 @@ const AdminCreateSalesCallCards = () => {
   );
 };
 
-export default AdminCreateSalesCallCards;
+export default AdminCreateCards;

@@ -1,20 +1,19 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AdminHome from "./pages/AdminHome";
-import UserHome from "./pages/UserHome";
+import AdminHome from "./pages/Admin/AdminHome";
+import UserHome from "./pages/User/UserHome";
 import "./App.css";
 import { AppContext } from "./context/AppContext";
 import { useContext } from "react";
 import Room from "./pages/Room";
-import AdminCreateAdmin from "./pages/AdminCreateAdmin";
-import AdminCreateUser from "./pages/AdminCreateUser";
-import AdminLayout from "./pages/AdminLayout";
-import UserLayout from "./pages/UserLayout";
+import AdminCreateAdmin from "./pages/Admin/AdminCreateAdmin";
+import AdminCreateUser from "./pages/Admin/AdminCreateUser";
+import AdminLayout from "./pages/Admin/AdminLayout";
+import UserLayout from "./pages/User/UserLayout";
 import Simulation from "./pages/Simulation";
-import AdminCreateSalesCallCards from "./pages/AdminCreateSalesCallCards";
-import Simulation2 from "./pages/Simulation2";
+import AdminCreateCards from "./pages/Admin/AdminCreateCards";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
-import AdminDecks from "./pages/AdminDecks";
+import AdminDecks from "./pages/Admin/AdminDecks";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -25,8 +24,7 @@ const App = () => {
         {/* Other Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/rooms/:roomId" element={<Room />} />
-        <Route path="/simulation" element={<Simulation />} />
-        <Route path="/simulation2/:roomId" element={<Simulation2 />} />
+        <Route path="/simulation/:roomId" element={<Simulation />} />
 
         {/* User Routes */}
         <Route path="/" element={<LandingPage />} />
@@ -72,7 +70,7 @@ const App = () => {
           path="/admin-create-sales-call-cards/:deckId"
           element={
             <AdminLayout>
-              <AdminCreateSalesCallCards />
+              <AdminCreateCards />
             </AdminLayout>
           }
         />

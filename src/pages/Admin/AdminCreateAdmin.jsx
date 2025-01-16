@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../axios/axios";
-import { AppContext } from "../context/AppContext";
+import api from "../../axios/axios";
+import { AppContext } from "../../context/AppContext";
 
 const AdminCreateAdmin = () => {
   const { token } = useContext(AppContext);
