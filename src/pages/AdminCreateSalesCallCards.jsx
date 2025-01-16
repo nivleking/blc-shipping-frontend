@@ -40,6 +40,7 @@ const AdminCreateSalesCallCards = () => {
   const fetchContainers = async () => {
     try {
       const response = await api.get("/containers");
+      console.log(response.data);
       setContainers(response.data);
     } catch (error) {
       console.error("Error fetching containers:", error);
@@ -264,7 +265,7 @@ const AdminCreateSalesCallCards = () => {
                     <td colSpan="2" className="py-2">
                       <div className="grid grid-cols-3 gap-2">
                         {containers
-                          .filter((container) => container.sales_call_card_id === card.id)
+                          .filter((container) => container.card_id === card.id)
                           .map((container) => (
                             <div
                               key={container.id}

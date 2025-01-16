@@ -212,7 +212,7 @@ const Simulation2 = () => {
     try {
       await api.post(`/cards/${cardId}/accept`);
       const acceptedCard = salesCallCards.find((card) => card.id === cardId);
-      const newContainers = containers.filter((container) => container.sales_call_card_id === cardId);
+      const newContainers = containers.filter((container) => container.card_id === cardId);
 
       // Add containers to the docks
       const updatedDroppedItems = [...droppedItems];
@@ -491,7 +491,7 @@ const Simulation2 = () => {
                         <td colSpan="2" className="py-2">
                           <div className="grid grid-cols-3 gap-2">
                             {containers
-                              .filter((container) => container.sales_call_card_id === salesCallCards[currentCardIndex].id)
+                              .filter((container) => container.card_id === salesCallCards[currentCardIndex].id)
                               .map((container) => (
                                 <div
                                   key={container.id}
