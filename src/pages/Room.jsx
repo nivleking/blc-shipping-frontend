@@ -25,7 +25,7 @@ const Room = () => {
     const fetchRoomDetails = async () => {
       try {
         // Room Detail
-        const roomResponse = await api.get(`/room/${roomId}`, {
+        const roomResponse = await api.get(`/rooms/${roomId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -34,7 +34,7 @@ const Room = () => {
         setRoomStatus(roomResponse.data.status); // Set room status
 
         // Admin Detail
-        const adminResponse = await api.get(`/user/${adminId}`, {
+        const adminResponse = await api.get(`/users/${adminId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -42,7 +42,7 @@ const Room = () => {
         setAdminName(adminResponse.data.name);
 
         // Users in This Room
-        const usersResponse = await api.get(`/room/${roomId}/users`, {
+        const usersResponse = await api.get(`/rooms/${roomId}/users`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -50,7 +50,7 @@ const Room = () => {
         setUsers(usersResponse.data || []);
 
         // Deck Origins
-        const originsResponse = await api.get(`/room/${roomId}/deck-origins`, {
+        const originsResponse = await api.get(`/rooms/${roomId}/deck-origins`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -90,7 +90,7 @@ const Room = () => {
 
   const handleKickUser = (userId) => {
     api
-      .delete(`room/${roomId}/kick/${userId}`, {
+      .delete(`rooms/${roomId}/kick/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -109,7 +109,7 @@ const Room = () => {
     } else {
       api
         .post(
-          `room/${roomId}/leave`,
+          `rooms/${roomId}/leave`,
           {},
           {
             headers: {
@@ -130,7 +130,7 @@ const Room = () => {
   async function startSimulation() {
     try {
       const res = await api.put(
-        `/room/${roomId}`,
+        `/rooms/${roomId}`,
         {
           status: "active",
         },
@@ -155,7 +155,7 @@ const Room = () => {
   async function endSimulation() {
     try {
       const res = await api.put(
-        `/room/${roomId}`,
+        `/rooms/${roomId}`,
         {
           status: "finished",
         },
@@ -182,7 +182,7 @@ const Room = () => {
   async function handleSwapBays() {
     try {
       const res = await api.put(
-        `/room/${roomId}/swap-bays`,
+        `/rooms/${roomId}/swap-bays`,
         {},
         {
           headers: {
@@ -201,7 +201,7 @@ const Room = () => {
   const handleSetPorts = async () => {
     try {
       const res = await api.put(
-        `/room/${roomId}/set-ports`,
+        `/rooms/${roomId}/set-ports`,
         { ports },
         {
           headers: {
@@ -228,7 +228,7 @@ const Room = () => {
   const handleSaveConfig = async () => {
     try {
       await api.post(
-        `/room/${roomId}/save-config`,
+        `/rooms/${roomId}/save-config`,
         {
           baySize,
           bayCount,

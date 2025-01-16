@@ -91,14 +91,14 @@ const Simulation2 = () => {
   useEffect(() => {
     const fetchSalesCallCards = async () => {
       try {
-        const roomResponse = await api.get(`/room/${roomId}`, {
+        const roomResponse = await api.get(`/rooms/${roomId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         const deckId = roomResponse.data.deck_id;
 
-        const portResponse = await api.get(`/room/${roomId}/user-port`, {
+        const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -363,7 +363,7 @@ const Simulation2 = () => {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await api.get(`/room/${roomId}/config`, {
+        const response = await api.get(`/rooms/${roomId}/config`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

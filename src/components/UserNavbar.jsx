@@ -12,7 +12,7 @@ const UserNavbar = ({ toggleSidebar, isSidebarOpen }) => {
     e.preventDefault();
     try {
       await api.post(
-        "user/logout",
+        "users/logout",
         {},
         {
           headers: {

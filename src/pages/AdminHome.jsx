@@ -27,7 +27,7 @@ const AdminHome = () => {
   useEffect(() => {
     async function fetchRooms() {
       try {
-        const response = await api.get("room", {
+        const response = await api.get("rooms", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -61,7 +61,7 @@ const AdminHome = () => {
     e.preventDefault();
     try {
       const response = await api.post(
-        "room",
+        "rooms",
         {
           id: formData.id,
           name: formData.name,
@@ -88,7 +88,7 @@ const AdminHome = () => {
     return async (e) => {
       e.preventDefault();
       try {
-        const usersResponse = await api.get(`room/${roomId}/users`, {
+        const usersResponse = await api.get(`rooms/${roomId}/users`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -96,7 +96,7 @@ const AdminHome = () => {
 
         const userIds = usersResponse.data.map((user) => user.id);
 
-        const response = await api.delete(`room/${roomId}`, {
+        const response = await api.delete(`rooms/${roomId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -132,7 +132,7 @@ const AdminHome = () => {
   async function handleSelectDeck() {
     try {
       const response = await api.put(
-        `room/${selectedRoom}/select-deck`,
+        `rooms/${selectedRoom}/select-deck`,
         {
           deck_id: selectedDeck,
           max_users: maxUsers,
@@ -146,7 +146,7 @@ const AdminHome = () => {
 
       if (response.status === 200) {
         setShowDeckModal(false);
-        navigate(`/room/${selectedRoom}`);
+        navigate(`/rooms/${selectedRoom}`);
       }
     } catch (error) {
       console.error("Error selecting deck:", error);

@@ -46,13 +46,13 @@ const AdminCreateAdmin = () => {
     e.preventDefault();
     try {
       if (editingAdmin) {
-        await api.put(`/user/${editingAdmin.id}`, formData, {
+        await api.put(`/users/${editingAdmin.id}`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
       } else {
-        await api.post("/user/register", formData, {
+        await api.post("/users/register", formData, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -92,7 +92,7 @@ const AdminCreateAdmin = () => {
 
   const handleDelete = async (adminId) => {
     try {
-      await api.delete(`/user/${adminId}`, {
+      await api.delete(`/users/${adminId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

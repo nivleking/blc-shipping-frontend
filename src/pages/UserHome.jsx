@@ -16,7 +16,7 @@ const UserHome = () => {
     e.preventDefault();
     try {
       const response = await api.post(
-        `room/${roomId}/join`,
+        `rooms/${roomId}/join`,
         {},
         {
           headers: {
@@ -28,7 +28,7 @@ const UserHome = () => {
       if (response.status === 200) {
         console.log("Join room response:", response.data);
         socket.emit("user_added", user);
-        navigate(`/room/${roomId}`);
+        navigate(`/rooms/${roomId}`);
       }
     } catch (error) {
       console.error("Error joining room:", error);
