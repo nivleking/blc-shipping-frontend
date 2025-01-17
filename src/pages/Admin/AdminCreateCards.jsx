@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import api from "../../axios/axios";
 import { useNavigate, useParams } from "react-router-dom";
 
+const formatIDR = (value) => {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
+};
+
 const AdminCreateCards = () => {
   const { deckId } = useParams();
   const navigate = useNavigate();
@@ -26,7 +30,7 @@ const AdminCreateCards = () => {
     fetchContainers();
   }, []);
 
-  const fetchDeck = async () => {
+  async function fetchDeck() {
     try {
       const res = await api.get(`/decks/${deckId}`);
       setDeck(res.data);
@@ -35,9 +39,9 @@ const AdminCreateCards = () => {
     } catch (error) {
       console.error("Error fetching deck:", error);
     }
-  };
+  }
 
-  const fetchContainers = async () => {
+  async function fetchContainers() {
     try {
       const response = await api.get("/containers");
       console.log(response.data);
@@ -45,7 +49,7 @@ const AdminCreateCards = () => {
     } catch (error) {
       console.error("Error fetching containers:", error);
     }
-  };
+  }
 
   const handleGenerateChange = (e) => {
     const { name, value } = e.target;
@@ -57,7 +61,7 @@ const AdminCreateCards = () => {
     }
   };
 
-  const handleGenerateSubmit = async (e) => {
+  async function handleGenerateSubmit(e) {
     e.preventDefault();
     try {
       const response = await api.post(`/generate-cards/${deckId}`, generateFormData);
@@ -79,11 +83,7 @@ const AdminCreateCards = () => {
       setSalesCallCards([]);
       console.error("Error generating sales call cards:", error);
     }
-  };
-
-  const formatIDR = (value) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
-  };
+  }
 
   const calculateDeckStats = (cards) => {
     const stats = cards.reduce((acc, card) => {
@@ -103,12 +103,11 @@ const AdminCreateCards = () => {
     setPortStats(stats);
   };
 
+  // Pagination Logic
   const indexOfLastCard = currentPage * cardsPerPage;
   const indexOfFirstCard = indexOfLastCard - cardsPerPage;
   const currentCards = salesCallCards.slice(indexOfFirstCard, indexOfLastCard);
-
   const totalPages = Math.ceil(salesCallCards.length / cardsPerPage);
-
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (

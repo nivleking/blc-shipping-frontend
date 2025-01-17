@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import api from "../axios/axios";
@@ -22,46 +22,6 @@ const Room = () => {
   const [bayCount, setBayCount] = useState(1);
 
   useEffect(() => {
-    const fetchRoomDetails = async () => {
-      try {
-        // Room Detail
-        const roomResponse = await api.get(`/rooms/${roomId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const adminId = roomResponse.data.admin_id;
-        setRoomStatus(roomResponse.data.status); // Set room status
-
-        // Admin Detail
-        const adminResponse = await api.get(`/users/${adminId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setAdminName(adminResponse.data.name);
-
-        // Users in This Room
-        const usersResponse = await api.get(`/rooms/${roomId}/users`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUsers(usersResponse.data || []);
-
-        // Deck Origins
-        const originsResponse = await api.get(`/rooms/${roomId}/deck-origins`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        console.log("Origins: ", originsResponse.data);
-        setOrigins(originsResponse.data);
-      } catch (error) {
-        console.error("There was an error fetching the room details!", error);
-      }
-    };
-
     fetchRoomDetails();
 
     socket.on("user_added", (newUser) => {
@@ -77,7 +37,7 @@ const Room = () => {
 
     socket.on("start_simulation", (roomId) => {
       if (user.is_admin !== 1) {
-        navigate(`/simulation2/${roomId}`);
+        navigate(`/simulation/${roomId}`);
       }
     });
 
@@ -87,6 +47,41 @@ const Room = () => {
       socket.off("start_simulation");
     };
   }, [roomId, token, user, navigate]);
+
+  async function fetchRoomDetails() {
+    try {
+      const roomResponse = await api.get(`/rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const adminId = roomResponse.data.admin_id;
+      setRoomStatus(roomResponse.data.status);
+
+      const adminResponse = await api.get(`/users/${adminId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setAdminName(adminResponse.data.name);
+
+      const usersResponse = await api.get(`/rooms/${roomId}/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUsers(usersResponse.data || []);
+
+      const originsResponse = await api.get(`/rooms/${roomId}/deck-origins`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setOrigins(originsResponse.data);
+    } catch (error) {
+      console.error("There was an error fetching the room details!", error);
+    }
+  }
 
   const handleKickUser = (userId) => {
     api
@@ -198,7 +193,7 @@ const Room = () => {
     }
   }
 
-  const handleSetPorts = async () => {
+  async function handleSetPorts() {
     try {
       const res = await api.put(
         `/rooms/${roomId}/set-ports`,
@@ -214,7 +209,7 @@ const Room = () => {
     } catch (error) {
       console.error("There was an error setting the ports!", error);
     }
-  };
+  }
 
   const handleBaySizeChange = (e) => {
     const { name, value } = e.target;
@@ -225,7 +220,7 @@ const Room = () => {
     setBayCount(parseInt(e.target.value));
   };
 
-  const handleSaveConfig = async () => {
+  async function handleSaveConfig() {
     try {
       await api.post(
         `/rooms/${roomId}/save-config`,
@@ -240,7 +235,6 @@ const Room = () => {
         }
       );
 
-      // Create docks for each user in this room
       const dockLayout = Array.from({ length: 3 }).map(() => Array(5).fill(null));
       const dockSize = { rows: 3, columns: 5 };
       const promises = users.map((singleUser) =>
@@ -266,7 +260,7 @@ const Room = () => {
     } catch (error) {
       console.error("There was an error saving the configuration!", error);
     }
-  };
+  }
 
   const renderShipLayout = () => {
     return (

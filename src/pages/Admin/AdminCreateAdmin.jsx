@@ -16,23 +16,23 @@ const AdminCreateAdmin = () => {
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
-    async function fetchAdmins() {
-      try {
-        const adminsResponse = await api.get("/all-admins", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setAdmins(adminsResponse.data);
-      } catch (error) {
-        console.error("Error fetching admins:", error);
-      }
-    }
-
     if (token) {
       fetchAdmins();
     }
   }, [token]);
+
+  async function fetchAdmins() {
+    try {
+      const adminsResponse = await api.get("/all-admins", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setAdmins(adminsResponse.data);
+    } catch (error) {
+      console.error("Error fetching admins:", error);
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,13 +66,8 @@ const AdminCreateAdmin = () => {
         password_confirmation: "",
       });
       setEditingAdmin(null);
-      // Refresh admins list
-      const response = await api.get("/all-admins", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setAdmins(response.data);
+
+      fetchAdmins();
     } catch (error) {
       setFormErrors(error.response.data.errors);
       console.error("Error creating/updating admin:", error);
@@ -90,24 +85,19 @@ const AdminCreateAdmin = () => {
     setEditingAdmin(admin);
   };
 
-  const handleDelete = async (adminId) => {
+  async function handleDelete(adminId) {
     try {
       await api.delete(`/users/${adminId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      // Refresh admins list
-      const response = await api.get("/all-admins", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setAdmins(response.data);
+
+      setAdmins(admins.filter((admin) => admin.id !== adminId));
     } catch (error) {
       console.error("Error deleting admin:", error);
     }
-  };
+  }
 
   return (
     <div className="container mx-auto mt-10 p-6">

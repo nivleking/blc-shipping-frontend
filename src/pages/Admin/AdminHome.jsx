@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import { AppContext } from "../../context/AppContext";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "../../axios/axios";
 import { io } from "socket.io-client";
 
@@ -25,37 +25,37 @@ const AdminHome = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchRooms() {
-      try {
-        const response = await api.get("rooms", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setRooms(response.data);
-      } catch (error) {
-        console.error("Error fetching rooms:", error);
-      }
-    }
-
-    async function fetchDecks() {
-      try {
-        const response = await api.get("decks", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setDecks(response.data);
-      } catch (error) {
-        console.error("Error fetching decks:", error);
-      }
-    }
-
     if (token) {
       fetchRooms();
       fetchDecks();
     }
   }, [token]);
+
+  async function fetchRooms() {
+    try {
+      const response = await api.get("rooms", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setRooms(response.data);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+    }
+  }
+
+  async function fetchDecks() {
+    try {
+      const response = await api.get("decks", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setDecks(response.data);
+    } catch (error) {
+      console.error("Error fetching decks:", error);
+    }
+  }
 
   async function createRoom(e) {
     e.preventDefault();
@@ -84,36 +84,34 @@ const AdminHome = () => {
     }
   }
 
-  function handleDeleteRoom(roomId) {
-    return async (e) => {
-      e.preventDefault();
-      try {
-        const usersResponse = await api.get(`rooms/${roomId}/users`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+  async function handleDeleteRoom(roomId) {
+    e.preventDefault();
+    try {
+      const usersResponse = await api.get(`rooms/${roomId}/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const userIds = usersResponse.data.map((user) => user.id);
+
+      const response = await api.delete(`rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 200) {
+        setRooms((prevRooms) => prevRooms.filter((room) => room.id !== roomId));
+        console.log("Room deleted:", roomId);
+
+        userIds.forEach((userId) => {
+          socket.emit("user_kicked", userId);
         });
-
-        const userIds = usersResponse.data.map((user) => user.id);
-
-        const response = await api.delete(`rooms/${roomId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.status === 200) {
-          setRooms((prevRooms) => prevRooms.filter((room) => room.id !== roomId));
-          console.log("Room deleted:", roomId);
-
-          userIds.forEach((userId) => {
-            socket.emit("user_kicked", userId);
-          });
-        }
-      } catch (error) {
-        console.error("Error deleting room:", error);
       }
-    };
+    } catch (error) {
+      console.error("Error deleting room:", error);
+    }
   }
 
   function handleChange(e) {
@@ -122,11 +120,6 @@ const AdminHome = () => {
       ...prevData,
       [name]: value,
     }));
-  }
-
-  function handleOpenRoom(roomId) {
-    setSelectedRoom(roomId);
-    setShowDeckModal(true);
   }
 
   async function handleSelectDeck() {
@@ -174,6 +167,11 @@ const AdminHome = () => {
       setDeckOrigins([]);
       setMaxUsers(0);
     }
+  }
+
+  function handleOpenRoom(roomId) {
+    setSelectedRoom(roomId);
+    setShowDeckModal(true);
   }
 
   return (

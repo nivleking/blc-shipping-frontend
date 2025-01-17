@@ -1,69 +1,19 @@
 import { useState, useEffect, useContext } from "react";
-import { DndContext, DragOverlay, useDraggable, useDroppable } from "@dnd-kit/core";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
 import api from "../axios/axios";
 import { io } from "socket.io-client";
-import { CSS } from "@dnd-kit/utilities";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
+import ContainerDock from "../components/simulations/ContainerDock";
+import ContainerBay from "../components/simulations/ContainerBay";
+import DraggableContainer from "../components/simulations/DraggableContainer"
+import DroppableCell from "../components/simulations/DroppableCell";
 
 const websocket = "http://localhost:5174";
 const socket = io.connect(websocket);
 
-const DraggableContainer = ({ id, text, style, isDragging, color }) => {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id,
-  });
-
-  const defaultStyle = {
-    transform: CSS.Transform.toString(transform),
-    zIndex: isDragging ? 9999 : "auto",
-    backgroundColor: color, // Apply the color
-    color: color === "blue" ? "white" : "black",
-  };
-
-  return (
-    <div ref={setNodeRef} style={{ ...defaultStyle, ...style }} {...listeners} {...attributes} className={`p-2 m-1 text-white rounded cursor-move shadow ${isDragging ? "dragging" : ""}`}>
-      {text}
-    </div>
-  );
-};
-
-const DroppableCell = ({ id, children, coordinates }) => {
-  const { isOver, setNodeRef } = useDroppable({
-    id,
-  });
-
-  const style = {
-    backgroundColor: isOver ? "lightgreen" : "white",
-    position: "relative",
-    width: "100px", // Adjust the width
-    height: "100px", // Adjust the height
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className="border border-gray-300 flex items-center justify-center rounded shadow-sm">
-      <span style={{ position: "absolute", top: "2px", left: "2px", fontSize: "10px", color: "gray" }}>{coordinates}</span>
-      {children}
-    </div>
-  );
-};
-
-const ContainerBay = ({ id, rows, columns, children }) => {
-  return (
-    <div
-      className="grid gap-1 m-2 border border-gray-400 rounded shadow-sm"
-      style={{
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        gridTemplateRows: `repeat(${rows}, 1fr)`,
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
-const ContainerDocks = ({ id, children }) => {
-  return <div className="grid grid-cols-5 grid-rows-3 gap-1 m-2 border border-gray-400">{children}</div>;
+const formatIDR = (value) => {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
 };
 
 const Simulation = () => {
@@ -89,86 +39,50 @@ const Simulation = () => {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
   useEffect(() => {
-    const fetchSalesCallCards = async () => {
-      try {
-        const roomResponse = await api.get(`/rooms/${roomId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const deckId = roomResponse.data.deck_id;
-
-        const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const userPort = portResponse.data.port;
-
-        const deckResponse = await api.get(`/decks/${deckId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const filteredCards = deckResponse.data.cards.filter((card) => card.origin === userPort);
-        console.log("Filtered Cards:", filteredCards);
-        setSalesCallCards(filteredCards);
-      } catch (error) {
-        console.error("Error fetching sales call cards:", error);
-      }
-    };
-
-    const fetchContainers = async () => {
-      try {
-        const response = await api.get("/containers");
-        setContainers(response.data);
-      } catch (error) {
-        console.error("Error fetching containers:", error);
-      }
-    };
-
     fetchSalesCallCards();
     fetchContainers();
   }, [roomId, token]);
 
+  async function fetchSalesCallCards() {
+    try {
+      const roomResponse = await api.get(`/rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const deckId = roomResponse.data.deck_id;
+
+      const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const userPort = portResponse.data.port;
+
+      const deckResponse = await api.get(`/decks/${deckId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const filteredCards = deckResponse.data.cards.filter((card) => card.origin === userPort);
+      console.log("Filtered Cards:", filteredCards);
+      setSalesCallCards(filteredCards);
+    } catch (error) {
+      console.error("Error fetching sales call cards:", error);
+    }
+  }
+
+  async function fetchContainers() {
+    try {
+      const response = await api.get("/containers");
+      setContainers(response.data);
+    } catch (error) {
+      console.error("Error fetching containers:", error);
+    }
+  }
+
   useEffect(() => {
-    const fetchArenaData = async () => {
-      if (!user || !user.id) {
-        console.log("User not available yet");
-        return;
-      }
-
-      console.log("User:", user);
-      console.log("Room ID:", roomId);
-      try {
-        const response = await api.get(`ship-bays/${roomId}/${user.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const savedArena = JSON.parse(response.data.arena);
-        console.log("Saved Arena:", savedArena);
-
-        const newDroppedItems = [];
-        savedArena.forEach((bay, bayIndex) => {
-          bay.forEach((row, rowIndex) => {
-            row.forEach((item, colIndex) => {
-              if (item) {
-                newDroppedItems.push({
-                  id: item,
-                  area: `bay-${bayIndex}-${rowIndex * bay[0].length + colIndex}`,
-                });
-              }
-            });
-          });
-        });
-        setDroppedItems((prevItems) => [...prevItems.filter((item) => item.area.startsWith("docks")), ...newDroppedItems]);
-      } catch (error) {
-        console.error("Error fetching arena data:", error);
-      }
-    };
-
     fetchDockData();
 
     socket.on("swap_bays", () => {
@@ -181,7 +95,43 @@ const Simulation = () => {
     };
   }, [roomId, user, token]);
 
-  const fetchDockData = async () => {
+  async function fetchArenaData() {
+    if (!user || !user.id) {
+      console.log("User not available yet");
+      return;
+    }
+
+    console.log("User:", user);
+    console.log("Room ID:", roomId);
+    try {
+      const response = await api.get(`ship-bays/${roomId}/${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const savedArena = JSON.parse(response.data.arena);
+      console.log("Saved Arena:", savedArena);
+
+      const newDroppedItems = [];
+      savedArena.forEach((bay, bayIndex) => {
+        bay.forEach((row, rowIndex) => {
+          row.forEach((item, colIndex) => {
+            if (item) {
+              newDroppedItems.push({
+                id: item,
+                area: `bay-${bayIndex}-${rowIndex * bay[0].length + colIndex}`,
+              });
+            }
+          });
+        });
+      });
+      setDroppedItems((prevItems) => [...prevItems.filter((item) => item.area.startsWith("docks")), ...newDroppedItems]);
+    } catch (error) {
+      console.error("Error fetching arena data:", error);
+    }
+  }
+
+  async function fetchDockData() {
     if (!user || !user.id) {
       console.log("User not available yet");
       return;
@@ -200,7 +150,26 @@ const Simulation = () => {
     } catch (error) {
       console.error("Error fetching dock data:", error);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchConfig();
+  }, [roomId, token]);
+
+  async function fetchConfig() {
+    try {
+      const response = await api.get(`/rooms/${roomId}/config`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const { baySize, bayCount } = response.data;
+      setBaySize(baySize);
+      setBayCount(bayCount);
+    } catch (error) {
+      console.error("There was an error fetching the configuration!", error);
+    }
+  }
 
   useEffect(() => {
     if (currentCardIndex >= salesCallCards.length) {
@@ -208,17 +177,15 @@ const Simulation = () => {
     }
   }, [salesCallCards, currentCardIndex]);
 
-  const handleAcceptCard = async (cardId) => {
+  async function handleAcceptCard(cardId) {
     try {
       await api.post(`/cards/${cardId}/accept`);
       const acceptedCard = salesCallCards.find((card) => card.id === cardId);
       const newContainers = containers.filter((container) => container.card_id === cardId);
 
-      // Add containers to the docks
       const updatedDroppedItems = [...droppedItems];
       let dockIndex = 0;
 
-      // Find the next available cell in the docks
       const findNextAvailableCell = () => {
         while (updatedDroppedItems.some((item) => item.area === `docks-${dockIndex}`)) {
           dockIndex++;
@@ -231,7 +198,7 @@ const Simulation = () => {
         updatedDroppedItems.push({
           id: container.id,
           area: dockCellId,
-          color: container.color, // Include color
+          color: container.color,
         });
       });
 
@@ -242,9 +209,9 @@ const Simulation = () => {
     } catch (error) {
       console.error("Error accepting sales call card:", error);
     }
-  };
+  }
 
-  const handleRejectCard = async (cardId) => {
+  async function handleRejectCard(cardId) {
     try {
       await api.post(`/cards/${cardId}/reject`);
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
@@ -252,13 +219,13 @@ const Simulation = () => {
     } catch (error) {
       console.error("Error rejecting sales call card:", error);
     }
-  };
+  }
 
   const handleDragStart = (event) => {
     setDraggingItem(event.active.id);
   };
 
-  const handleDragEnd = async (event) => {
+  async function handleDragEnd(event) {
     const { active, over } = event;
     setDraggingItem(null);
     console.log("Active:", active);
@@ -316,7 +283,7 @@ const Simulation = () => {
         console.error("API call failed", error);
       }
     }
-  };
+  }
 
   const handlePageChange = (direction) => {
     setCurrentPage((prevPage) => prevPage + direction);
@@ -360,29 +327,6 @@ const Simulation = () => {
 
   const paginatedItems = droppedItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        const response = await api.get(`/rooms/${roomId}/config`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const { baySize, bayCount } = response.data;
-        setBaySize(baySize);
-        setBayCount(bayCount);
-      } catch (error) {
-        console.error("There was an error fetching the configuration!", error);
-      }
-    };
-
-    fetchConfig();
-  }, [roomId, token]);
-
-  const formatIDR = (value) => {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
-  };
-
   return (
     <>
       <div className="flex flex-col">
@@ -420,7 +364,7 @@ const Simulation = () => {
           {/* Docks Area */}
           <div className="flex flex-row justify-center items-center gap-4" style={{ height: "100%", width: "100%", backgroundColor: "#e0e0e0" }}>
             <div className="flex flex-col items-center justify-center">
-              <ContainerDocks id="docks" rows={dockSize.rows} columns={dockSize.columns}>
+              <ContainerDock id="docks" rows={dockSize.rows} columns={dockSize.columns}>
                 {Array.from({ length: dockSize.rows * dockSize.columns }).map((_, cellIndex) => {
                   const rowIndex = Math.floor(cellIndex / dockSize.columns);
                   const colIndex = cellIndex % dockSize.columns;
@@ -438,7 +382,7 @@ const Simulation = () => {
                     </DroppableCell>
                   );
                 })}
-              </ContainerDocks>
+              </ContainerDock>
             </div>
             <div className="flex flex-col items-center w-full max-w-md">
               {salesCallCards.length > 0 && currentCardIndex < salesCallCards.length && (

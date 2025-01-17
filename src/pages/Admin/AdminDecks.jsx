@@ -10,7 +10,7 @@ const AdminDecks = () => {
     fetchDecks();
   }, []);
 
-  const fetchDecks = async () => {
+  async function fetchDecks() {
     try {
       const response = await api.get("/decks");
       const decksData = response.data;
@@ -26,14 +26,14 @@ const AdminDecks = () => {
     } catch (error) {
       console.error("Error fetching decks:", error);
     }
-  };
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
     try {
       const response = await api.post("/decks", formData);
@@ -42,18 +42,18 @@ const AdminDecks = () => {
     } catch (error) {
       console.error("Error creating deck:", error);
     }
-  };
+  }
 
-  const handleDeleteDeck = async (deckId) => {
+  async function handleDeleteDeck(deckId) {
     try {
       await api.delete(`/decks/${deckId}`);
       setDecks(decks.filter((deck) => deck.id !== deckId));
     } catch (error) {
       console.error("Error deleting deck:", error);
     }
-  };
+  }
 
-  const calculateDeckStats = (cards) => {
+  function calculateDeckStats(cards) {
     if (!cards) {
       return { totalPorts: 0 };
     }
@@ -62,7 +62,7 @@ const AdminDecks = () => {
     return {
       totalPorts,
     };
-  };
+  }
 
   return (
     <div className="container mx-auto p-4">

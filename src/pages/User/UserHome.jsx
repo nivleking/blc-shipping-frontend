@@ -35,10 +35,6 @@ const UserHome = () => {
     }
   }
 
-  useEffect(() => {
-    console.log("User in UserHome:", user);
-  }, [user]);
-
   return (
     <div>
       <h2 className="mb-4 text-2xl font-bold text-center">User Home</h2>

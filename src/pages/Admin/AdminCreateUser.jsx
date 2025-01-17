@@ -16,23 +16,23 @@ const AdminCreateUser = () => {
   const { token } = useContext(AppContext);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await api.get("/all-users", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setUsers(response.data);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-
     if (token) {
       fetchUsers();
     }
   }, [token]);
+
+  async function fetchUsers() {
+    try {
+      const response = await api.get("/all-users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +42,18 @@ const AdminCreateUser = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleEdit = (user) => {
+    setFormData({
+      name: user.name,
+      email: user.email,
+      is_admin: false,
+      password: "",
+      password_confirmation: "",
+    });
+    setEditingUser(user);
+  };
+
+  async function handleSubmit(e) {
     e.preventDefault();
     try {
       if (editingUser) {
@@ -66,47 +77,27 @@ const AdminCreateUser = () => {
         password_confirmation: "",
       });
       setEditingUser(null);
-      const response = await api.get("/all-users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setUsers(response.data);
+
+      fetchUsers();
     } catch (error) {
       setFormErrors(error.response.data.errors);
       console.error("Error creating/updating user:", error);
     }
-  };
+  }
 
-  const handleEdit = (user) => {
-    setFormData({
-      name: user.name,
-      email: user.email,
-      is_admin: false,
-      password: "",
-      password_confirmation: "",
-    });
-    setEditingUser(user);
-  };
-
-  const handleDelete = async (userId) => {
+  async function handleDelete(userId) {
     try {
       await api.delete(`/users/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      // Refresh users list
-      const response = await api.get("/all-users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setUsers(response.data);
+
+      setUsers(users.filter((user) => user.id !== userId));
     } catch (error) {
       console.error("Error deleting user:", error);
     }
-  };
+  }
 
   return (
     <div className="container mx-auto mt-10 p-6">

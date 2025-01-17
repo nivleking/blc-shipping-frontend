@@ -8,7 +8,7 @@ const UserNavbar = ({ toggleSidebar, isSidebarOpen }) => {
   const { token, setToken, setUser } = useContext(AppContext);
   const navigate = useNavigate();
 
-  const handleLogout = async (e) => {
+  async function handleLogout(e) {
     e.preventDefault();
     try {
       await api.post(
@@ -27,7 +27,7 @@ const UserNavbar = ({ toggleSidebar, isSidebarOpen }) => {
     } catch (error) {
       console.error("Logout error:", error);
     }
-  };
+  }
 
   return (
     <nav className="bg-gray-900 p-4 text-white flex justify-between items-center shadow-md">
