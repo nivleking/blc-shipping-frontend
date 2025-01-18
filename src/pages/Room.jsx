@@ -12,8 +12,10 @@ const Room = () => {
   const [users, setUsers] = useState([]);
   const [adminName, setAdminName] = useState("");
   const [roomStatus, setRoomStatus] = useState("");
+  const [deckId, setDeckId] = useState("");
   const [showPortPopup, setShowPortPopup] = useState(false);
   const [ports, setPorts] = useState({});
+  const [shipBay, setShipBay] = useState([]);
   const [origins, setOrigins] = useState([]);
   const { user, token } = useContext(AppContext);
   const navigate = useNavigate();
@@ -56,7 +58,9 @@ const Room = () => {
         },
       });
       const adminId = roomResponse.data.admin_id;
+      const deckId = roomResponse.data.deck_id;
       setRoomStatus(roomResponse.data.status);
+      setDeckId(deckId);
 
       const adminResponse = await api.get(`/users/${adminId}`, {
         headers: {
@@ -136,14 +140,53 @@ const Room = () => {
         }
       );
       setRoomStatus("active");
-      console.log(res);
+
+      const deckResponse = await api.get(`/decks/${deckId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const cards = deckResponse.data.cards;
+
+      console.log("Cards", cards);
+      console.log("Users", users);
+
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
+
+        // Fetch ship bay for the current user
+        const shipBayResponse = await api.get(`/ship-bays/${roomId}/${user.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const userShipBay = shipBayResponse.data;
+        console.log("User Ship Bay", userShipBay);
+
+        if (!userShipBay) continue;
+
+        const userPort = userShipBay.port;
+        const matchedCards = cards.filter((card) => card.origin === userPort);
+
+        for (const matchedCard of matchedCards) {
+          await api.post(
+            `/rooms/${roomId}/create-card-temporary/${user.id}`,
+            { card_id: matchedCard.id },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+        }
+      }
     } catch (error) {
       console.error("There was an error starting the simulation!", error);
     }
   }
 
   const handleStartSimulation = () => {
-    socket.emit("start_simulation", roomId);
+    // socket.emit("start_simulation", roomId);
     startSimulation();
   };
 
@@ -205,6 +248,9 @@ const Room = () => {
         }
       );
       console.log(res);
+      console.log(res.data.shipbays);
+      setShipBay(res.data.shipbays);
+      console.log("Ship Bay", shipBay);
       setShowPortPopup(false);
     } catch (error) {
       console.error("There was an error setting the ports!", error);

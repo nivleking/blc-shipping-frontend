@@ -84,35 +84,37 @@ const AdminHome = () => {
     }
   }
 
-  async function handleDeleteRoom(roomId) {
-    e.preventDefault();
-    try {
-      const usersResponse = await api.get(`rooms/${roomId}/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const userIds = usersResponse.data.map((user) => user.id);
-
-      const response = await api.delete(`rooms/${roomId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 200) {
-        setRooms((prevRooms) => prevRooms.filter((room) => room.id !== roomId));
-        console.log("Room deleted:", roomId);
-
-        userIds.forEach((userId) => {
-          socket.emit("user_kicked", userId);
+  function handleDeleteRoom(roomId) {
+    return async (e) => {
+      e.preventDefault();
+      try {
+        const usersResponse = await api.get(`rooms/${roomId}/users`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
+
+        const userIds = usersResponse.data.map((user) => user.id);
+
+        const response = await api.delete(`rooms/${roomId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 200) {
+          setRooms((prevRooms) => prevRooms.filter((room) => room.id !== roomId));
+          console.log("Room deleted:", roomId);
+
+          userIds.forEach((userId) => {
+            socket.emit("user_kicked", userId);
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting room:", error);
       }
-    } catch (error) {
-      console.error("Error deleting room:", error);
-    }
-  }
+    };
+  } 
 
   function handleChange(e) {
     const { name, value } = e.target;
