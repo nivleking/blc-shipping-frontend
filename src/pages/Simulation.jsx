@@ -6,7 +6,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import ContainerDock from "../components/simulations/ContainerDock";
 import ContainerBay from "../components/simulations/ContainerBay";
-import DraggableContainer from "../components/simulations/DraggableContainer"
+import DraggableContainer from "../components/simulations/DraggableContainer";
 import DroppableCell from "../components/simulations/DroppableCell";
 
 const websocket = "http://localhost:5174";
@@ -179,7 +179,17 @@ const Simulation = () => {
 
   async function handleAcceptCard(cardId) {
     try {
-      await api.post(`/cards/${cardId}/accept`);
+      await api.post(
+        "/card-temporary/accept",
+        {
+          card_temporary_id: cardId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       const acceptedCard = salesCallCards.find((card) => card.id === cardId);
       const newContainers = containers.filter((container) => container.card_id === cardId);
 
@@ -213,7 +223,17 @@ const Simulation = () => {
 
   async function handleRejectCard(cardId) {
     try {
-      await api.post(`/cards/${cardId}/reject`);
+      await api.post(
+        "/card-temporary/reject",
+        {
+          card_temporary_id: cardId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
       setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
     } catch (error) {

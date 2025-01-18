@@ -8,7 +8,8 @@ const DraggableContainer = ({ id, text, style, isDragging, color }) => {
 
   const defaultStyle = {
     transform: CSS.Transform.toString(transform),
-    zIndex: isDragging ? 9999 : "auto",
+    zIndex: isDragging ? 1000 : "auto",
+    position: isDragging ? "fixed" : "relative",
     backgroundColor: color,
     color: color === "blue" ? "white" : "black",
   };

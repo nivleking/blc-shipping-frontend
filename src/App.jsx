@@ -14,6 +14,7 @@ import AdminCreateCards from "./pages/Admin/AdminCreateCards";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import AdminDecks from "./pages/Admin/AdminDecks";
+import Simulation2 from "./pages/Simulation2";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -25,6 +26,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/rooms/:roomId" element={<Room />} />
         <Route path="/simulation/:roomId" element={<Simulation />} />
+        <Route path="/simulation2" element={<Simulation2 />} />
 
         {/* User Routes */}
         <Route path="/" element={<LandingPage />} />

@@ -186,7 +186,7 @@ const Room = () => {
   }
 
   const handleStartSimulation = () => {
-    // socket.emit("start_simulation", roomId);
+    socket.emit("start_simulation", roomId);
     startSimulation();
   };
 
