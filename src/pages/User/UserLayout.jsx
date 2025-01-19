@@ -1,9 +1,9 @@
 import { useState } from "react";
-import UserSidebar from "./../../components/UserSidebar";
-import UserNavbar from "./../../components/UserNavbar";
+import UserSidebar from "../../components/UserSidebar";
+import UserNavbar from "../../components/UserNavbar";
 
 const UserLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -11,8 +11,8 @@ const UserLayout = ({ children }) => {
 
   return (
     <div className="flex">
-      {isSidebarOpen && <UserSidebar />}
-      <div className="flex-1">
+      <UserSidebar isSidebarOpen={isSidebarOpen} />
+      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-16"}`}>
         <UserNavbar toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="p-6 bg-gray-100 min-h-screen">{children}</div>
       </div>

@@ -1,0 +1,78 @@
+@keyframes borderAnimation {
+  0% {
+    border-color: #3b82f6;
+  }
+  50% {
+    border-color: #60a5fa;
+  }
+  100% {
+    border-color: #3b82f6;
+  }
+}
+
+@keyframes polygonAnimation {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(20px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-border {
+  animation: borderAnimation 2s infinite;
+}
+
+.animate-polygon {
+  animation: polygonAnimation 5s infinite;
+}
+
+.text-gray-100:hover {
+  color: #60a5fa;
+}
+
+.animated-border {
+  position: relative;
+  border: 5px solid transparent;
+  border-radius: 20px;
+  background: linear-gradient(#121213, #121213), linear-gradient(#121213 30%, rgba(18, 18, 19, 0.6) 80%, rgba(18, 18, 19, 0)), linear-gradient(90deg, #ff6d1b, #ffee55, #5bff89, #4d8aff, #6b5fff, #ff64f9, #ff6565);
+  background-origin: border-box;
+  background-clip: padding-box, border-box, border-box;
+  background-size: 200%;
+  animation: animate 2s infinite linear;
+}
+
+.animated-border::after {
+  content: "";
+  background: linear-gradient(90deg, #ff6d1b, #ffee55, #5bff89, #4d8aff, #6b5fff, #ff64f9, #ff6565);
+  background-size: 200%;
+  height: 50%;
+  width: 100%;
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  z-index: -1;
+  filter: blur(25px);
+  animation: animate 2s infinite linear;
+}
+
+@keyframes animate {
+  0% {
+    background-position: 0;
+  }
+  100% {
+    background-position: 200%;
+  }
+}
+
+.animated-border:hover,
+.animated-border:hover::after {
+  animation: animate 0.9s infinite linear;
+}
+
+.underline {
+  text-decoration: underline;
+}

@@ -3,6 +3,10 @@ import { AppContext } from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../axios/axios";
 import { io } from "socket.io-client";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ReactPaginate from "react-paginate";
+import "./AdminHome.css"; // Import the CSS file for pagination styling
 
 const websocket = "http://localhost:5174";
 const socket = io.connect(websocket);
@@ -14,14 +18,14 @@ const AdminHome = () => {
     id: "",
     name: "",
     description: "",
+    deck_id: "",
+    max_users: 0,
   });
   const [errors, setErrors] = useState({});
   const [decks, setDecks] = useState([]);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [selectedDeck, setSelectedDeck] = useState("");
-  const [maxUsers, setMaxUsers] = useState(0);
-  const [showDeckModal, setShowDeckModal] = useState(false);
-  const [deckOrigins, setDeckOrigins] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "ascending" });
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5; // Limit to 5 rooms per page
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,6 +43,7 @@ const AdminHome = () => {
         },
       });
       setRooms(response.data);
+      console.log("Rooms fetched:", response.data);
     } catch (error) {
       console.error("Error fetching rooms:", error);
     }
@@ -60,22 +65,15 @@ const AdminHome = () => {
   async function createRoom(e) {
     e.preventDefault();
     try {
-      const response = await api.post(
-        "rooms",
-        {
-          id: formData.id,
-          name: formData.name,
-          description: formData.description,
+      const response = await api.post("rooms", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      });
 
       if (response.status === 200) {
         setRooms((prevRooms) => [...prevRooms, response.data]);
+        toast.success("Room created successfully!", { toastId: "room-create" });
         console.log("Room created:", response.data);
       }
     } catch (error) {
@@ -104,6 +102,7 @@ const AdminHome = () => {
 
         if (response.status === 200) {
           setRooms((prevRooms) => prevRooms.filter((room) => room.id !== roomId));
+          toast.success("Room deleted successfully!", { toastId: "room-delete" });
           console.log("Room deleted:", roomId);
 
           userIds.forEach((userId) => {
@@ -114,7 +113,7 @@ const AdminHome = () => {
         console.error("Error deleting room:", error);
       }
     };
-  } 
+  }
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -124,33 +123,12 @@ const AdminHome = () => {
     }));
   }
 
-  async function handleSelectDeck() {
-    try {
-      const response = await api.put(
-        `rooms/${selectedRoom}/select-deck`,
-        {
-          deck_id: selectedDeck,
-          max_users: maxUsers,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        setShowDeckModal(false);
-        navigate(`/rooms/${selectedRoom}`);
-      }
-    } catch (error) {
-      console.error("Error selecting deck:", error);
-    }
-  }
-
   async function handleDeckChange(e) {
     const deckId = e.target.value;
-    setSelectedDeck(deckId);
+    setFormData((prevData) => ({
+      ...prevData,
+      deck_id: deckId,
+    }));
 
     if (deckId) {
       try {
@@ -160,110 +138,167 @@ const AdminHome = () => {
           },
         });
         const origins = response.data;
-        setDeckOrigins(origins);
-        setMaxUsers(Object.keys(origins).length);
+        setFormData((prevData) => ({
+          ...prevData,
+          max_users: Object.keys(origins).length,
+        }));
       } catch (error) {
         console.error("Error fetching deck origins:", error);
       }
     } else {
-      setDeckOrigins([]);
-      setMaxUsers(0);
+      setFormData((prevData) => ({
+        ...prevData,
+        max_users: 0,
+      }));
     }
   }
 
   function handleOpenRoom(roomId) {
-    setSelectedRoom(roomId);
-    setShowDeckModal(true);
+    navigate(`/rooms/${roomId}`);
   }
 
-  return (
-    <div className="container mx-auto p-4">
-      <h2 className="mb-4 text-3xl font-bold text-center text-gray-800">Admin Home</h2>
-      <p className="text-center text-gray-600">Welcome {user && user.email}</p>
-      <form onSubmit={createRoom} className="mt-6 space-y-4 max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
-        <div>
-          <label htmlFor="id" className="block text-gray-700">
-            Room ID
-          </label>
-          <input type="text" id="id" name="id" value={formData.id} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
-          {errors.id && <p className="text-red-500">{errors.id[0]}</p>}
-        </div>
-        <div>
-          <label htmlFor="name" className="block text-gray-700">
-            Room Name
-          </label>
-          <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
-          {errors.name && <p className="text-red-500">{errors.name[0]}</p>}
-        </div>
-        <div>
-          <label htmlFor="description" className="block text-gray-700">
-            Room Description
-          </label>
-          <input type="text" id="description" name="description" value={formData.description} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
-          {errors.description && <p className="text-red-500">{errors.description[0]}</p>}
-        </div>
-        <button type="submit" className="w-full p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600">
-          Create Room
-        </button>
-      </form>
-      <div className="mt-8">
-        <h3 className="mb-4 text-2xl font-bold text-center text-gray-800">Rooms</h3>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {rooms.map((room) => (
-            <div key={room.id} className="p-6 bg-white rounded-lg shadow-md">
-              <h4 className="mb-2 text-xl font-bold text-gray-800">
-                {room.id} - {room.name}
-              </h4>
-              <p className="text-gray-600">{room.description}</p>
-              <div className="flex space-x-2 mt-4">
-                <button
-                  onClick={() => handleOpenRoom(room.id)}
-                  className={`flex-1 p-2 text-center text-white rounded-lg ${room.status === "active" || room.status === "finished" ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-                  disabled={room.status === "active" || room.status === "finished"}
-                >
-                  Open
-                </button>
-                <form action="" onSubmit={handleDeleteRoom(room.id)} className="flex-1">
-                  <button disabled={room.status === "active"} className={`w-full p-2 text-center text-white rounded-lg ${room.status === "active" ? "bg-gray-500 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}>
-                    Delete
-                  </button>
-                </form>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+  function handleSort(key) {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  }
 
-      {showDeckModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Select Deck for Room</h2>
-            <div className="mb-4">
-              <label className="block text-gray-700">Deck</label>
-              <select value={selectedDeck} onChange={handleDeckChange} className="w-full p-2 border border-gray-300 rounded">
-                <option value="">Select a deck</option>
-                {decks.map((deck) => (
-                  <option key={deck.id} value={deck.id}>
-                    {deck.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Max Users</label>
-              <input type="number" value={maxUsers} onChange={(e) => setMaxUsers(e.target.value)} className="w-full p-2 border border-gray-300 rounded" readOnly />
-            </div>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeckModal(false)} className="p-2 bg-gray-500 text-white rounded">
-                Cancel
-              </button>
-              <button onClick={handleSelectDeck} className="p-2 bg-blue-500 text-white rounded">
-                Select Deck
-              </button>
-            </div>
-          </div>
+  function sortedRooms() {
+    let sortableRooms = [...rooms];
+    if (sortConfig !== null) {
+      sortableRooms.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === "ascending" ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === "ascending" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableRooms;
+  }
+
+  const handlePageClick = (event) => {
+    setCurrentPage(event.selected);
+  };
+
+  const offset = currentPage * itemsPerPage;
+  const currentPageData = sortedRooms().slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(rooms.length / itemsPerPage);
+
+  return (
+    <div className="container mx-auto p-4 flex">
+      <ToastContainer />
+      <div className="w-3/4 pr-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="mb-4 text-1xl font-bold text-gray-800">All Rooms</h3>
+          <ReactPaginate
+            previousLabel={"previous"}
+            nextLabel={"next"}
+            breakLabel={"..."}
+            breakClassName={"break-me"}
+            pageCount={pageCount}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+            onPageChange={handlePageClick}
+            containerClassName={"pagination"}
+            subContainerClassName={"pages pagination"}
+            activeClassName={"active"}
+            previousClassName={"page-item"}
+            nextClassName={"page-item"}
+            pageClassName={"page-item"}
+            pageLinkClassName={"page-link"}
+            previousLinkClassName={"page-link"}
+            nextLinkClassName={"page-link"}
+            breakLinkClassName={"page-link"}
+          />
         </div>
-      )}
+        {rooms.length === 0 ? (
+          <p className="text-center text-gray-600">There are no rooms! Let's create one.</p>
+        ) : (
+          <div>
+            <ul className="space-y-4">
+              {currentPageData.map((room) => (
+                <li key={room.id} className="bg-white p-4 rounded-lg shadow-md flex justify-between items-center">
+                  <div>
+                    <p className="text-lg font-bold">{room.name}</p>
+                    <p className="text-gray-600">{room.description}</p>
+                    <p className="text-gray-500 text-sm">
+                      Created by {room.created_by} at {new Date(room.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={() => handleOpenRoom(room.id)}
+                      className={`p-2 text-center text-white rounded-lg ${room.status === "active" || room.status === "finished" ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
+                      disabled={room.status === "active" || room.status === "finished"}
+                    >
+                      Open
+                    </button>
+                    <form action="" onSubmit={handleDeleteRoom(room.id)}>
+                      <button disabled={room.status === "active"} className={`p-2 text-center text-white rounded-lg ${room.status === "active" ? "bg-gray-500 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}>
+                        Delete
+                      </button>
+                    </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <div className="w-1/4">
+        <h3 className="mb-4 text-1xl font-bold text-gray-800">Create New Room</h3>
+        <form onSubmit={createRoom} className="space-y-4 bg-white p-6 rounded-lg shadow-md">
+          <div>
+            <label htmlFor="id" className="block text-gray-700">
+              Room ID
+            </label>
+            <input type="text" id="id" name="id" value={formData.id} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+            {errors.id && <p className="text-red-500">{errors.id[0]}</p>}
+          </div>
+          <div>
+            <label htmlFor="name" className="block text-gray-700">
+              Room Name
+            </label>
+            <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+            {errors.name && <p className="text-red-500">{errors.name[0]}</p>}
+          </div>
+          <div>
+            <label htmlFor="description" className="block text-gray-700">
+              Room Description
+            </label>
+            <input type="text" id="description" name="description" value={formData.description} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+            {errors.description && <p className="text-red-500">{errors.description[0]}</p>}
+          </div>
+          <div>
+            <label htmlFor="deck_id" className="block text-gray-700">
+              Deck
+            </label>
+            <select id="deck_id" name="deck_id" value={formData.deck_id} onChange={handleDeckChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+              <option value="">Select a deck</option>
+              {decks.map((deck) => (
+                <option key={deck.id} value={deck.id}>
+                  {deck.name}
+                </option>
+              ))}
+            </select>
+            {errors.deck_id && <p className="text-red-500">{errors.deck_id[0]}</p>}
+          </div>
+          <div>
+            <label htmlFor="max_users" className="block text-gray-700">
+              Max Users
+            </label>
+            <input type="number" id="max_users" name="max_users" value={formData.max_users} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" readOnly />
+          </div>
+          <button type="submit" className="w-full p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600">
+            Create
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

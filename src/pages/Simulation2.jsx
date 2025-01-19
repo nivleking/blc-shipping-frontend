@@ -9,8 +9,8 @@ const Draggable = ({ id, style }) => {
   const draggableStyle = {
     ...style,
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    position: isDragging ? "fixed" : "relative", // Gunakan fixed saat dragging
-    zIndex: isDragging ? 1000 : "auto", // Pastikan elemen berada di atas lainnya
+    position: isDragging ? "fixed" : "relative",
+    zIndex: isDragging ? 1000 : "auto",
   };
 
   return (
