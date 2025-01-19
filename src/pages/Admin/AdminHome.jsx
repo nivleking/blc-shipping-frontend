@@ -14,6 +14,7 @@ const socket = io.connect(websocket);
 const AdminHome = () => {
   const { user, token } = useContext(AppContext);
   const [rooms, setRooms] = useState([]);
+  const [admins, setAdmins] = useState({});
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -25,7 +26,7 @@ const AdminHome = () => {
   const [decks, setDecks] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: "name", direction: "ascending" });
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5; // Limit to 5 rooms per page
+  const itemsPerPage = 5;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +45,19 @@ const AdminHome = () => {
       });
       setRooms(response.data);
       console.log("Rooms fetched:", response.data);
+
+      // Fetch admin details for each room
+      response.data.forEach(async (room) => {
+        const adminResponse = await api.get(`users/${room.admin_id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setAdmins((prevAdmins) => ({
+          ...prevAdmins,
+          [room.admin_id]: adminResponse.data,
+        }));
+      });
     } catch (error) {
       console.error("Error fetching rooms:", error);
     }
@@ -227,7 +241,7 @@ const AdminHome = () => {
                     <p className="text-lg font-bold">{room.name}</p>
                     <p className="text-gray-600">{room.description}</p>
                     <p className="text-gray-500 text-sm">
-                      Created by {room.created_by} at {new Date(room.created_at).toLocaleString()}
+                      Created by {admins[room.admin_id] && admins[room.admin_id].name} at {new Date(room.created_at).toLocaleString()}
                     </p>
                   </div>
                   <div className="flex space-x-4">

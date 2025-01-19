@@ -12,7 +12,7 @@ const UserLayout = ({ children }) => {
   return (
     <div className="flex">
       <UserSidebar isSidebarOpen={isSidebarOpen} />
-      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-16"}`}>
+      <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-20"}`}>
         <UserNavbar toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="p-6 bg-gray-100 min-h-screen">{children}</div>
       </div>

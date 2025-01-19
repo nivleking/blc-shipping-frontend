@@ -3,7 +3,7 @@ import { FaHome, FaDoorOpen } from "react-icons/fa";
 
 const UserSidebar = ({ isSidebarOpen }) => {
   return (
-    <div className={`bg-gray-900 text-white ${isSidebarOpen ? "w-64" : "w-16"} flex flex-col fixed h-full transition-all duration-300`}>
+    <div className={`bg-gray-900 text-white ${isSidebarOpen ? "w-64" : "w-20"} flex flex-col fixed h-full transition-all duration-300`}>
       <div className="p-6">
         <h2 className={`text-2xl font-bold ${!isSidebarOpen && "hidden"}`}>BLC Shipping</h2>
       </div>
