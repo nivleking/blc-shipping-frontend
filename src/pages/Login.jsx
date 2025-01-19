@@ -1,5 +1,7 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import api from "../axios/axios";
 import { AppContext } from "../context/AppContext";
 
@@ -11,6 +13,21 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const { setToken } = useContext(AppContext);
+
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      toast.dismiss();
+      toast.error(errors[Object.keys(errors)[0]][0], {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+    }
+  }, [errors]);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -32,7 +49,20 @@ const Login = () => {
         }
       }
     } catch (error) {
-      setErrors(error.response.data.errors);
+      if (error.response && error.response.data && error.response.data.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        toast.dismiss(); // Dismiss any existing toasts
+        toast.error("An unexpected error occurred. Please try again.", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      }
     }
   }
 
@@ -46,6 +76,7 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-gradient-to-tr from-black to-[#3b82f6]">
+      <ToastContainer />
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -99,7 +130,7 @@ const Login = () => {
                 type="submit"
                 className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                Sign in
+                Log in
               </button>
             </div>
           </form>

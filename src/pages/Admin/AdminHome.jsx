@@ -2,11 +2,11 @@ import React, { useContext, useState, useEffect } from "react";
 import { AppContext } from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../axios/axios";
-import { io } from "socket.io-client";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactPaginate from "react-paginate";
 import "./AdminHome.css"; // Import the CSS file for pagination styling
+import io from "socket.io-client";
 
 const websocket = "http://localhost:5174";
 const socket = io.connect(websocket);
@@ -46,7 +46,6 @@ const AdminHome = () => {
       setRooms(response.data);
       console.log("Rooms fetched:", response.data);
 
-      // Fetch admin details for each room
       response.data.forEach(async (room) => {
         const adminResponse = await api.get(`users/${room.admin_id}`, {
           headers: {
@@ -157,7 +156,8 @@ const AdminHome = () => {
           max_users: Object.keys(origins).length,
         }));
       } catch (error) {
-        console.error("Error fetching deck origins:", error);
+        console.error("Error selecting deck:", error);
+        toast.error("Error selecting deck. Please try again.", { toastId: "deck-select-error" });
       }
     } else {
       setFormData((prevData) => ({
