@@ -19,9 +19,6 @@ const Room = () => {
   const [origins, setOrigins] = useState([]);
   const { user, token } = useContext(AppContext);
   const navigate = useNavigate();
-  const [showConfigPopup, setShowConfigPopup] = useState(false);
-  const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
-  const [bayCount, setBayCount] = useState(1);
 
   useEffect(() => {
     fetchRoomDetails();
@@ -257,86 +254,6 @@ const Room = () => {
     }
   }
 
-  const handleBaySizeChange = (e) => {
-    const { name, value } = e.target;
-    setBaySize((prevSize) => ({ ...prevSize, [name]: parseInt(value) }));
-  };
-
-  const handleBayCountChange = (e) => {
-    setBayCount(parseInt(e.target.value));
-  };
-
-  async function handleSaveConfig() {
-    try {
-      await api.post(
-        `/rooms/${roomId}/save-config`,
-        {
-          baySize,
-          bayCount,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const dockLayout = Array.from({ length: 3 }).map(() => Array(5).fill(null));
-      const dockSize = { rows: 3, columns: 5 };
-      const promises = users.map((singleUser) =>
-        api.post(
-          `/ship-docks`,
-          {
-            arena: dockLayout,
-            user_id: singleUser.id,
-            room_id: roomId,
-            dock_size: dockSize,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
-      );
-
-      await Promise.all(promises);
-
-      setShowConfigPopup(false);
-    } catch (error) {
-      console.error("There was an error saving the configuration!", error);
-    }
-  }
-
-  const renderShipLayout = () => {
-    return (
-      <div className="flex overflow-x-auto">
-        {Array.from({ length: bayCount }).map((_, bayIndex) => (
-          <div key={`bay-${bayIndex}`} className="mb-4">
-            <h5 className="text-center text-md font-medium mb-2">Bay {bayIndex + 1}</h5>
-            <div
-              className="grid gap-1 m-2 border border-gray-400 rounded shadow-sm"
-              style={{
-                gridTemplateColumns: `repeat(${baySize.columns}, 1fr)`,
-                gridTemplateRows: `repeat(${baySize.rows}, 1fr)`,
-              }}
-            >
-              {Array.from({ length: baySize.rows * baySize.columns }).map((_, cellIndex) => (
-                <div key={`bay-${bayIndex}-${cellIndex}`} className="h-16 w-16 border border-gray-300 flex items-center justify-center rounded shadow-sm">
-                  <span style={{ position: "absolute", top: "2px", left: "2px", fontSize: "10px", color: "gray" }}>
-                    {bayIndex + 1}
-                    {Math.floor(cellIndex / baySize.columns)}
-                    {cellIndex % baySize.columns}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-gray-100">
       <div className="w-full bg-yellow-600 py-2">
@@ -398,10 +315,6 @@ const Room = () => {
                   PORTS
                 </button>
 
-                <button onClick={() => setShowConfigPopup(true)} className="mt-6 w-full p-3 text-white bg-slate-500 rounded-lg hover:bg-slate-600">
-                  LAYOUT
-                </button>
-
                 <button onClick={handleStartSimulation} className="mt-6 w-full p-3 text-white bg-green-500 rounded-lg hover:bg-green-600" disabled={users.length < 1}>
                   START!
                 </button>
@@ -418,40 +331,6 @@ const Room = () => {
               <button onClick={handleSwapBays} className="mt-6 w-full p-3 text-white bg-yellow-500 rounded-lg hover:bg-yellow-600">
                 SWAP BAYS
               </button>
-            )}
-
-            {showConfigPopup && (
-              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl overflow-auto" style={{ maxHeight: "90vh" }}>
-                  <h2 className="text-xl font-bold mb-4">Configure Ship</h2>
-                  <div className="flex mb-4">
-                    <div className="mr-4">
-                      <label className="block mb-2">Bay Size (Rows x Columns):</label>
-                      <div className="flex items-center">
-                        <input max="7" type="number" name="rows" value={baySize.rows} onChange={handleBaySizeChange} min="1" className="w-12 p-1 border border-gray-300 rounded mr-2" />
-                        x
-                        <input max="8" type="number" name="columns" value={baySize.columns} onChange={handleBaySizeChange} min="1" className="w-12 p-1 border border-gray-300 rounded ml-2" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block mb-2">Number of Bays:</label>
-                      <input max="8" type="number" value={bayCount} onChange={handleBayCountChange} min="1" className="w-12 p-1 border border-gray-300 rounded" />
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold mb-2">Ship Layout Preview</h3>
-                    {renderShipLayout()}
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => setShowConfigPopup(false)} className="p-2 bg-gray-500 text-white rounded">
-                      Cancel
-                    </button>
-                    <button onClick={handleSaveConfig} className="p-2 bg-blue-500 text-white rounded">
-                      Save
-                    </button>
-                  </div>
-                </div>
-              </div>
             )}
           </div>
         </div>
