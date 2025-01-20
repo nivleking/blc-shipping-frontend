@@ -8,6 +8,8 @@ import ContainerDock from "../components/simulations/ContainerDock";
 import ContainerBay from "../components/simulations/ContainerBay";
 import DraggableContainer from "../components/simulations/DraggableContainer";
 import DroppableCell from "../components/simulations/DroppableCell";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const websocket = "http://localhost:5174";
 const socket = io.connect(websocket);
@@ -245,63 +247,136 @@ const Simulation = () => {
     setDraggingItem(event.active.id);
   };
 
+  // Add these helper functions after existing formatIDR function
+  const checkAbove = (droppedItems, baySize, targetArea) => {
+    const [type, bayIndex, cellIndex] = targetArea.split("-");
+    if (type !== "bay") return true;
+
+    const row = Math.floor(cellIndex / baySize.columns);
+    const col = cellIndex % baySize.columns;
+
+    // Check if it's top row
+    if (row === 0) return true;
+
+    // Check if there's a container above
+    const aboveCellId = `bay-${bayIndex}-${(row - 1) * baySize.columns + col}`;
+    const containerAbove = droppedItems.find((item) => item.area === aboveCellId);
+
+    return !containerAbove;
+  };
+
+  const checkSpace = (droppedItems, baySize, targetArea) => {
+    const [type, bayIndex, cellIndex] = targetArea.split("-");
+    if (type !== "bay") return true;
+
+    const row = Math.floor(cellIndex / baySize.columns);
+    const col = cellIndex % baySize.columns;
+
+    // Don't allow if cell already occupied
+    const isOccupied = droppedItems.some((item) => item.area === targetArea);
+    if (isOccupied) return false;
+
+    // If not bottom row, check container below
+    if (row < baySize.rows - 1) {
+      const belowCellId = `bay-${bayIndex}-${(row + 1) * baySize.columns + col}`;
+      const containerBelow = droppedItems.find((item) => item.area === belowCellId);
+      if (!containerBelow) return false; // Can't float in air
+    }
+
+    return true;
+  };
+
   async function handleDragEnd(event) {
     const { active, over } = event;
     setDraggingItem(null);
-    console.log("Active:", active);
-    console.log("Over:", over);
 
-    if (over) {
-      const activeItem = droppedItems.find((item) => item.id === active.id);
-      if (activeItem && activeItem.area === over.id) {
-        console.log("Item dropped in the same cell, no API call needed");
-        return;
-      }
+    if (!over) return;
 
-      const updatedDroppedItems = droppedItems.map((item) => (item.id === active.id ? { ...item, area: over.id, color: item.color } : item));
-      setDroppedItems(updatedDroppedItems);
+    // Same cell check
+    const activeItem = droppedItems.find((item) => item.id === active.id);
+    if (activeItem && activeItem.area === over.id) return;
 
-      const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
-        return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
-          return Array.from({ length: baySize.columns }).map((_, colIndex) => {
-            const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
-            const item = updatedDroppedItems.find((item) => item.area === cellId);
-            return item ? item.id : null;
-          });
-        });
+    // Validate move
+    const isAboveClear = checkAbove(droppedItems, baySize, over.id);
+    const isSpaceValid = checkSpace(droppedItems, baySize, over.id);
+
+    if (!isAboveClear) {
+      toast.error("Cannot place container - blocked by container above", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
-      setBayData(newBayData);
+      return;
+    }
 
-      const newDockData = Array.from({ length: dockSize.rows }).map((_, rowIndex) => {
-        return Array.from({ length: dockSize.columns }).map((_, colIndex) => {
-          const cellId = `docks-${rowIndex * dockSize.columns + colIndex}`;
+    if (!isSpaceValid) {
+      toast.error("Invalid placement - container cannot float", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
+
+    // Existing update logic...
+    const updatedDroppedItems = droppedItems.map((item) => (item.id === active.id ? { ...item, area: over.id } : item));
+    setDroppedItems(updatedDroppedItems);
+
+    toast.success("Container placed successfully!", {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+
+    const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
+      return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
+        return Array.from({ length: baySize.columns }).map((_, colIndex) => {
+          const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
           const item = updatedDroppedItems.find((item) => item.area === cellId);
           return item ? item.id : null;
         });
       });
-      setDockData(newDockData);
+    });
+    setBayData(newBayData);
 
-      console.log("User:", user);
-      console.log("Room ID:", roomId);
+    const newDockData = Array.from({ length: dockSize.rows }).map((_, rowIndex) => {
+      return Array.from({ length: dockSize.columns }).map((_, colIndex) => {
+        const cellId = `docks-${rowIndex * dockSize.columns + colIndex}`;
+        const item = updatedDroppedItems.find((item) => item.area === cellId);
+        return item ? item.id : null;
+      });
+    });
+    setDockData(newDockData);
 
-      try {
-        const resBay = await api.post("/ship-bays", {
-          arena: newBayData,
-          user_id: user.id,
-          room_id: roomId,
-        });
-        console.log("API call successful for bays", resBay.data);
+    console.log("User:", user);
+    console.log("Room ID:", roomId);
 
-        const resDock = await api.post("/ship-docks", {
-          arena: newDockData,
-          user_id: user.id,
-          room_id: roomId,
-          dock_size: dockSize,
-        });
-        console.log("API call successful for docks", resDock.data);
-      } catch (error) {
-        console.error("API call failed", error);
-      }
+    try {
+      const resBay = await api.post("/ship-bays", {
+        arena: newBayData,
+        user_id: user.id,
+        room_id: roomId,
+      });
+      console.log("API call successful for bays", resBay.data);
+
+      const resDock = await api.post("/ship-docks", {
+        arena: newDockData,
+        user_id: user.id,
+        room_id: roomId,
+        dock_size: dockSize,
+      });
+      console.log("API call successful for docks", resDock.data);
+    } catch (error) {
+      console.error("API call failed", error);
     }
   }
 
@@ -315,7 +390,7 @@ const Simulation = () => {
         return Array.from({ length: baySize.columns }).map((_, colIndex) => {
           const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
           const item = droppedItems.find((item) => item.area === cellId);
-          return item ? item.id : null;
+          return item ? item.id : 0;
         });
       });
     });
@@ -326,7 +401,7 @@ const Simulation = () => {
       return Array.from({ length: 5 }).map((_, colIndex) => {
         const cellId = `docks-${rowIndex * 5 + colIndex}`;
         const item = droppedItems.find((item) => item.area === cellId);
-        return item ? item.id : null;
+        return item ? item.id : 0;
       });
     });
     setDockData(newDockData);
@@ -349,6 +424,7 @@ const Simulation = () => {
 
   return (
     <>
+      <ToastContainer />
       <div className="flex flex-col">
         <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           {/* Simulation Area */}
