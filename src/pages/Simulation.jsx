@@ -4,10 +4,10 @@ import api from "../axios/axios";
 import { io } from "socket.io-client";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-import ContainerDock from "../components/simulations/ContainerDock";
-import ContainerBay from "../components/simulations/ContainerBay";
+import ShipBay from "../components/simulations/ShipBay";
+import ShipDock from "../components/simulations/ShipDock";
+import SalesCallCard from "../components/simulations/SalesCallCard";
 import DraggableContainer from "../components/simulations/DraggableContainer";
-import DroppableCell from "../components/simulations/DroppableCell";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -247,7 +247,6 @@ const Simulation = () => {
     setDraggingItem(event.active.id);
   };
 
-  // Add these helper functions after existing formatIDR function
   const checkAbove = (droppedItems, baySize, targetArea) => {
     const [type, bayIndex, cellIndex] = targetArea.split("-");
     if (type !== "bay") return true;
@@ -255,10 +254,8 @@ const Simulation = () => {
     const row = Math.floor(cellIndex / baySize.columns);
     const col = cellIndex % baySize.columns;
 
-    // Check if it's top row
     if (row === 0) return true;
 
-    // Check if there's a container above
     const aboveCellId = `bay-${bayIndex}-${(row - 1) * baySize.columns + col}`;
     const containerAbove = droppedItems.find((item) => item.area === aboveCellId);
 
@@ -272,15 +269,13 @@ const Simulation = () => {
     const row = Math.floor(cellIndex / baySize.columns);
     const col = cellIndex % baySize.columns;
 
-    // Don't allow if cell already occupied
     const isOccupied = droppedItems.some((item) => item.area === targetArea);
     if (isOccupied) return false;
 
-    // If not bottom row, check container below
     if (row < baySize.rows - 1) {
       const belowCellId = `bay-${bayIndex}-${(row + 1) * baySize.columns + col}`;
       const containerBelow = droppedItems.find((item) => item.area === belowCellId);
-      if (!containerBelow) return false; // Can't float in air
+      if (!containerBelow) return false;
     }
 
     return true;
@@ -292,11 +287,9 @@ const Simulation = () => {
 
     if (!over) return;
 
-    // Same cell check
     const activeItem = droppedItems.find((item) => item.id === active.id);
     if (activeItem && activeItem.area === over.id) return;
 
-    // Validate move
     const isAboveClear = checkAbove(droppedItems, baySize, over.id);
     const isSpaceValid = checkSpace(droppedItems, baySize, over.id);
 
@@ -427,137 +420,15 @@ const Simulation = () => {
       <ToastContainer />
       <div className="flex flex-col">
         <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          {/* Simulation Area */}
-          <div className="p-5" style={{ height: "100%", backgroundColor: "#f0f0f0", overflowX: "auto" }}>
-            <div className="flex" style={{ width: "max-content" }}>
-              {Array.from({ length: bayCount }).map((_, bayIndex) => (
-                <div key={`bay-${bayIndex}`}>
-                  <h5 className="text-center text-md font-medium mb-2">Bay {bayIndex + 1}</h5>
-                  <ContainerBay id={`bay-${bayIndex}`} rows={baySize.rows} columns={baySize.columns}>
-                    {Array.from({ length: baySize.rows * baySize.columns }).map((_, cellIndex) => {
-                      const rowIndex = Math.floor(cellIndex / baySize.columns);
-                      const colIndex = cellIndex % baySize.columns;
-                      const coordinates = `${bayIndex + 1}${rowIndex}${colIndex}`;
-                      return (
-                        <DroppableCell key={`bay-${bayIndex}-${cellIndex}`} id={`bay-${bayIndex}-${cellIndex}`} coordinates={coordinates}>
-                          {droppedItems.find((item) => item.area === `bay-${bayIndex}-${cellIndex}`) && (
-                            <DraggableContainer
-                              id={droppedItems.find((item) => item.area === `bay-${bayIndex}-${cellIndex}`).id}
-                              text={droppedItems.find((item) => item.area === `bay-${bayIndex}-${cellIndex}`).id}
-                              isDragging={draggingItem === droppedItems.find((item) => item.area === `bay-${bayIndex}-${cellIndex}`).id}
-                              color={droppedItems.find((item) => item.area === `bay-${bayIndex}-${cellIndex}`).color} // Pass color
-                            />
-                          )}
-                        </DroppableCell>
-                      );
-                    })}
-                  </ContainerBay>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Ship Bay */}
+          <ShipBay bayCount={bayCount} baySize={baySize} droppedItems={droppedItems} draggingItem={draggingItem} />
 
-          {/* Docks Area */}
+          {/* Ship Dock */}
           <div className="flex flex-row justify-center items-center gap-4" style={{ height: "100%", width: "100%", backgroundColor: "#e0e0e0" }}>
-            <div className="flex flex-col items-center justify-center">
-              <ContainerDock id="docks" rows={dockSize.rows} columns={dockSize.columns}>
-                {Array.from({ length: dockSize.rows * dockSize.columns }).map((_, cellIndex) => {
-                  const rowIndex = Math.floor(cellIndex / dockSize.columns);
-                  const colIndex = cellIndex % dockSize.columns;
-                  const coordinates = `docks-${rowIndex}${colIndex}`;
-                  return (
-                    <DroppableCell key={`docks-${cellIndex}`} id={`docks-${cellIndex}`} coordinates={coordinates}>
-                      {paginatedItems.find((item) => item.area === `docks-${cellIndex}`) && (
-                        <DraggableContainer
-                          id={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
-                          text={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
-                          isDragging={draggingItem === paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
-                          color={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).color} // Pass color
-                        />
-                      )}
-                    </DroppableCell>
-                  );
-                })}
-              </ContainerDock>
-            </div>
+            <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} />
+
             <div className="flex flex-col items-center w-full max-w-md">
-              {salesCallCards.length > 0 && currentCardIndex < salesCallCards.length && (
-                <div key={salesCallCards[currentCardIndex].id} className="bg-white rounded-lg shadow-md p-4 w-full">
-                  <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <tbody>
-                      <tr className="font-bold">
-                        <td>{salesCallCards[currentCardIndex].origin}</td>
-                        <td>Booking {salesCallCards[currentCardIndex].id}</td>
-                      </tr>
-                      <tr>
-                        <td colSpan={2}>
-                          <hr />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="font-medium py-2">Type:</td>
-                        <td className="py-2">{salesCallCards[currentCardIndex].type}</td>
-                      </tr>
-                      <tr>
-                        <td className="font-medium py-2">Priority:</td>
-                        <td className="py-2">{salesCallCards[currentCardIndex].priority}</td>
-                      </tr>
-                      <tr>
-                        <td className="font-medium py-2">Origin:</td>
-                        <td className="py-2">{salesCallCards[currentCardIndex].origin}</td>
-                      </tr>
-                      <tr>
-                        <td className="font-medium py-2">Destination:</td>
-                        <td className="py-2">{salesCallCards[currentCardIndex].destination}</td>
-                      </tr>
-                      <tr>
-                        <td className="font-medium py-2">Quantity:</td>
-                        <td className="py-2">{salesCallCards[currentCardIndex].quantity}</td>
-                      </tr>
-                      <tr>
-                        <td className="font-medium py-2">Revenue/Container:</td>
-                        <td className="py-2">{formatIDR(salesCallCards[currentCardIndex].revenue / salesCallCards[currentCardIndex].quantity)}</td>
-                      </tr>
-                      <tr>
-                        <td className="font-medium py-2">Total Revenue:</td>
-                        <td className="py-2">{formatIDR(salesCallCards[currentCardIndex].revenue)}</td>
-                      </tr>
-                      <tr>
-                        <td colSpan={2} className="font-medium py-2 text-center">
-                          Containers
-                        </td>
-                      </tr>
-                      <tr>
-                        <td colSpan="2" className="py-2">
-                          <div className="grid grid-cols-3 gap-2">
-                            {containers
-                              .filter((container) => container.card_id === salesCallCards[currentCardIndex].id)
-                              .map((container) => (
-                                <div
-                                  key={container.id}
-                                  className={`p-2 border border-dashed border-gray-300 rounded text-center bg-${container.color}-500`}
-                                  style={{ backgroundImage: "linear-gradient(90deg, transparent 70%, rgba(255, 255, 255, 0.5) 50%)", backgroundSize: "10px 10px" }}
-                                >
-                                  {container.id}
-                                </div>
-                              ))}
-                          </div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td colSpan={2} className="font-medium py-2 text-center">
-                          <button onClick={() => handleAcceptCard(salesCallCards[currentCardIndex].id)} className="p-2 bg-green-500 text-white rounded mr-2">
-                            Accept
-                          </button>
-                          <button onClick={() => handleRejectCard(salesCallCards[currentCardIndex].id)} className="p-2 bg-red-500 text-white rounded">
-                            Reject
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
             </div>
           </div>
 
