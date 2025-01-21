@@ -22,11 +22,7 @@ const Simulation = () => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
   const navigate = useNavigate();
-  const [droppedItems, setDroppedItems] = useState([
-    // { id: "box1", area: "docks-0" },
-    // { id: "box2", area: "docks-1" },
-    // { id: "box3", area: "docks-2" },
-  ]);
+  const [droppedItems, setDroppedItems] = useState([]);
   const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
   const [bayCount, setBayCount] = useState(1);
   const [bayData, setBayData] = useState([]);
@@ -40,12 +36,23 @@ const Simulation = () => {
   const [containers, setContainers] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [revenue, setRevenue] = useState(0);
+
   useEffect(() => {
-    fetchSalesCallCards();
-    fetchContainers();
-  }, [roomId, token]);
+    if (user && token) {
+      fetchSalesCallCards();
+      fetchContainers();
+    }
+  }, [roomId, token, user]);
 
   async function fetchSalesCallCards() {
+    if (!user || !token) {
+      console.log("User not authenticated");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const roomResponse = await api.get(`/rooms/${roomId}`, {
         headers: {
@@ -53,6 +60,12 @@ const Simulation = () => {
         },
       });
       const deckId = roomResponse.data.deck_id;
+
+      if (!user.id) {
+        toast.error("User session invalid");
+        navigate("/");
+        return;
+      }
 
       const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
         headers: {
@@ -67,11 +80,27 @@ const Simulation = () => {
         },
       });
 
-      const filteredCards = deckResponse.data.cards.filter((card) => card.origin === userPort);
-      console.log("Filtered Cards:", filteredCards);
+      const cardTemporaryResponse = await api.get(`/card-temporary/${roomId}/${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const cardTemporaries = cardTemporaryResponse.data;
+
+      const filteredCards = deckResponse.data.cards
+        .filter((card) => card.origin === userPort)
+        .filter((card) => {
+          const cardTemp = cardTemporaries.find((ct) => ct.card_id === card.id);
+          return !cardTemp || cardTemp.status === "selected";
+        });
+
       setSalesCallCards(filteredCards);
     } catch (error) {
       console.error("Error fetching sales call cards:", error);
+      toast.error("Failed to load sales call cards");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -85,6 +114,7 @@ const Simulation = () => {
   }
 
   useEffect(() => {
+    fetchArenaData();
     fetchDockData();
 
     socket.on("swap_bays", () => {
@@ -103,33 +133,92 @@ const Simulation = () => {
       return;
     }
 
-    console.log("User:", user);
-    console.log("Room ID:", roomId);
     try {
       const response = await api.get(`ship-bays/${roomId}/${user.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      const savedArena = JSON.parse(response.data.arena);
-      console.log("Saved Arena:", savedArena);
 
+      // Initialize empty arena if none exists
+      const savedArena = response.data.arena
+        ? JSON.parse(response.data.arena)
+        : Array(bayCount)
+            .fill()
+            .map(() =>
+              Array(baySize.rows)
+                .fill()
+                .map(() => Array(baySize.columns).fill(null))
+            );
+
+      // Get revenue from response
+      setRevenue(response.data.revenue || 0);
+
+      const containersResponse = await api.get("/containers");
+      const containerData = containersResponse.data;
+
+      // Process bay items
       const newDroppedItems = [];
       savedArena.forEach((bay, bayIndex) => {
         bay.forEach((row, rowIndex) => {
           row.forEach((item, colIndex) => {
             if (item) {
-              newDroppedItems.push({
-                id: item,
-                area: `bay-${bayIndex}-${rowIndex * bay[0].length + colIndex}`,
-              });
+              const container = containerData.find((c) => c.id === item);
+              if (container) {
+                newDroppedItems.push({
+                  id: item,
+                  area: `bay-${bayIndex}-${rowIndex * bay[0].length + colIndex}`,
+                  color: container.color,
+                });
+              }
             }
           });
         });
       });
-      setDroppedItems((prevItems) => [...prevItems.filter((item) => item.area.startsWith("docks")), ...newDroppedItems]);
+
+      // Process dock items
+      const dockResponse = await api.get(`ship-docks/${roomId}/${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const dockArena = dockResponse.data.arena
+        ? JSON.parse(dockResponse.data.arena)
+        : Array(dockSize.rows)
+            .fill()
+            .map(() => Array(dockSize.columns).fill(null));
+
+      const dockItems = dockArena
+        .flat()
+        .map((item, index) => {
+          if (item) {
+            const container = containerData.find((c) => c.id === item);
+            if (container) {
+              return {
+                id: item,
+                area: `docks-${index}`,
+                color: container.color,
+              };
+            }
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      setDroppedItems([...dockItems, ...newDroppedItems]);
     } catch (error) {
       console.error("Error fetching arena data:", error);
+      // Initialize with empty data instead of showing error
+      const emptyBayData = Array(bayCount)
+        .fill()
+        .map(() =>
+          Array(baySize.rows)
+            .fill()
+            .map(() => Array(baySize.columns).fill(null))
+        );
+      setBayData(emptyBayData);
+      setDroppedItems([]);
     }
   }
 
@@ -181,6 +270,11 @@ const Simulation = () => {
 
   async function handleAcceptCard(cardId) {
     try {
+      // Get current card first to validate revenue
+      const currentCard = salesCallCards.find((card) => card.id === cardId);
+      const cardRevenue = parseFloat(currentCard.revenue) || 0;
+      const newRevenue = parseFloat(revenue) + cardRevenue;
+
       await api.post(
         "/card-temporary/accept",
         {
@@ -192,9 +286,10 @@ const Simulation = () => {
           },
         }
       );
-      const acceptedCard = salesCallCards.find((card) => card.id === cardId);
-      const newContainers = containers.filter((container) => container.card_id === cardId);
+      setRevenue(newRevenue);
 
+      // Update dropped items with new containers
+      const newContainers = containers.filter((container) => container.card_id === cardId);
       const updatedDroppedItems = [...droppedItems];
       let dockIndex = 0;
 
@@ -215,11 +310,71 @@ const Simulation = () => {
       });
 
       setDroppedItems(updatedDroppedItems);
+
+      // Create new bay data array
+      const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
+        return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
+          return Array.from({ length: baySize.columns }).map((_, colIndex) => {
+            const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
+            const item = updatedDroppedItems.find((item) => item.area === cellId);
+            return item ? item.id : null;
+          });
+        });
+      });
+
+      // Create new dock data array
+      const newDockData = Array.from({ length: dockSize.rows }).map((_, rowIndex) => {
+        return Array.from({ length: dockSize.columns }).map((_, colIndex) => {
+          const cellId = `docks-${rowIndex * dockSize.columns + colIndex}`;
+          const item = updatedDroppedItems.find((item) => item.area === cellId);
+          return item ? item.id : null;
+        });
+      });
+
+      // Update bay with new revenue
+      console.log("New revenue", newRevenue);
+      const tempRes = await api.post(
+        "/ship-bays",
+        {
+          arena: newBayData,
+          user_id: user.id,
+          room_id: roomId,
+          revenue: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("Temp res:", tempRes);
+
+      // Update dock
+      await api.post(
+        "/ship-docks",
+        {
+          arena: newDockData,
+          user_id: user.id,
+          room_id: roomId,
+          dock_size: dockSize,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update states
+      setBayData(newBayData);
+      setDockData(newDockData);
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
       setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
-      fetchDockData();
+
+      toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
     } catch (error) {
       console.error("Error accepting sales call card:", error);
+      toast.error("Failed to add containers to dock");
     }
   }
 
@@ -354,10 +509,12 @@ const Simulation = () => {
     console.log("Room ID:", roomId);
 
     try {
+      console.log("Revenue:", revenue);
       const resBay = await api.post("/ship-bays", {
         arena: newBayData,
         user_id: user.id,
         room_id: roomId,
+        revenue: revenue,
       });
       console.log("API call successful for bays", resBay.data);
 
@@ -418,24 +575,34 @@ const Simulation = () => {
   return (
     <>
       <ToastContainer />
-      <div className="flex flex-col">
-        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          {/* Ship Bay */}
-          <ShipBay bayCount={bayCount} baySize={baySize} droppedItems={droppedItems} draggingItem={draggingItem} />
-
-          {/* Ship Dock */}
-          <div className="flex flex-row justify-center items-center gap-4" style={{ height: "100%", width: "100%", backgroundColor: "#e0e0e0" }}>
-            <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} />
-
-            <div className="flex flex-col items-center w-full max-w-md">
-              <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
-            </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-screen">
+          <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          {/* Add Revenue Display */}
+          <div className="bg-green-100 p-4 shadow-md mb-4">
+            <h2 className="text-xl font-bold text-center">Total Revenue: {formatIDR(revenue)}</h2>
           </div>
+          <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            {/* Ship Bay */}
+            <ShipBay bayCount={bayCount} baySize={baySize} droppedItems={droppedItems} draggingItem={draggingItem} />
 
-          {/* DragOverlay */}
-          <DragOverlay>{draggingItem ? <DraggableContainer id={draggingItem} text={draggingItem} style={{ zIndex: 9999 }} /> : null}</DragOverlay>
-        </DndContext>
-      </div>
+            {/* Ship Dock */}
+            <div className="flex flex-row justify-center items-center gap-4" style={{ height: "100%", width: "100%", backgroundColor: "#e0e0e0" }}>
+              <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} />
+
+              <div className="flex flex-col items-center w-full max-w-md">
+                <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
+              </div>
+            </div>
+
+            {/* DragOverlay */}
+            <DragOverlay>{draggingItem ? <DraggableContainer id={draggingItem} text={draggingItem} style={{ zIndex: 9999 }} /> : null}</DragOverlay>
+          </DndContext>
+        </div>
+      )}
     </>
   );
 };
