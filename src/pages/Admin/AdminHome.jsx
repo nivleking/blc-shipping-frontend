@@ -96,26 +96,6 @@ const AdminHome = () => {
         setRooms((prevRooms) => [...prevRooms, response.data]);
         toast.success("Room created successfully!", { toastId: "room-create" });
         console.log("Room created:", response.data);
-
-        const dockLayout = Array.from({ length: 3 }).map(() => Array(5).fill(null));
-        const dockSize = { rows: 3, columns: 5 };
-        const promises = rooms.map((singleRoom) =>
-          api.post(
-            `/ship-docks`,
-            {
-              arena: dockLayout,
-              room_id: singleRoom.id,
-              dock_size: dockSize,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-        );
-
-        await Promise.all(promises);
       }
     } catch (error) {
       setErrors(error.response.data.errors);
