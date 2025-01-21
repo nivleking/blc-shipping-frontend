@@ -148,8 +148,26 @@ const Room = () => {
       console.log("Cards", cards);
       console.log("Users", users);
 
+      const dockLayout = Array.from({ length: 3 }).map(() => Array(5).fill(null));
+      const dockSize = { rows: 3, columns: 5 };
+
       for (let i = 0; i < users.length; i++) {
         const user = users[i];
+
+        await api.post(
+          `/ship-docks`,
+          {
+            arena: dockLayout,
+            room_id: roomId,
+            user_id: user.id,
+            dock_size: dockSize,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         // Fetch ship bay for the current user
         const shipBayResponse = await api.get(`/ship-bays/${roomId}/${user.id}`, {
