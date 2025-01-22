@@ -339,7 +339,7 @@ const Simulation = () => {
           arena: newBayData,
           user_id: user.id,
           room_id: roomId,
-          revenue: 1,
+          revenue: newRevenue,
         },
         {
           headers: {
