@@ -17,6 +17,7 @@ const Room = () => {
   const [ports, setPorts] = useState({});
   const [shipBay, setShipBay] = useState([]);
   const [origins, setOrigins] = useState([]);
+  const [assignedPorts, setAssignedPorts] = useState({});
   const { user, token } = useContext(AppContext);
   const navigate = useNavigate();
 
@@ -40,10 +41,18 @@ const Room = () => {
       }
     });
 
+    socket.on("port_updated", ({ userId, port }) => {
+      setAssignedPorts((prev) => ({
+        ...prev,
+        [userId]: port,
+      }));
+    });
+
     return () => {
       socket.off("user_added");
       socket.off("user_kicked");
       socket.off("start_simulation");
+      socket.off("port_updated");
     };
   }, [roomId, token, user, navigate]);
 
@@ -262,10 +271,17 @@ const Room = () => {
           },
         }
       );
-      console.log(res);
-      console.log(res.data.shipbays);
+
+      // Emit port assignments for each user
+      Object.entries(ports).forEach(([userId, port]) => {
+        socket.emit("port_assigned", {
+          roomId,
+          userId,
+          port,
+        });
+      });
+
       setShipBay(res.data.shipbays);
-      console.log("Ship Bay", shipBay);
       setShowPortPopup(false);
     } catch (error) {
       console.error("There was an error setting the ports!", error);
@@ -273,115 +289,203 @@ const Room = () => {
   }
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-screen bg-gray-100">
-      <div className="w-full bg-yellow-600 py-2">
-        <div className="relative overflow-hidden h-8">
-          <div className="absolute whitespace-nowrap animate-marquee-top text-white text-lg font-bold marquee-container italic">===WAITING ROOM===</div>
+    <div className="flex flex-col items-center justify-between min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      {/* Enhanced Header */}
+      <div className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 py-3 shadow-md">
+        <div className="relative overflow-hidden h-10">
+          <div className="absolute whitespace-nowrap animate-marquee-top text-white text-xl font-bold marquee-container italic flex items-center justify-center w-full">
+            <span className="mr-4">⚓</span> WAITING ROOM <span className="ml-4">⚓</span>
+          </div>
         </div>
       </div>
-      <div className="flex-grow flex items-center justify-center w-full">
-        <div className="p-8 bg-white rounded-lg shadow-lg w-full max-w-2xl">
-          <h2 className="mb-6 text-3xl font-bold text-center text-gray-800">
-            {roomId} - Admin: {adminName}
-          </h2>
-          <h3 className="mb-4 text-xl font-semibold text-center text-gray-700">Users in Room</h3>
-          {roomStatus === "finished" && <div className="mb-4 text-center text-red-500 font-semibold">The simulation has ended.</div>}
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead>
-              <tr>
-                <th className="py-2 px-4 border-b border-gray-300">#</th>
-                <th className="py-2 px-4 border-b border-gray-300">Name</th>
-                {user && user.is_admin === 1 && <th className="py-2 px-4 border-b border-gray-300">Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {users && Array.isArray(users) && users.length > 0 ? (
-                users.map((singleUser, index) => (
-                  <tr key={singleUser.id} className="text-center">
-                    <td className="py-2 px-4 border-b border-gray-300">{index + 1}</td>
-                    <td className="py-2 px-4 border-b border-gray-300">{singleUser.name}</td>
-                    {user && user.is_admin === 1 && (
-                      <td className="py-2 px-4 border-b border-gray-300">
-                        <button
-                          onClick={() => handleKickUser(singleUser.id)}
-                          className={`p-2 text-white rounded-lg ${roomStatus === "active" || roomStatus === "finished" ? "bg-gray-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}
-                          disabled={roomStatus === "active" || roomStatus === "finished"}
-                        >
-                          Kick
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              ) : (
+
+      <div className="flex-grow flex items-center justify-center w-full p-6">
+        <div className="p-8 bg-white rounded-xl shadow-xl w-full max-w-4xl">
+          {/* Room Info Section */}
+          <div className="flex items-center justify-between mb-8 border-b pb-4">
+            <div>
+              <h2 className="text-4xl font-bold text-gray-800 mb-2">Room #{roomId}</h2>
+              <div className="flex items-center text-gray-600">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span className="font-medium">Admin: {adminName}</span>
+              </div>
+            </div>
+            <div className="bg-gray-100 px-4 py-2 rounded-lg">
+              <span className="font-medium">Status: </span>
+              <span
+                className={`inline-block px-3 py-1 rounded-full text-sm font-medium
+                ${roomStatus === "active" ? "bg-green-100 text-green-800" : roomStatus === "finished" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"}`}
+              >
+                {roomStatus.toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          {/* Enhanced Users Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <h3 className="text-xl font-semibold p-4 bg-gray-50 border-b">Players ({users.length})</h3>
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan="3" className="py-2 px-4 border-b border-gray-300 text-center italic text-gray-500">
-                    Users will appear here once they join the room.
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
+                  {user && user.is_admin === 1 && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
                 </tr>
-              )}
-            </tbody>
-          </table>
-          <div className="flex flex-row gap-2">
-            <button onClick={handleBack} className="mt-6 w-full p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600">
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {users && users.length > 0 ? (
+                  users.map((singleUser, index) => (
+                    <tr key={singleUser.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">{singleUser.name.charAt(0).toUpperCase()}</div>
+                          <div className="text-sm font-medium text-gray-900">{singleUser.name}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignedPorts[singleUser.id] || "Not Assigned"}</td>
+                      {user && user.is_admin === 1 && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button
+                            onClick={() => handleKickUser(singleUser.id)}
+                            className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white 
+                              ${roomStatus === "active" || roomStatus === "finished" ? "bg-gray-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"}`}
+                            disabled={roomStatus === "active" || roomStatus === "finished"}
+                          >
+                            Kick Player
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="px-6 py-4 text-center text-gray-500 italic">
+                      Waiting for players to join...
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Enhanced Button Group */}
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button
+              onClick={handleBack}
+              className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
               HOME
             </button>
 
             {user && user.is_admin === 1 && roomStatus !== "active" && roomStatus !== "finished" && (
               <>
-                <button onClick={() => setShowPortPopup(true)} className="mt-6 w-full p-3 text-white bg-yellow-500 rounded-lg hover:bg-yellow-600">
-                  PORTS
+                <button
+                  onClick={() => setShowPortPopup(true)}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  SET PORTS
                 </button>
 
-                <button onClick={handleStartSimulation} className="mt-6 w-full p-3 text-white bg-green-500 rounded-lg hover:bg-green-600" disabled={users.length < 1}>
-                  START!
+                <button
+                  onClick={handleStartSimulation}
+                  className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
+                    ${users.length < 1 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors`}
+                  disabled={users.length < 1}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  START GAME
                 </button>
               </>
             )}
 
             {user && user.is_admin === 1 && roomStatus === "active" && (
-              <button onClick={endSimulation} className="mt-6 w-full p-3 text-white bg-black rounded-lg hover:bg-gray-800">
-                END SIMULATION
-              </button>
-            )}
+              <>
+                <button
+                  onClick={handleSwapBays}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
+                  </svg>
+                  SWAP BAYS
+                </button>
 
-            {user && user.is_admin === 1 && roomStatus === "active" && (
-              <button onClick={handleSwapBays} className="mt-6 w-full p-3 text-white bg-yellow-500 rounded-lg hover:bg-yellow-600">
-                SWAP BAYS
-              </button>
+                <button
+                  onClick={endSimulation}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  END GAME
+                </button>
+              </>
             )}
           </div>
         </div>
       </div>
-      <div className="w-full bg-yellow-600 py-2">
-        <div className="relative overflow-hidden h-8">
-          <div className="absolute whitespace-nowrap animate-marquee-bottom text-white text-lg font-bold marquee-container italic">===WAITING ROOM===</div>
+
+      {/* Bottom Marquee */}
+      <div className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 py-3 shadow-md">
+        <div className="relative overflow-hidden h-10">
+          <div className="absolute whitespace-nowrap animate-marquee-bottom text-white text-xl font-bold marquee-container italic flex items-center justify-center w-full">
+            <span className="mr-4">⚓</span> WAITING ROOM <span className="ml-4">⚓</span>
+          </div>
         </div>
       </div>
 
+      {/* Enhanced Modal */}
       {showPortPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Set Ports for Users</h2>
-            {users.map((singleUser) => (
-              <div key={singleUser.id} className="mb-4">
-                <label className="block text-gray-700">{singleUser.name}</label>
-                <select className="w-full p-2 border border-gray-300 rounded" value={ports[singleUser.id] || ""} onChange={(e) => setPorts({ ...ports, [singleUser.id]: e.target.value })}>
-                  <option value="">Select a port</option>
-                  {Object.values(origins).map((origin) => (
-                    <option key={origin} value={origin}>
-                      {origin}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowPortPopup(false)} className="p-2 bg-gray-500 text-white rounded">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Assign Ports to Players</h2>
+            </div>
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              {users.map((singleUser) => (
+                <div key={singleUser.id} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">{singleUser.name}</label>
+                  <select
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    value={ports[singleUser.id] || ""}
+                    onChange={(e) => setPorts({ ...ports, [singleUser.id]: e.target.value })}
+                  >
+                    <option value="">Select a port</option>
+                    {Object.values(origins).map((origin) => (
+                      <option key={origin} value={origin}>
+                        {origin}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 rounded-b-lg">
+              <button
+                onClick={() => setShowPortPopup(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
                 Cancel
               </button>
-              <button onClick={handleSetPorts} className="p-2 bg-blue-500 text-white rounded">
-                Set Ports
+              <button
+                onClick={handleSetPorts}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Confirm Ports
               </button>
             </div>
           </div>
