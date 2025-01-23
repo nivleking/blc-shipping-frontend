@@ -209,7 +209,6 @@ const Simulation = () => {
       setDroppedItems([...dockItems, ...newDroppedItems]);
     } catch (error) {
       console.error("Error fetching arena data:", error);
-      // Initialize with empty data instead of showing error
       const emptyBayData = Array(bayCount)
         .fill()
         .map(() =>
@@ -270,7 +269,6 @@ const Simulation = () => {
 
   async function handleAcceptCard(cardId) {
     try {
-      // Get current card first to validate revenue
       const currentCard = salesCallCards.find((card) => card.id === cardId);
       const cardRevenue = parseFloat(currentCard.revenue) || 0;
       const newRevenue = parseFloat(revenue) + cardRevenue;
@@ -288,7 +286,6 @@ const Simulation = () => {
       );
       setRevenue(newRevenue);
 
-      // Update dropped items with new containers
       const newContainers = containers.filter((container) => container.card_id === cardId);
       const updatedDroppedItems = [...droppedItems];
       let dockIndex = 0;
@@ -311,7 +308,6 @@ const Simulation = () => {
 
       setDroppedItems(updatedDroppedItems);
 
-      // Create new bay data array
       const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
         return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
           return Array.from({ length: baySize.columns }).map((_, colIndex) => {
@@ -322,7 +318,6 @@ const Simulation = () => {
         });
       });
 
-      // Create new dock data array
       const newDockData = Array.from({ length: dockSize.rows }).map((_, rowIndex) => {
         return Array.from({ length: dockSize.columns }).map((_, colIndex) => {
           const cellId = `docks-${rowIndex * dockSize.columns + colIndex}`;
@@ -331,8 +326,6 @@ const Simulation = () => {
         });
       });
 
-      // Update bay with new revenue
-      console.log("New revenue", newRevenue);
       const tempRes = await api.post(
         "/ship-bays",
         {

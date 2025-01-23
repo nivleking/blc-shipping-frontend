@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
 import api from "../../axios/axios";
 import { AppContext } from "../../context/AppContext";
+import ReactPaginate from "react-paginate";
+import { AiFillEdit, AiFillDelete } from "react-icons/ai";
+import "./AdminHome.css";
 
 const AdminCreateUser = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +17,17 @@ const AdminCreateUser = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const { token } = useContext(AppContext);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5;
+
+  const handlePageClick = (event) => {
+    setCurrentPage(event.selected);
+  };
+
+  const offset = currentPage * itemsPerPage;
+  const currentPageData = users.slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(users.length / itemsPerPage);
 
   useEffect(() => {
     if (token) {
@@ -100,9 +114,9 @@ const AdminCreateUser = () => {
   }
 
   return (
-    <div className="container mx-auto mt-10 p-6">
+    <div className="container mx-auto p-4">
       <div className="mb-6 p-6 bg-white rounded shadow-md">
-        <h2 className="mb-6 text-2xl font-bold text-center">{editingUser ? "Edit User" : "Create User"}</h2>
+        <h2 className="mb-4 text-1xl font-bold">{editingUser ? "Edit User" : "Create User"}</h2>
         <form onSubmit={handleSubmit} className="mb-6">
           <div className="mb-4">
             <label htmlFor="name" className="block text-gray-700">
@@ -136,35 +150,55 @@ const AdminCreateUser = () => {
           </button>
         </form>
       </div>
-      <div className="p-6 bg-white rounded shadow-md">
-        <h2 className="mb-4 text-2xl font-bold text-center">Users</h2>
-        <table className="min-w-full bg-white border border-gray-300">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border-b border-gray-300">#</th>
-              <th className="py-2 px-4 border-b border-gray-300">Name</th>
-              <th className="py-2 px-4 border-b border-gray-300">Email</th>
-              <th className="py-2 px-4 border-b border-gray-300">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user, index) => (
-              <tr key={user.id}>
-                <td className="py-2 px-4 border-b border-gray-300">{index + 1}</td>
-                <td className="py-2 px-4 border-b border-gray-300">{user.name}</td>
-                <td className="py-2 px-4 border-b border-gray-300">{user.email}</td>
-                <td className="py-2 px-4 border-b border-gray-300">
-                  <button onClick={() => handleEdit(user)} className="mr-2 p-2 bg-yellow-500 text-white rounded">
-                    Edit
+      <div className="w-full bg-white p-6 rounded-lg shadow-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-1xl font-bold text-gray-800 mb-4">All Users</h3>
+          <ReactPaginate
+            previousLabel={"Previous"}
+            nextLabel={"Next"}
+            breakLabel={"..."}
+            pageCount={pageCount}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+            onPageChange={handlePageClick}
+            containerClassName={"pagination"}
+            activeClassName={"active"}
+            previousClassName={"page-item"}
+            nextClassName={"page-item"}
+            pageClassName={"page-item"}
+            pageLinkClassName={"page-link"}
+            previousLinkClassName={"page-link"}
+            nextLinkClassName={"page-link"}
+            breakLinkClassName={"page-link"}
+          />
+        </div>
+
+        {users.length === 0 ? (
+          <p className="text-center text-gray-600">There are no users! Let's create one!</p>
+        ) : (
+          <div className="space-y-4">
+            {currentPageData.map((user, index) => (
+              <div key={user.id} className="flex justify-between items-center border-b border-gray-200 pb-4 mb-4">
+                <div className="flex-shrink-0">
+                  <div className="text-black px-2 py-1 rounded-lg w-12 text-center">{offset + index + 1}</div>
+                </div>
+                <div className="ml-4 flex-grow">
+                  <p className="text-lg font-bold">{user.name}</p>
+                  <p className="text-gray-400 text-sm">{user.email}</p>
+                  <p className="text-gray-400 text-sm">Role: {user.is_admin ? "Admin" : "User"}</p>
+                </div>
+                <div className="flex space-x-4">
+                  <button onClick={() => handleEdit(user)} className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition duration-300 flex items-center">
+                    <AiFillEdit className="mr-1" /> Edit
                   </button>
-                  <button onClick={() => handleDelete(user.id)} className="p-2 bg-red-500 text-white rounded">
-                    Delete
+                  <button onClick={() => handleDelete(user.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300 flex items-center">
+                    <AiFillDelete className="mr-1" /> Delete
                   </button>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
     </div>
   );

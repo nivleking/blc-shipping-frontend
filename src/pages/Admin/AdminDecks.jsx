@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../../axios/axios";
 import { Link } from "react-router-dom";
+import ReactPaginate from "react-paginate";
+import { AiFillDelete, AiFillFolderOpen } from "react-icons/ai";
+import "./AdminHome.css";
 
 const AdminDecks = () => {
   const [decks, setDecks] = useState([]);
   const [formData, setFormData] = useState({ name: "" });
+  const [errors, setErrors] = useState({});
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchDecks();
@@ -40,6 +46,7 @@ const AdminDecks = () => {
       setDecks([...decks, response.data]);
       setFormData({ name: "" });
     } catch (error) {
+      setErrors(error.response.data.errors);
       console.error("Error creating deck:", error);
     }
   }
@@ -49,6 +56,7 @@ const AdminDecks = () => {
       await api.delete(`/decks/${deckId}`);
       setDecks(decks.filter((deck) => deck.id !== deckId));
     } catch (error) {
+      setErrors(error.response.data.errors);
       console.error("Error deleting deck:", error);
     }
   }
@@ -64,41 +72,83 @@ const AdminDecks = () => {
     };
   }
 
+  const handlePageClick = (event) => {
+    setCurrentPage(event.selected);
+  };
+
+  const offset = currentPage * itemsPerPage;
+  const currentPageData = decks.slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(decks.length / itemsPerPage);
+
   return (
     <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Decks</h2>
+      <div className="mb-4">
+        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-lg space-y-6">
+          <div className="w-full">
+            <h3 className="text-1xl font-bold text-gray-900">Create New Deck</h3>
+          </div>
+          <div className="flex flex-col">
+            <label className="block text-gray-700 font-semibold">Deck Name</label>
+            <input type="text" name="name" value={formData.name} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter Deck Name" />
+            {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+          </div>
+          <button type="submit" className="p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">
+            Create Deck
+          </button>
+        </form>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mb-4">
-        <div className="mb-2">
-          <label className="block text-gray-700">Deck Name</label>
-          <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded" />
+      <div className="w-full bg-white p-6 rounded-lg shadow-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-1xl font-bold text-gray-800 mb-4">All Decks</h3>
+          <ReactPaginate
+            previousLabel={"Previous"}
+            nextLabel={"Next"}
+            breakLabel={"..."}
+            pageCount={pageCount}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+            onPageChange={handlePageClick}
+            containerClassName={"pagination"}
+            activeClassName={"active"}
+            previousClassName={"page-item"}
+            nextClassName={"page-item"}
+            pageClassName={"page-item"}
+            pageLinkClassName={"page-link"}
+            previousLinkClassName={"page-link"}
+            nextLinkClassName={"page-link"}
+            breakLinkClassName={"page-link"}
+          />
         </div>
-        <button type="submit" className="p-2 bg-blue-500 text-white rounded">
-          Create Deck
-        </button>
-      </form>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        {decks.map((deck) => {
-          const { totalPorts } = calculateDeckStats(deck.cards);
-          return (
-            <div key={deck.id} className="relative bg-white rounded shadow overflow-hidden">
-              <img src={`https://picsum.photos/seed/containers/1200/400`} alt="Deck" className="w-full h-48 object-cover" />
-              <div className="p-4">
-                <h3 className="text-xl font-bold">{deck.name}</h3>
-                <p className="text-sm mb-2 text-gray-500">Total Ports: {totalPorts}</p>
-                <div className="flex flex-row justify-items-start space-x-2">
-                  <Link to={`/admin-create-sales-call-cards/${deck.id}`} className="p-2 bg-blue-500 text-white rounded mb-2">
-                    View
-                  </Link>
-                  <button onClick={() => handleDeleteDeck(deck.id)} className="p-2 bg-red-500 text-white rounded mb-2">
-                    Delete
-                  </button>
+        {decks.length === 0 ? (
+          <p className="text-center text-gray-600">There are no decks! Let's create one!</p>
+        ) : (
+          <div className="space-y-4">
+            {currentPageData.map((deck, index) => {
+              const { totalPorts } = calculateDeckStats(deck.cards);
+              return (
+                <div key={deck.id} className="flex justify-between items-center border-b border-gray-200 pb-4 mb-4">
+                  <div className="flex-shrink-0">
+                    <div className="text-black px-2 py-1 rounded-lg w-12 text-center">{offset + index + 1}</div>
+                  </div>
+                  <div className="ml-4 flex-grow">
+                    <p className="text-lg font-bold">{deck.name}</p>
+                    <p className="text-gray-400 text-sm">Total Ports: {totalPorts}</p>
+                  </div>
+                  <div className="flex space-x-4">
+                    <Link to={`/admin-create-sales-call-cards/${deck.id}`} className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 flex items-center">
+                      <AiFillFolderOpen className="mr-1" /> View
+                    </Link>
+                    <button onClick={() => handleDeleteDeck(deck.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300 flex items-center">
+                      <AiFillDelete className="mr-1" /> Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

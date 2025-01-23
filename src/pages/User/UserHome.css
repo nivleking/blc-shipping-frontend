@@ -1,0 +1,69 @@
+.ocean-container {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+.ocean {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  bottom: 35px;
+  left: 0;
+  background: transparent;
+}
+
+.ship {
+  position: absolute;
+  left: 50%;
+  bottom: 0px;
+  transform: translateX(-50%);
+  animation: float 3s ease-in-out infinite;
+  z-index: 10;
+  width: 180px;
+  height: 150px;
+}
+
+@keyframes float {
+  0% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-10px);
+  }
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.wave {
+  position: absolute;
+  width: 200%;
+  bottom: 0;
+  height: 50px;
+}
+
+.wave-front {
+  animation: wave 10s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+  z-index: 2;
+}
+
+.wave-back {
+  animation: wave 12s cubic-bezier(0.36, 0.45, 0.63, 0.53) -0.125s infinite;
+  z-index: 1;
+  opacity: 0.5;
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-25%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
