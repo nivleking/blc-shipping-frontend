@@ -1,5 +1,17 @@
-const ContainerDock = ({ id, children }) => {
-  return <div className="grid grid-cols-5 grid-rows-3 gap-1 m-2 border border-gray-400">{children}</div>;
+const ContainerDock = ({ id, rows, columns, children }) => {
+  return (
+    <div className="bg-gray-100 p-4 rounded-xl shadow-inner">
+      <div
+        className="grid gap-2"
+        style={{
+          gridTemplateColumns: `repeat(${columns}, minmax(100px, 1fr))`,
+          gridTemplateRows: `repeat(${rows}, 100px)`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 };
 
 export default ContainerDock;

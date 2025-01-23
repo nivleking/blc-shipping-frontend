@@ -1,3 +1,4 @@
+// src/components/simulations/DroppableCell.jsx
 import { useDroppable } from "@dnd-kit/core";
 
 const DroppableCell = ({ id, children, coordinates }) => {
@@ -5,16 +6,22 @@ const DroppableCell = ({ id, children, coordinates }) => {
     id,
   });
 
-  const style = {
-    backgroundColor: isOver ? "lightgreen" : "white",
-    position: "relative",
-    width: "100px",
-    height: "100px",
-  };
-
   return (
-    <div ref={setNodeRef} style={style} className="border border-gray-300 flex items-center justify-center rounded shadow-sm">
-      <span style={{ position: "absolute", top: "2px", left: "2px", fontSize: "10px", color: "gray" }}>{coordinates}</span>
+    <div
+      ref={setNodeRef}
+      className={`
+        relative
+        w-full h-[100px]
+        rounded-lg
+        border-2
+        flex items-center justify-center
+        transition-colors duration-200
+        ${isOver ? "border-blue-400 bg-blue-50" : "border-gray-200 bg-white"}
+      `}
+    >
+      {/* Coordinate Label */}
+      <span className="absolute top-1 left-1 text-[10px] text-gray-400 font-mono">{coordinates}</span>
+
       {children}
     </div>
   );

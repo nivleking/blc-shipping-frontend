@@ -412,18 +412,23 @@ const Simulation = () => {
 
   const checkSpace = (droppedItems, baySize, targetArea) => {
     const [type, bayIndex, cellIndex] = targetArea.split("-");
-    if (type !== "bay") return true;
-
-    const row = Math.floor(cellIndex / baySize.columns);
-    const col = cellIndex % baySize.columns;
 
     const isOccupied = droppedItems.some((item) => item.area === targetArea);
     if (isOccupied) return false;
 
-    if (row < baySize.rows - 1) {
-      const belowCellId = `bay-${bayIndex}-${(row + 1) * baySize.columns + col}`;
-      const containerBelow = droppedItems.find((item) => item.area === belowCellId);
-      if (!containerBelow) return false;
+    if (type === "docks") {
+      return true;
+    }
+
+    if (type === "bay") {
+      const row = Math.floor(cellIndex / baySize.columns);
+      const col = cellIndex % baySize.columns;
+
+      if (row < baySize.rows - 1) {
+        const belowCellId = `bay-${bayIndex}-${(row + 1) * baySize.columns + col}`;
+        const containerBelow = droppedItems.find((item) => item.area === belowCellId);
+        if (!containerBelow) return false;
+      }
     }
 
     return true;
@@ -565,38 +570,155 @@ const Simulation = () => {
 
   const paginatedItems = droppedItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
+  const [penalties, setPenalties] = useState(0);
+  const [rank, setRank] = useState(1);
+  const [section, setSection] = useState(1);
+
   return (
-    <>
-      <ToastContainer />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-6">
+      <ToastContainer position="top-right" theme="light" autoClose={3000} />
+
       {isLoading ? (
         <div className="flex justify-center items-center h-screen">
-          <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-24 w-24"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
         </div>
       ) : (
-        <div className="flex flex-col">
-          {/* Add Revenue Display */}
-          <div className="bg-green-100 p-4 shadow-md mb-4">
-            <h2 className="text-xl font-bold text-center">Total Revenue: {formatIDR(revenue)}</h2>
-          </div>
-          <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            {/* Ship Bay */}
-            <ShipBay bayCount={bayCount} baySize={baySize} droppedItems={droppedItems} draggingItem={draggingItem} />
-
-            {/* Ship Dock */}
-            <div className="flex flex-row justify-center items-center gap-4" style={{ height: "100%", width: "100%", backgroundColor: "#e0e0e0" }}>
-              <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} />
-
-              <div className="flex flex-col items-center w-full max-w-md">
-                <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
+        <div className="container mx-auto px-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {/* Revenue Card */}
+            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="text-white">
+                  <p className="text-sm font-medium opacity-80">Total Revenue</p>
+                  <h3 className="text-2xl font-bold">{formatIDR(revenue)}</h3>
+                </div>
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
 
-            {/* DragOverlay */}
-            <DragOverlay>{draggingItem ? <DraggableContainer id={draggingItem} text={draggingItem} style={{ zIndex: 9999 }} /> : null}</DragOverlay>
+            {/* Penalties Card */}
+            <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="text-white">
+                  <p className="text-sm font-medium opacity-80">Penalties</p>
+                  <h3 className="text-2xl font-bold">{formatIDR(penalties)}</h3>
+                </div>
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Rank Card */}
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="text-white">
+                  <p className="text-sm font-medium opacity-80">Current Rank</p>
+                  <h3 className="text-2xl font-bold">#{rank}</h3>
+                </div>
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Section Card */}
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div className="text-white">
+                  <p className="text-sm font-medium opacity-80">Section</p>
+                  <h3 className="text-2xl font-bold">Section {section}</h3>
+                </div>
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="flex flex-col gap-6">
+              {/* Ship Bay Section - Full Width */}
+              <div className="w-full bg-white rounded-xl shadow-xl p-6 border border-gray-200">
+                <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                  <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                  </svg>
+                  Ship Bay
+                </h3>
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <ShipBay bayCount={bayCount} baySize={baySize} droppedItems={droppedItems} draggingItem={draggingItem} />
+                </div>
+              </div>
+
+              {/* Bottom Grid - Ship Dock and Sales Call Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Ship Dock Section */}
+                <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
+                  <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                    <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
+                    </svg>
+                    Ship Dock
+                  </h3>
+                  <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                    <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} />
+                  </div>
+                </div>
+
+                {/* Sales Call Cards Section */}
+                <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
+                  <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                    <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                    </svg>
+                    Sales Calls
+                  </h3>
+                  <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                    <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DragOverlay>
+              {draggingItem && (
+                <div className="rounded-lg" style={{ width: "100px", height: "60px" }}>
+                  <DraggableContainer
+                    id={draggingItem}
+                    text={draggingItem}
+                    style={{
+                      zIndex: 9999,
+                      transform: "scale(1.05)",
+                      opacity: 0.9,
+                    }}
+                  />
+                </div>
+              )}
+            </DragOverlay>
           </DndContext>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

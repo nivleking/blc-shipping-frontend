@@ -1,13 +1,15 @@
 const ContainerBay = ({ id, rows, columns, children }) => {
   return (
-    <div
-      className="grid gap-1 m-2 border border-gray-400 rounded shadow-sm"
-      style={{
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        gridTemplateRows: `repeat(${rows}, 1fr)`,
-      }}
-    >
-      {children}
+    <div className="bg-gray-100 p-4 rounded-xl shadow-inner">
+      <div
+        className="grid gap-2"
+        style={{
+          gridTemplateColumns: `repeat(${columns}, minmax(100px, 1fr))`,
+          gridTemplateRows: `repeat(${rows}, 100px)`,
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 };
