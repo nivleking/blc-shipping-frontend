@@ -10,7 +10,7 @@ const StatsPanel = ({ portStats, formatIDR }) => (
   <div className="bg-white rounded-lg shadow p-4">
     <div className="flex items-center space-x-2 text-gray-800 mb-4">
       <BsGraphUp size={18} />
-      <h2 className="text-base font-semibold">Port Statistics</h2>
+      <h2 className="text-base font-semibold">Port Information</h2>
     </div>
     {Object.entries(portStats).map(([port, stats], index) => (
       <motion.div key={port} variants={statsVariants} initial="hidden" animate="visible" transition={{ delay: index * 0.1 }} className="bg-gray-50 rounded-xl p-4 shadow-sm mb-3">

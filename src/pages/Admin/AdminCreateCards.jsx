@@ -10,6 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import api from "../../axios/axios";
 import GenerateCardsNavbar from "../../components/simulations/GenerateCardsNavbar";
 import StatsPanel from "../../components/simulations/StatsPanel";
+import { PiXCircleDuotone } from "react-icons/pi";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", {
@@ -196,10 +197,10 @@ const AdminCreateCards = () => {
   const CardsPreview = ({ currentCards, containers, formatIDR }) => {
     const filteredCards = getFilteredCards(currentCards);
     return (
-      <div className="col-span-4 bg-white shadow-lg rounded-md overflow-hidden">
+      <div className="col-span-4 bg-white shadow-md rounded-lg overflow-hidden text-sm">
         {/* Header with Filters */}
-        <div className="p-4 border-b sticky top-0 bg-white z-10 ">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 border-b sticky top-0 bg-white z-10">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-800">Generated Cards</h2>
           </div>
 
@@ -207,21 +208,21 @@ const AdminCreateCards = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-3 py-1 text-sm rounded-full transition-colors
+              className={`px-4 py-1.5 text-sm rounded-full transition-colors
               ${filterType === "all" ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"}`}
             >
               All
             </button>
             <button
               onClick={() => setFilterType("committed")}
-              className={`px-3 py-1 text-sm rounded-full transition-colors
+              className={`px-4 py-1.5 text-sm rounded-full transition-colors
               ${filterType === "committed" ? "bg-green-500 text-white" : "bg-green-100 hover:bg-green-200 text-green-700"}`}
             >
               Committed
             </button>
             <button
               onClick={() => setFilterType("non-committed")}
-              className={`px-3 py-1 text-sm rounded-full transition-colors
+              className={`px-4 py-1.5 text-sm rounded-full transition-colors
               ${filterType === "non-committed" ? "bg-yellow-500 text-white" : "bg-yellow-100 hover:bg-yellow-200 text-yellow-700"}`}
             >
               Non-Committed
@@ -230,7 +231,7 @@ const AdminCreateCards = () => {
         </div>
 
         {/* Cards Grid */}
-        <div className="p-4 grid grid-cols-2 grid-rows-3 gap-3 overflow-y-auto h-[calc(100vh-15rem)]">
+        <div className="p-4 grid grid-cols-3 grid-rows-2 gap-4 overflow-y-auto h-[calc(100vh-14rem)]">
           {filteredCards.map((card, index) => (
             <motion.div
               key={card.id}
@@ -238,13 +239,13 @@ const AdminCreateCards = () => {
               initial="hidden"
               animate="visible"
               transition={{ delay: index * 0.1 }}
-              className={`bg-white rounded-xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow
+              className={`bg-white rounded-lg border shadow hover:shadow-md transition-shadow
                         ${card.priority === "Committed" ? "border-l-4 border-green-500" : "border-l-4 border-yellow-500"}`}
             >
               {/* Card Content */}
               <div className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-semibold text-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-semibold text-base">
                     {card.origin} → {card.destination}
                   </span>
                   <span
@@ -258,19 +259,19 @@ const AdminCreateCards = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">Type</span>
-                    <p className="font-medium">{card.type}</p>
+                    <p className="font-medium mt-1">{card.type}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Quantity</span>
-                    <p className="font-medium">{card.quantity}</p>
+                    <p className="font-medium mt-1">{card.quantity}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Revenue/Container</span>
-                    <p className="font-medium">{formatIDR(card.revenue / card.quantity)}</p>
+                    <p className="font-medium mt-1">{formatIDR(card.revenue / card.quantity)}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Total Revenue</span>
-                    <p className="font-medium">{formatIDR(card.revenue)}</p>
+                    <p className="font-medium mt-1">{formatIDR(card.revenue)}</p>
                   </div>
                 </div>
 
@@ -281,8 +282,8 @@ const AdminCreateCards = () => {
                     {containers
                       .filter((c) => c.card_id === card.id)
                       .map((container) => (
-                        <div key={container.id} className={`h-6 rounded-sm bg-${container.color}-500`} title={`Container ${container.id}`}>
-                          <p className="text-center text-sm">{container.id}</p>
+                        <div key={container.id} className={`h-6 rounded bg-${container.color}-500`} title={`Container ${container.id}`}>
+                          <p className="text-center text-sm text-white leading-6">{container.id}</p>
                         </div>
                       ))}
                   </div>
@@ -300,7 +301,7 @@ const AdminCreateCards = () => {
             </span>
             <div className="flex gap-2">
               {[...Array(totalPages)].map((_, i) => (
-                <button key={i} onClick={() => paginate(i + 1)} className={`px-3 py-1 rounded ${currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>
+                <button key={i} onClick={() => paginate(i + 1)} className={`px-3 py-1.5 rounded text-sm ${currentPage === i + 1 ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"}`}>
                   {i + 1}
                 </button>
               ))}
@@ -324,244 +325,288 @@ const AdminCreateCards = () => {
     }
   };
 
+  const [showInfoModal, setShowInfoModal] = useState(false);
+
+  const navBarTitle = `Sales Call Cards - Deck ${deck.name}`;
+
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Navigation Bar */}
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer />
+      <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateSubmit} onInfoClick={() => setShowInfoModal(true)} />
 
-      <GenerateCardsNavbar title="Generate Sales Call Cards" onBack={() => navigate(-1)} onGenerate={handleGenerateSubmit} />
+      <div className="container mx-auto px-4 py-6">
+        <TabGroup>
+          <TabList className="flex space-x-1 rounded-xl bg-white shadow-sm p-1 mb-6">
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+                ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`
+              }
+            >
+              Configuration
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+                ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`
+              }
+            >
+              Generated Cards
+            </Tab>
+          </TabList>
 
-      {/* Main Content */}
-      <div className="pt-4">
-        <InformationCard className="mb-4 mx-4" />
-        <div className="grid grid-cols-12 gap-6 h-screen">
-          <div className="col-span-3 space-y-6">
-            <StatsPanel portStats={portStats} formatIDR={formatIDR} />
-          </div>
-          {/* Configuration Area */}
-          <div className="col-span-5 space-y-6">
-            <div className="col-span-12 lg:col-span-3 space-y-4">
-              <div className="bg-white rounded-lg shadow p-4">
-                <TabGroup>
-                  <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
-                    <Tab
-                      className={({ selected }) =>
-                        `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+          <TabPanels>
+            {/* Configuration Tab */}
+            <TabPanel>
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-4">
+                  <StatsPanel portStats={portStats} formatIDR={formatIDR} />
+                </div>
+                <div className="col-span-8">
+                  <div className="bg-white rounded-lg shadow p-4">
+                    <TabGroup>
+                      <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+                        <Tab
+                          className={({ selected }) =>
+                            `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
                 ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
-                      }
-                    >
-                      Quick Presets
-                    </Tab>
-                    <Tab
-                      className={({ selected }) =>
-                        `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+                          }
+                        >
+                          Quick Presets
+                        </Tab>
+                        <Tab
+                          className={({ selected }) =>
+                            `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
                 ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
-                      }
-                    >
-                      Advanced Settings
-                    </Tab>
-                  </TabList>
+                          }
+                        >
+                          Advanced Settings
+                        </Tab>
+                      </TabList>
 
-                  <TabPanels className="mt-6">
-                    <TabPanel>
-                      <div className="grid grid-cols-2 gap-4">
-                        {/* Preset Cards */}
-                        {[
-                          {
-                            title: "Standard",
-                            desc: "15 containers per port - 8 sales cards per port - 250M revenue",
-                            icon: <BsBoxSeam className="text-blue-500" size={24} />,
-                            config: {
-                              maxTotalRevenueEachPort: 250000000,
-                              maxTotalContainerQuantityEachPort: 15,
-                              maxSalesCardEachPort: 8,
-                            },
-                          },
-                          {
-                            title: "Medium Revenue",
-                            desc: "35 containers per port - 10 sales cards per port - 350M revenue",
-                            icon: <BsGear className="text-blue-500" size={24} />,
-                            config: {
-                              maxTotalRevenueEachPort: 350000000,
-                              maxTotalContainerQuantityEachPort: 25,
-                              maxSalesCardEachPort: 10,
-                            },
-                          },
-                          {
-                            title: "High Volume",
-                            desc: "50 containers per port - 10 sales cards per port - 1B revenue",
-                            icon: <BsLightning className="text-blue-500" size={24} />,
-                            config: {
-                              maxTotalRevenueEachPort: 1000000000,
-                              maxTotalContainerQuantityEachPort: 50,
-                              maxSalesCardEachPort: 10,
-                            },
-                          },
-                        ].map((preset) => (
-                          <button
-                            key={preset.title}
-                            onClick={() => handlePresetSelect(preset.config)}
-                            className="p-6 rounded-xl border-2 border-gray-200 
+                      <TabPanels className="mt-6">
+                        <TabPanel>
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Preset Cards */}
+                            {[
+                              {
+                                title: "Standard",
+                                desc: "15 containers per port - 8 sales cards per port - 250M revenue",
+                                icon: <BsBoxSeam className="text-blue-500" size={24} />,
+                                config: {
+                                  maxTotalRevenueEachPort: 250000000,
+                                  maxTotalContainerQuantityEachPort: 15,
+                                  maxSalesCardEachPort: 8,
+                                },
+                              },
+                              {
+                                title: "Medium Revenue",
+                                desc: "35 containers per port - 10 sales cards per port - 350M revenue",
+                                icon: <BsGear className="text-blue-500" size={24} />,
+                                config: {
+                                  maxTotalRevenueEachPort: 350000000,
+                                  maxTotalContainerQuantityEachPort: 25,
+                                  maxSalesCardEachPort: 10,
+                                },
+                              },
+                              {
+                                title: "High Volume",
+                                desc: "50 containers per port - 10 sales cards per port - 1B revenue",
+                                icon: <BsLightning className="text-blue-500" size={24} />,
+                                config: {
+                                  maxTotalRevenueEachPort: 1000000000,
+                                  maxTotalContainerQuantityEachPort: 50,
+                                  maxSalesCardEachPort: 10,
+                                },
+                              },
+                            ].map((preset) => (
+                              <button
+                                key={preset.title}
+                                onClick={() => handlePresetSelect(preset.config)}
+                                className="p-6 rounded-xl border-2 border-gray-200 
                                hover:border-blue-500 transition-colors 
                                bg-white shadow-sm hover:shadow-md"
-                          >
-                            <div className="flex items-center space-x-3 mb-3">
-                              {preset.icon}
-                              <h3 className="font-semibold text-gray-800">{preset.title}</h3>
-                            </div>
-                            <p className="text-sm text-gray-600">{preset.desc}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </TabPanel>
-
-                    <TabPanel>
-                      <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-                        {/* Advanced Settings Form */}
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <label htmlFor="generateConfig" className="text-sm font-medium text-gray-700">
-                              Custom Configuration
-                            </label>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(JSON.stringify(generateFormData, null, 2));
-                                toast.success("Configuration copied to clipboard!");
-                              }}
-                              className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                            >
-                              <AiOutlineCopy /> Copy
-                            </button>
+                              >
+                                <div className="flex items-center space-x-3 mb-3">
+                                  {preset.icon}
+                                  <h3 className="font-semibold text-gray-800">{preset.title}</h3>
+                                </div>
+                                <p className="text-sm text-gray-600">{preset.desc}</p>
+                              </button>
+                            ))}
                           </div>
-                          <div className="relative">
-                            <textarea
-                              name="generateConfig"
-                              id="generateConfig"
-                              value={JSON.stringify(generateFormData, null, 2)}
-                              onChange={handleGenerateChange}
-                              className="w-full h-48 p-4 font-mono text-sm border-2 rounded-lg 
+                        </TabPanel>
+
+                        <TabPanel>
+                          <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+                            {/* Advanced Settings Form */}
+                            <div className="space-y-4">
+                              <div className="flex justify-between items-center">
+                                <label htmlFor="generateConfig" className="text-sm font-medium text-gray-700">
+                                  Custom Configuration
+                                </label>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(JSON.stringify(generateFormData, null, 2));
+                                    toast.success("Configuration copied to clipboard!");
+                                  }}
+                                  className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                                >
+                                  <AiOutlineCopy /> Copy
+                                </button>
+                              </div>
+                              <div className="relative">
+                                <textarea
+                                  name="generateConfig"
+                                  id="generateConfig"
+                                  value={JSON.stringify(generateFormData, null, 2)}
+                                  onChange={handleGenerateChange}
+                                  className="w-full h-48 p-4 font-mono text-sm border-2 rounded-lg 
                 focus:outline-none focus:border-blue-500 
                 bg-gray-50 resize-none overflow-auto"
-                              spellCheck="false"
-                            />
-                            <div className="absolute top-2 right-2 text-xs text-gray-400">{Object.keys(generateFormData).length} fields</div>
-                          </div>
-                          <div className="text-xs text-gray-500">Edit the JSON directly or use the form controls above</div>
-                        </div>
-                        <hr />
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-gray-800">Total Ports</h3>
-                          <div className="grid grid-cols-3 gap-4">
-                            {[4, 5, 6].map((port) => (
-                              <button
-                                key={port}
-                                onClick={() => handlePortSelect(port)}
-                                className={`p-4 rounded-lg border-2 transition-colors
+                                  spellCheck="false"
+                                />
+                                <div className="absolute top-2 right-2 text-xs text-gray-400">{Object.keys(generateFormData).length} fields</div>
+                              </div>
+                              <div className="text-xs text-gray-500">Edit the JSON directly or use the form controls above</div>
+                            </div>
+                            <hr />
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-gray-800">Total Ports</h3>
+                              <div className="grid grid-cols-3 gap-4">
+                                {[4, 5, 6].map((port) => (
+                                  <button
+                                    key={port}
+                                    onClick={() => handlePortSelect(port)}
+                                    className={`p-4 rounded-lg border-2 transition-colors
                                     ${generateFormData.ports === port ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}
-                              >
-                                {port} Ports
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <hr />
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-gray-800">Sales Call Revenue Configuration</h3>
-                          <div className="grid grid-cols-3 gap-4">
-                            {[250_000_000, 500_000_000, 750_000_000].map((revenue) => (
-                              <button
-                                key={revenue}
-                                onClick={() => handleRevenueSelect(revenue)}
-                                className={`p-4 rounded-lg border-2 transition-colors
+                                  >
+                                    {port} Ports
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <hr />
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-gray-800">Sales Call Revenue Configuration</h3>
+                              <div className="grid grid-cols-3 gap-4">
+                                {[250_000_000, 500_000_000, 750_000_000].map((revenue) => (
+                                  <button
+                                    key={revenue}
+                                    onClick={() => handleRevenueSelect(revenue)}
+                                    className={`p-4 rounded-lg border-2 transition-colors
                                     ${generateFormData.maxTotalRevenueEachPort === revenue ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}
-                              >
-                                {formatIDR(revenue)}
-                              </button>
-                            ))}
-                            <div className="relative">
-                              <input
-                                type="number"
-                                name="maxTotalRevenueEachPort"
-                                value={generateFormData.maxTotalRevenueEachPort}
-                                onChange={handleGenerateChange}
-                                placeholder="Edit revenue manually"
-                                className="w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
-                              />
-                              <span className="absolute bottom-2 right-2 text-xs text-gray-500">Edit revenue manually</span>
+                                  >
+                                    {formatIDR(revenue)}
+                                  </button>
+                                ))}
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    name="maxTotalRevenueEachPort"
+                                    value={generateFormData.maxTotalRevenueEachPort}
+                                    onChange={handleGenerateChange}
+                                    placeholder="Edit revenue manually"
+                                    className="w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                                  />
+                                  <span className="absolute bottom-2 right-2 text-xs text-gray-500">Edit revenue manually</span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        <hr />
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-gray-800">Sales Call Quantity Configuration</h3>
-                          <div className="grid grid-cols-3 gap-4">
-                            {[15, 20, 25].map((quantity) => (
-                              <button
-                                key={quantity}
-                                onClick={() => handleQuantitySelect(quantity)}
-                                className={`p-4 rounded-lg border-2 transition-colors
+                            <hr />
+                            <div className="space-y-4">
+                              <h3 className="text-lg font-semibold text-gray-800">Sales Call Quantity Configuration</h3>
+                              <div className="grid grid-cols-3 gap-4">
+                                {[15, 20, 25].map((quantity) => (
+                                  <button
+                                    key={quantity}
+                                    onClick={() => handleQuantitySelect(quantity)}
+                                    className={`p-4 rounded-lg border-2 transition-colors
                                     ${generateFormData.maxTotalContainerQuantityEachPort === quantity ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}
-                              >
-                                {quantity} Containers
-                              </button>
-                            ))}
-                            <div className="relative">
-                              <input
-                                type="number"
-                                name="maxTotalContainerQuantityEachPort"
-                                value={generateFormData.maxTotalContainerQuantityEachPort}
-                                onChange={handleGenerateChange}
-                                placeholder="Edit container quantity manually"
-                                min="1"
-                                max="100"
-                                className="w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
-                              />
-                              <span className="absolute bottom-2 right-2 text-xs text-gray-500">Edit container quantity manually</span>
+                                  >
+                                    {quantity} Containers
+                                  </button>
+                                ))}
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    name="maxTotalContainerQuantityEachPort"
+                                    value={generateFormData.maxTotalContainerQuantityEachPort}
+                                    onChange={handleGenerateChange}
+                                    placeholder="Edit container quantity manually"
+                                    min="1"
+                                    max="100"
+                                    className="w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                                  />
+                                  <span className="absolute bottom-2 right-2 text-xs text-gray-500">Edit container quantity manually</span>
+                                </div>
+                              </div>
+                            </div>
+                            <hr />
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-800">Standard Deviation</h3>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label htmlFor="quantityStandardDeviation" className="text-sm text-gray-600">
+                                    Quantity
+                                  </label>
+                                  <input
+                                    type="number"
+                                    name="quantityStandardDeviation"
+                                    id="quantityStandardDeviation"
+                                    value={generateFormData.quantityStandardDeviation}
+                                    onChange={handleGenerateChange}
+                                    className="w-full p-2 border-2 rounded-lg focus:outline-none focus:border-blue-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="revenueStandardDeviation" className="text-sm text-gray-600">
+                                    Revenue
+                                  </label>
+                                  <input
+                                    type="number"
+                                    name="revenueStandardDeviation"
+                                    id="revenueStandardDeviation"
+                                    value={generateFormData.revenueStandardDeviation}
+                                    onChange={handleGenerateChange}
+                                    className="w-full p-2 border-2 rounded-lg focus:outline-none focus:border-blue-500"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <hr />
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-800">Standard Deviation</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label htmlFor="quantityStandardDeviation" className="text-sm text-gray-600">
-                                Quantity
-                              </label>
-                              <input
-                                type="number"
-                                name="quantityStandardDeviation"
-                                id="quantityStandardDeviation"
-                                value={generateFormData.quantityStandardDeviation}
-                                onChange={handleGenerateChange}
-                                className="w-full p-2 border-2 rounded-lg focus:outline-none focus:border-blue-500"
-                              />
-                            </div>
-                            <div>
-                              <label htmlFor="revenueStandardDeviation" className="text-sm text-gray-600">
-                                Revenue
-                              </label>
-                              <input
-                                type="number"
-                                name="revenueStandardDeviation"
-                                id="revenueStandardDeviation"
-                                value={generateFormData.revenueStandardDeviation}
-                                onChange={handleGenerateChange}
-                                className="w-full p-2 border-2 rounded-lg focus:outline-none focus:border-blue-500"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </TabPanel>
-                  </TabPanels>
-                </TabGroup>
+                        </TabPanel>
+                      </TabPanels>
+                    </TabGroup>
+                  </div>
+                </div>
+              </div>
+            </TabPanel>
+
+            {/* Generated Cards Tab */}
+            <TabPanel>
+              <div className="bg-white rounded-lg shadow">
+                <CardsPreview currentCards={currentCards} containers={containers} formatIDR={formatIDR} />
+              </div>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
+
+        {/* Information Modal */}
+        {showInfoModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+            <div className="bg-white rounded-xl shadow-lg max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-end mb-4">
+                  <button onClick={() => setShowInfoModal(false)} className="text-gray-500 hover:text-gray-700">
+                    <PiXCircleDuotone className="w-6 h-6" />
+                  </button>
+                </div>
+                <InformationCard />
               </div>
             </div>
           </div>
-          {/* Cards Preview */}
-          <CardsPreview currentCards={currentCards} containers={containers} formatIDR={formatIDR} />
-        </div>
+        )}
       </div>
     </div>
   );
