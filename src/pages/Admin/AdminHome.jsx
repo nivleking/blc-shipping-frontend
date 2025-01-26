@@ -36,6 +36,7 @@ const AdminHome = () => {
   const [showConfigPopup, setShowConfigPopup] = useState(false);
   const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
   const [bayCount, setBayCount] = useState(1);
+  const [isBayConfigured, setIsBayConfigured] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -96,6 +97,16 @@ const AdminHome = () => {
         setRooms((prevRooms) => [...prevRooms, response.data]);
         toast.success("Room created successfully!", { toastId: "room-create" });
         console.log("Room created:", response.data);
+        setIsBayConfigured(false);
+        setFormData({
+          id: "",
+          name: "",
+          description: "",
+          deck_id: "",
+          max_users: 0,
+          bay_size: {},
+          bay_count: "",
+        });
       }
     } catch (error) {
       setErrors(error.response.data.errors);
@@ -222,6 +233,7 @@ const AdminHome = () => {
       bay_count: bayCount,
     }));
     setShowConfigPopup(false);
+    setIsBayConfigured(true);
     toast.success("Ship bay layout saved successfully!", { toastId: "config-save" });
   };
 
@@ -294,8 +306,13 @@ const AdminHome = () => {
             </div>
           </div>
           <div className="flex justify-start space-x-4">
-            <button type="button" onClick={() => setShowConfigPopup(true)} className="p-3 text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition duration-300">
-              Ship Bay Layout
+            <button
+              type="button"
+              onClick={() => setShowConfigPopup(true)}
+              className={`p-3 text-white rounded-lg transition duration-300 flex items-center gap-2
+    ${isBayConfigured ? "bg-green-500 hover:bg-green-600" : "bg-orange-500 hover:bg-orange-600"}`}
+            >
+              {isBayConfigured ? "✓ Edit Ship Bay Layout" : "Ship Bay Layout"}
             </button>
             <button type="submit" className="p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">
               Create
