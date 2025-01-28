@@ -10,8 +10,9 @@ const ShipDock = ({ dockSize, paginatedItems, draggingItem }) => {
           const rowIndex = Math.floor(cellIndex / dockSize.columns);
           const colIndex = cellIndex % dockSize.columns;
           const coordinates = `docks-${rowIndex}${colIndex}`;
+          const isValid = true;
           return (
-            <DroppableCell key={`docks-${cellIndex}`} id={`docks-${cellIndex}`} coordinates={coordinates}>
+            <DroppableCell key={`docks-${cellIndex}`} id={`docks-${cellIndex}`} coordinates={coordinates} isValid={isValid}>
               {paginatedItems.find((item) => item.area === `docks-${cellIndex}`) && (
                 <DraggableContainer
                   id={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}

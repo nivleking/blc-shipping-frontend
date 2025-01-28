@@ -8,8 +8,11 @@ import ShipBay from "../components/simulations/ShipBay";
 import ShipDock from "../components/simulations/ShipDock";
 import SalesCallCard from "../components/simulations/SalesCallCard";
 import DraggableContainer from "../components/simulations/DraggableContainer";
+import HeaderCards from "../components/simulations/stowages/HeaderCards";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import LoadingSpinner from "../components/simulations/LoadingSpinner";
+import PortLegend from "../components/cards/PortLegend";
 
 const websocket = "http://localhost:5174";
 const socket = io.connect(websocket);
@@ -21,6 +24,7 @@ const formatIDR = (value) => {
 const Simulation = () => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
+  const [port, setPort] = useState("");
   const navigate = useNavigate();
   const [droppedItems, setDroppedItems] = useState([]);
   const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
@@ -153,6 +157,8 @@ const Simulation = () => {
 
       // Get revenue from response
       setRevenue(response.data.revenue || 0);
+      setPort(response.data.port);
+      console.log("Port:", response.data.port);
 
       const containersResponse = await api.get("/containers");
       const containerData = containersResponse.data;
@@ -392,6 +398,17 @@ const Simulation = () => {
   }
 
   const handleDragStart = (event) => {
+    const sourceItem = droppedItems.find((item) => item.id === event.active.id);
+
+    if (sourceItem) {
+      const isBlocked = isBlockedByContainerAbove(droppedItems, sourceItem.area);
+
+      if (isBlocked) {
+        event.preventDefault();
+        return;
+      }
+    }
+
     setDraggingItem(event.active.id);
   };
 
@@ -410,6 +427,28 @@ const Simulation = () => {
     return !containerAbove;
   };
 
+  // Add new helper function to check if container is at bottom row
+  const isBottomContainer = (sourceArea, targetArea) => {
+    const [srcType, srcBayIndex, srcCellIndex] = sourceArea.split("-");
+    const [targetType, targetBayIndex, targetCellIndex] = targetArea.split("-");
+
+    if (srcType !== "bay" || targetType !== "bay") return false;
+
+    const srcRow = Math.floor(srcCellIndex / baySize.columns);
+    const srcCol = srcCellIndex % baySize.columns;
+
+    // Check if source is bottom row
+    if (srcRow === baySize.rows - 1) {
+      const targetRow = Math.floor(targetCellIndex / baySize.columns);
+      // Prevent moving up if source is bottom container
+      if (targetRow < srcRow) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const checkSpace = (droppedItems, baySize, targetArea) => {
     const [type, bayIndex, cellIndex] = targetArea.split("-");
 
@@ -424,6 +463,15 @@ const Simulation = () => {
       const row = Math.floor(cellIndex / baySize.columns);
       const col = cellIndex % baySize.columns;
 
+      // const sourceItem = droppedItems.find((item) => item.id === draggingItem);
+      // if (sourceItem && isBottomContainer(sourceItem.area, targetArea)) {
+      //   // toast.error("Cannot move bottom container upward", {
+      //   //   position: "top-right",
+      //   //   autoClose: 3000,
+      //   // });
+      //   return false;
+      // }
+
       if (row < baySize.rows - 1) {
         const belowCellId = `bay-${bayIndex}-${(row + 1) * baySize.columns + col}`;
         const containerBelow = droppedItems.find((item) => item.area === belowCellId);
@@ -434,6 +482,24 @@ const Simulation = () => {
     return true;
   };
 
+  // Add this helper function after other helper functions
+  const isBlockedByContainerAbove = (droppedItems, sourceArea) => {
+    const [type, bayIndex, cellIndex] = sourceArea.split("-");
+
+    if (type !== "bay") return false;
+
+    const row = Math.floor(cellIndex / baySize.columns);
+    const col = cellIndex % baySize.columns;
+
+    // Check if there's a container above
+    if (row > 0) {
+      const aboveCellId = `bay-${bayIndex}-${(row - 1) * baySize.columns + col}`;
+      return droppedItems.some((item) => item.area === aboveCellId);
+    }
+
+    return false;
+  };
+
   async function handleDragEnd(event) {
     const { active, over } = event;
     setDraggingItem(null);
@@ -442,6 +508,20 @@ const Simulation = () => {
 
     const activeItem = droppedItems.find((item) => item.id === active.id);
     if (activeItem && activeItem.area === over.id) return;
+
+    // Check if source container is blocked by containers above
+    const isSourceBlocked = isBlockedByContainerAbove(droppedItems, activeItem.area);
+    if (isSourceBlocked) {
+      toast.error("Cannot move container - blocked by container above", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
 
     const isAboveClear = checkAbove(droppedItems, baySize, over.id);
     const isSpaceValid = checkSpace(droppedItems, baySize, over.id);
@@ -523,6 +603,22 @@ const Simulation = () => {
         dock_size: dockSize,
       });
       console.log("API call successful for docks", resDock.data);
+
+      const resLog = await api.post(
+        "/simulation-logs",
+        {
+          arena: newBayData,
+          user_id: user.id,
+          room_id: roomId,
+          revenue: revenue,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("API call successful for logs", resLog.data);
     } catch (error) {
       console.error("API call failed", error);
     }
@@ -579,82 +675,12 @@ const Simulation = () => {
       <ToastContainer position="top-right" theme="light" autoClose={3000} />
 
       {isLoading ? (
-        <div className="flex justify-center items-center h-screen">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
-        </div>
+        <LoadingSpinner />
       ) : (
         <div className="container mx-auto px-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {/* Revenue Card */}
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="text-white">
-                  <p className="text-sm font-medium opacity-80">Total Revenue</p>
-                  <h3 className="text-2xl font-bold">{formatIDR(revenue)}</h3>
-                </div>
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
+          <HeaderCards port={port} revenue={revenue} penalties={penalties} rank={rank} section={section} formatIDR={formatIDR} />
 
-            {/* Penalties Card */}
-            <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-4 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="text-white">
-                  <p className="text-sm font-medium opacity-80">Penalties</p>
-                  <h3 className="text-2xl font-bold">{formatIDR(penalties)}</h3>
-                </div>
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Rank Card */}
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="text-white">
-                  <p className="text-sm font-medium opacity-80">Current Rank</p>
-                  <h3 className="text-2xl font-bold">#{rank}</h3>
-                </div>
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Section Card */}
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-4 shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="text-white">
-                  <p className="text-sm font-medium opacity-80">Section</p>
-                  <h3 className="text-2xl font-bold">Section {section}</h3>
-                </div>
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PortLegend />
 
           <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="flex flex-col gap-6">

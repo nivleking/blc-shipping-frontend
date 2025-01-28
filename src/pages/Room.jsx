@@ -15,6 +15,7 @@ const Room = () => {
   const [deckId, setDeckId] = useState("");
   const [showPortPopup, setShowPortPopup] = useState(false);
   const [ports, setPorts] = useState({});
+  const [portsSet, setPortsSet] = useState(false);
   const [shipBay, setShipBay] = useState([]);
   const [origins, setOrigins] = useState([]);
   const [assignedPorts, setAssignedPorts] = useState({});
@@ -283,6 +284,7 @@ const Room = () => {
 
       setShipBay(res.data.shipbays);
       setShowPortPopup(false);
+      setPortsSet(true);
     } catch (error) {
       console.error("There was an error setting the ports!", error);
     }
@@ -342,7 +344,6 @@ const Room = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">{singleUser.name.charAt(0).toUpperCase()}</div>
                           <div className="text-sm font-medium text-gray-900">{singleUser.name}</div>
                         </div>
                       </td>
@@ -363,8 +364,8 @@ const Room = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="3" className="px-6 py-4 text-center text-gray-500 italic">
-                      Waiting for players to join...
+                    <td colSpan="4" className="px-6 py-4 text-center text-gray-500 italic">
+                      No players in the room.
                     </td>
                   </tr>
                 )}
@@ -399,9 +400,10 @@ const Room = () => {
                 <button
                   onClick={handleStartSimulation}
                   className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
-                    ${users.length < 1 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
-                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors`}
-                  disabled={users.length < 1}
+    ${!portsSet || users.length < 1 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors`}
+                  disabled={!portsSet || users.length < 1}
+                  title={!portsSet ? "Please set ports first" : users.length < 1 ? "Need at least one player" : ""}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />

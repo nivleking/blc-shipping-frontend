@@ -52,7 +52,7 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
             </td>
           </tr>
           <tr>
-            <td colSpan="2" className="py-2">
+            <td colSpan="1" className="py-2">
               <div className="grid grid-cols-3 gap-2">
                 {containers
                   .filter((container) => container.card_id === salesCallCards[currentCardIndex].id)
@@ -60,7 +60,11 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
                     <div
                       key={container.id}
                       className={`p-2 border border-dashed border-gray-300 rounded text-center bg-${container.color}-500`}
-                      style={{ backgroundImage: "linear-gradient(90deg, transparent 70%, rgba(255, 255, 255, 0.5) 50%)", backgroundSize: "10px 10px" }}
+                      style={{
+                        backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 0.5px, black 1px, black 1px)",
+                        backgroundSize: "10px 10px",
+                        color: container.color === "yellow" ? "black" : "white",
+                      }}
                     >
                       {container.id}
                     </div>

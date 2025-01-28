@@ -1,6 +1,6 @@
-import React, { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import { AppContext } from "../../context/AppContext";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../../axios/axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,6 +9,8 @@ import "./AdminHome.css";
 import io from "socket.io-client";
 import RenderShipBayLayout from "../../components/simulations/RenderShipBayLayout";
 import { AiFillDelete, AiFillFolderOpen } from "react-icons/ai";
+import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
+import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
 
 const websocket = "http://localhost:5174";
 const socket = io.connect(websocket);
@@ -37,6 +39,9 @@ const AdminHome = () => {
   const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
   const [bayCount, setBayCount] = useState(1);
   const [isBayConfigured, setIsBayConfigured] = useState(false);
+
+  const [query, setQuery] = useState("");
+  const [selectedDeck, setSelectedDeck] = useState(null);
 
   useEffect(() => {
     if (token) {
@@ -237,6 +242,9 @@ const AdminHome = () => {
     toast.success("Ship bay layout saved successfully!", { toastId: "config-save" });
   };
 
+  // Add this filter function before return
+  const filteredDecks = query === "" ? decks : decks.filter((deck) => deck.name.toLowerCase().includes(query.toLowerCase()));
+
   return (
     <div className="container mx-auto p-4">
       <ToastContainer autoClose={2000} />
@@ -275,18 +283,67 @@ const AdminHome = () => {
               />
               {errors.description && <p className="text-red-500 mt-1">{errors.description[0]}</p>}
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col relative">
               <label htmlFor="deck_id" className="block text-gray-700 font-semibold">
                 Deck
               </label>
-              <select id="deck_id" name="deck_id" value={formData.deck_id} onChange={handleDeckChange} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
-                <option value="">Select a deck</option>
-                {decks.map((deck) => (
-                  <option key={deck.id} value={deck.id}>
-                    {deck.name}
-                  </option>
-                ))}
-              </select>
+              <Combobox
+                value={selectedDeck}
+                onChange={(deck) => {
+                  setSelectedDeck(deck);
+                  handleDeckChange({ target: { value: deck.id } });
+                }}
+              >
+                <div className="relative">
+                  {decks.length === 0 ? (
+                    <div className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center transition-all hover:border-blue-300 hover:bg-gray-100">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                        <HiDocumentCheck className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <h3 className="mt-4 text-sm font-medium text-gray-900">No Decks Available</h3>
+                      <p className="mt-2 text-sm text-gray-500">Get started by creating a new deck</p>
+                      <Link to="/admin-decks" className="mt-4 inline-flex items-center gap-x-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 hover:scale-105 transition-all duration-200">
+                        <HiPlus className="h-5 w-5" />
+                        Create New Deck
+                      </Link>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="group relative w-full cursor-pointer">
+                        <ComboboxInput
+                          className="w-full rounded-lg border border-gray-300 bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          displayValue={(deck) => deck?.name}
+                          onChange={(event) => setQuery(event.target.value)}
+                          placeholder="Select a deck..."
+                        />
+                        <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-3">
+                          <HiChevronUpDown className="h-5 w-5 text-gray-400 group-hover:text-blue-500" aria-hidden="true" />
+                        </ComboboxButton>
+                      </div>
+                      <ComboboxOptions className="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white py-2 text-base shadow-xl ring-1 ring-black/5 focus:outline-none sm:text-sm">
+                        {filteredDecks.length === 0 && query !== "" ? (
+                          <div className="px-4 py-3 text-sm text-gray-500">No decks found matching "{query}"</div>
+                        ) : (
+                          filteredDecks.map((deck) => (
+                            <ComboboxOption key={deck.id} value={deck} className={({ active }) => `relative cursor-pointer select-none px-4 py-3 text-sm transition-colors ${active ? "bg-blue-50 text-blue-700" : "text-gray-900"}`}>
+                              {({ selected, active }) => (
+                                <div className="flex items-center">
+                                  <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>{deck.name}</span>
+                                  {selected && (
+                                    <span className={`ml-auto flex items-center ${active ? "text-blue-700" : "text-blue-600"}`}>
+                                      <HiCheck className="h-5 w-5" aria-hidden="true" />
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </ComboboxOption>
+                          ))
+                        )}
+                      </ComboboxOptions>
+                    </>
+                  )}
+                </div>
+              </Combobox>
               {errors.deck_id && <p className="text-red-500 mt-1">{errors.deck_id[0]}</p>}
             </div>
             <div className="flex flex-col">
@@ -353,7 +410,12 @@ const AdminHome = () => {
               {currentPageData.map((room, index) => (
                 <div key={room.id} className="flex justify-between items-center border-b border-gray-200 pb-4 mb-4">
                   <div className="flex-shrink-0">
-                    <div className="bg-green-500 text-white px-2 py-1 rounded-lg transform -skew-x-12 w-12 text-center">{offset + index + 1}</div>
+                    <div
+                      // className="bg-green-500 text-white px-2 py-1 rounded-lg transform -skew-x-12 w-12 text-center"
+                      className={`${room.status === "active" ? "bg-green-500" : room.status === "finished" ? "bg-red-500" : "bg-blue-500"} text-white px-2 py-1 rounded-lg transform -skew-x-12 w-12 text-center`}
+                    >
+                      {offset + index + 1}
+                    </div>
                   </div>
                   <div className="ml-4 flex-grow">
                     <p className="text-lg font-bold">
@@ -365,6 +427,9 @@ const AdminHome = () => {
                     </p>
                   </div>
                   <div className="flex space-x-4">
+                    <button onClick={() => navigate(`/rooms/${room.id}/detail`)} className="p-2 text-center text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg">
+                      Detail
+                    </button>
                     <button
                       onClick={() => handleOpenRoom(room.id)}
                       className={`p-2 text-center text-white rounded-lg ${room.status === "active" || room.status === "finished" ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}

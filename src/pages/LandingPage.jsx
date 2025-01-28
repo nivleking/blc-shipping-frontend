@@ -1,9 +1,25 @@
 import { Link } from "react-router-dom";
 import "./LandingPage.css";
+import { useEffect } from "react";
 
 const LandingPage = () => {
+  useEffect(() => {
+    // Add particle effect animation
+    const createParticle = () => {
+      const particle = document.createElement("div");
+      particle.className = "particle";
+      particle.style.left = Math.random() * 85 + "vw";
+      document.querySelector(".particle-container").appendChild(particle);
+      setTimeout(() => particle.remove(), 5000);
+    };
+
+    const interval = setInterval(createParticle, 300);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <div className="bg-black min-h-screen overflow-hidden">
+      <div className="particle-container absolute inset-0" />
+
       <header className="absolute inset-x-0 top-0 z-50">
         <nav className="flex items-center justify-between p-6 lg:px-8" aria-label="Global">
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
@@ -22,6 +38,12 @@ const LandingPage = () => {
               clipPath: "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
             }}
           ></div>
+        </div>
+        {/* New floating elements */}
+        <div className="absolute inset-0 z-0">
+          <div className="floating-element left-20 top-40" />
+          <div className="floating-element right-20 top-60" />
+          <div className="floating-element left-1/4 bottom-40" />
         </div>
         <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
           <div className="hidden sm:mb-8 sm:flex sm:justify-center">

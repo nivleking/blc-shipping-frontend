@@ -14,6 +14,7 @@ import AdminCreateCards from "./pages/Admin/AdminCreateCards";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import AdminDecks from "./pages/Admin/AdminDecks";
+import RoomDetail from "./pages/Admin/RoomDetail";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -80,6 +81,15 @@ const App = () => {
           element={
             <AdminLayout>
               <AdminDecks />
+            </AdminLayout>
+          }
+        />
+
+        <Route
+          path="/rooms/:roomId/detail"
+          element={
+            <AdminLayout>
+              <RoomDetail />
             </AdminLayout>
           }
         />

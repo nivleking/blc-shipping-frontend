@@ -10,9 +10,22 @@ const DraggableContainer = ({ id, text, style, isDragging, color }) => {
     transform: CSS.Transform.toString(transform),
     zIndex: isDragging ? 1000 : "auto",
     position: isDragging ? "fixed" : "relative",
-    backgroundColor: color,
+    backgroundColor:
+      color === "yellow"
+        ? "#F59E0B" // yellow-500
+        : color === "blue"
+        ? "#3B82F6" // blue-500
+        : color === "green"
+        ? "#22C55E" // green-500
+        : color === "red"
+        ? "#EF4444" // red-500
+        : color === "purple"
+        ? "#8B5CF6" // purple-500
+        : color === "pink"
+        ? "#EC4899" // pink-500
+        : "#6B7280", // gray-500 default
     color: color === "yellow" ? "black" : "white",
-    width: "100px",
+    width: "80px",
     height: "60px",
   };
 
@@ -35,7 +48,7 @@ const DraggableContainer = ({ id, text, style, isDragging, color }) => {
         <div
           className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage: "repeating-linear-gradient(45deg, #fff 0, #fff 2px, transparent 2px, transparent 8px)",
+            backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 0.5px, black 1px, black 1px)",
           }}
         />
       </div>
