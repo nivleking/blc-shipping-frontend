@@ -224,7 +224,7 @@ const AdminCreateCards = () => {
 
   const [showInfoModal, setShowInfoModal] = useState(false);
 
-  const navBarTitle = `Sales Call Cards - Deck ${deck.name}`;
+  const navBarTitle = `${deck.name}`;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -271,6 +271,9 @@ const AdminCreateCards = () => {
                 onRevenueSelect={handleRevenueSelect}
                 onQuantitySelect={handleQuantitySelect}
                 formatIDR={formatIDR}
+                deckId={deckId}
+                refreshCards={fetchDeck}
+                refreshContainers={fetchContainers}
               />
             </TabPanel>
 

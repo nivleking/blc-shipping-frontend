@@ -4,15 +4,15 @@ import api from "../axios/axios";
 import { io } from "socket.io-client";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-import ShipBay from "../components/simulations/ShipBay";
-import ShipDock from "../components/simulations/ShipDock";
-import SalesCallCard from "../components/simulations/SalesCallCard";
-import DraggableContainer from "../components/simulations/DraggableContainer";
+import CapacityUptake from "../components/simulations/CapaticyUptake";
 import HeaderCards from "../components/simulations/stowages/HeaderCards";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LoadingSpinner from "../components/simulations/LoadingSpinner";
-import PortLegend from "../components/cards/PortLegend";
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
+import WeeklyPerformance from "../components/simulations/WeeklyPerformance";
+import MarketIntelligence from "../components/simulations/MarketIntelligence";
+import Stowage from "../components/simulations/Stowage";
 
 const websocket = "http://localhost:5174";
 const socket = io.connect(websocket);
@@ -42,6 +42,8 @@ const Simulation = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [revenue, setRevenue] = useState(0);
+  const [isSwapping, setIsSwapping] = useState(false);
+  const [selectedTab, setSelectedTab] = useState(1);
 
   useEffect(() => {
     if (user && token) {
@@ -122,8 +124,12 @@ const Simulation = () => {
     fetchDockData();
 
     socket.on("swap_bays", () => {
-      fetchArenaData();
-      fetchDockData();
+      setIsSwapping(true);
+      setTimeout(() => {
+        setIsSwapping(false);
+        fetchArenaData();
+        fetchDockData();
+      }, 3000);
     });
 
     return () => {
@@ -313,6 +319,17 @@ const Simulation = () => {
       });
 
       setDroppedItems(updatedDroppedItems);
+
+      const response = await api.get(`/rooms/${roomId}/rankings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      socket.emit("update_rankings", {
+        roomId,
+        rankings: response.data,
+      });
 
       const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
         return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
@@ -672,6 +689,18 @@ const Simulation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-6">
+      {/* Overlay Modal */}
+      {isSwapping && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-8 shadow-2xl max-w-md w-full mx-4">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+              <h3 className="text-xl font-semibold text-gray-800">Swapping Bays</h3>
+              <p className="text-gray-500 text-center">Please wait while the bays are being swapped...</p>
+            </div>
+          </div>
+        </div>
+      )}
       <ToastContainer position="top-right" theme="light" autoClose={3000} />
 
       {isLoading ? (
@@ -680,68 +709,112 @@ const Simulation = () => {
         <div className="container mx-auto px-6 space-y-6">
           <HeaderCards port={port} revenue={revenue} penalties={penalties} rank={rank} section={section} formatIDR={formatIDR} />
 
-          <PortLegend />
-
-          <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="flex flex-col gap-6">
-              {/* Ship Bay Section - Full Width */}
-              <div className="w-full bg-white rounded-xl shadow-xl p-6 border border-gray-200">
-                <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                  <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+          <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
+            <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+              <Tab
+                className={({ selected }) =>
+                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+                  ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                }
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
                   </svg>
-                  Ship Bay
-                </h3>
-                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                  <ShipBay bayCount={bayCount} baySize={baySize} droppedItems={droppedItems} draggingItem={draggingItem} />
+                  Capacity & Uptake
                 </div>
-              </div>
+              </Tab>
 
-              {/* Bottom Grid - Ship Dock and Sales Call Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Ship Dock Section */}
-                <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
-                  <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                    <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
-                    </svg>
-                    Ship Dock
-                  </h3>
-                  <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                    <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} />
-                  </div>
+              <Tab
+                className={({ selected }) =>
+                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+                  ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                }
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  Stowage
                 </div>
+              </Tab>
 
-                {/* Sales Call Cards Section */}
-                <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
-                  <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                    <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                    </svg>
-                    Sales Calls
-                  </h3>
-                  <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                    <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
-                  </div>
+              <Tab
+                className={({ selected }) =>
+                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+                  ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                }
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Weekly Performance
                 </div>
-              </div>
-            </div>
-            <DragOverlay>
-              {draggingItem && (
-                <div className="rounded-lg" style={{ width: "100px", height: "60px" }}>
-                  <DraggableContainer
-                    id={draggingItem}
-                    text={draggingItem}
-                    style={{
-                      zIndex: 9999,
-                      transform: "scale(1.05)",
-                      opacity: 0.9,
-                    }}
-                  />
+              </Tab>
+
+              <Tab
+                className={({ selected }) =>
+                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+                  ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                }
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  Market Intelligence
                 </div>
-              )}
-            </DragOverlay>
-          </DndContext>
+              </Tab>
+            </TabList>
+
+            <TabPanels className="mt-4">
+              {/* Capacity & Uptake Tab */}
+              <TabPanel>
+                <CapacityUptake />
+              </TabPanel>
+
+              <TabPanel>
+                <Stowage
+                  bayCount={bayCount}
+                  baySize={baySize}
+                  droppedItems={droppedItems}
+                  draggingItem={draggingItem}
+                  dockSize={dockSize}
+                  paginatedItems={paginatedItems}
+                  salesCallCards={salesCallCards}
+                  currentCardIndex={currentCardIndex}
+                  containers={containers}
+                  formatIDR={formatIDR}
+                  handleAcceptCard={handleAcceptCard}
+                  handleRejectCard={handleRejectCard}
+                  handleDragStart={handleDragStart}
+                  handleDragEnd={handleDragEnd}
+                />
+              </TabPanel>
+
+              {/* Weekly Performance Tab */}
+              <TabPanel>
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold mb-4">Weekly Performance Report</h3>
+                  <WeeklyPerformance port={port} />
+                </div>
+              </TabPanel>
+
+              {/* Market Intelligence Tab */}
+              <TabPanel>
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold mb-4">Market Intelligence</h3>
+                  <MarketIntelligence port={port} />
+                </div>
+              </TabPanel>
+            </TabPanels>
+          </TabGroup>
         </div>
       )}
     </div>

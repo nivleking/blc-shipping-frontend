@@ -8,7 +8,7 @@ import ReactPaginate from "react-paginate";
 import "./AdminHome.css";
 import io from "socket.io-client";
 import RenderShipBayLayout from "../../components/simulations/RenderShipBayLayout";
-import { AiFillDelete, AiFillFolderOpen } from "react-icons/ai";
+import { AiFillDelete, AiFillEye, AiFillFolderOpen } from "react-icons/ai";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
 
@@ -348,7 +348,7 @@ const AdminHome = () => {
             </div>
             <div className="flex flex-col">
               <label htmlFor="max_users" className="block text-gray-700 font-semibold">
-                Max Users
+                Total Ports (Users)
               </label>
               <input
                 type="number"
@@ -427,21 +427,30 @@ const AdminHome = () => {
                     </p>
                   </div>
                   <div className="flex space-x-4">
-                    <button onClick={() => navigate(`/rooms/${room.id}/detail`)} className="p-2 text-center text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg">
-                      Detail
-                    </button>
-                    <button
-                      onClick={() => handleOpenRoom(room.id)}
-                      className={`p-2 text-center text-white rounded-lg ${room.status === "active" || room.status === "finished" ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-                      disabled={room.status === "active" || room.status === "finished"}
-                    >
-                      <AiFillFolderOpen /> Open
-                    </button>
-                    <form action="" onSubmit={handleDeleteRoom(room.id)}>
-                      <button disabled={room.status === "active"} className={`p-2 text-center text-white rounded-lg ${room.status === "active" ? "bg-gray-500 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}>
-                        <AiFillDelete /> Delete
+                    {room.status === "finished" && (
+                      <button onClick={() => navigate(`/rooms/${room.id}/detail`)} className="p-2 text-center text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg flex items-center gap-2">
+                        <AiFillEye /> Detail
                       </button>
-                    </form>
+                    )}
+
+                    {room.status !== "finished" && (
+                      <button
+                        onClick={() => handleOpenRoom(room.id)}
+                        className={`p-2 text-center text-white rounded-lg flex items-center gap-2 
+        ${room.status === "active" ? "bg-gray-500 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
+                        disabled={room.status === "active"}
+                      >
+                        <AiFillFolderOpen /> Open
+                      </button>
+                    )}
+
+                    {room.status !== "active" && (
+                      <form action="" onSubmit={handleDeleteRoom(room.id)}>
+                        <button className="p-2 text-center text-white bg-red-500 hover:bg-red-600 rounded-lg flex items-center gap-2">
+                          <AiFillDelete /> Delete
+                        </button>
+                      </form>
+                    )}
                   </div>
                 </div>
               ))}

@@ -61,7 +61,7 @@ const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR }) => 
         <div className="flex items-center justify-between">
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Section</p>
-            <h3 className="text-2xl font-bold">Section {section}</h3>
+            <h3 className="text-2xl font-bold">Section {section} - Week 1</h3>
           </div>
           <div className="p-2 bg-white/20 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

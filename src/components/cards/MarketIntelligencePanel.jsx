@@ -97,6 +97,65 @@ const MarketIntelligencePanel = () => {
     }
   };
 
+  // Add new states
+  const [selectedPorts, setSelectedPorts] = useState(4);
+  const [availablePorts, setAvailablePorts] = useState({
+    4: ["SBY", "MKS", "MDN", "JYP"],
+    5: ["SBY", "MKS", "MDN", "JYP", "BPN"],
+    6: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS"],
+    7: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR"],
+    8: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH"],
+  });
+
+  // Add new price state
+  const [manualPrices, setManualPrices] = useState({});
+
+  // Add price change handler
+  const handlePriceChange = (origin, destination, type, value) => {
+    setManualPrices((prev) => ({
+      ...prev,
+      [origin]: {
+        ...prev[origin],
+        [destination]: {
+          ...prev[origin]?.[destination],
+          [type]: parseInt(value) || 0,
+        },
+      },
+    }));
+  };
+
+  // Add new state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Add submit handler
+  const handleSubmitPrices = async () => {
+    setIsSubmitting(true);
+    try {
+      // Validate if all prices are filled
+      for (const origin of availablePorts[selectedPorts]) {
+        for (const dest of availablePorts[selectedPorts]) {
+          if (origin === dest) continue;
+
+          const prices = manualPrices[origin]?.[dest];
+          if (!prices?.reefer || !prices?.dry) {
+            toast.error(`Please fill all prices for ${origin} to ${dest}`);
+            return;
+          }
+        }
+      }
+
+      toast.success("Market intelligence data saved successfully!");
+
+      // Reset form after success
+      setManualPrices({});
+    } catch (error) {
+      toast.error("Failed to save market intelligence data");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
@@ -125,6 +184,14 @@ const MarketIntelligencePanel = () => {
           <Tab
             className={({ selected }) =>
               `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+            ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+            }
+          >
+            <div className="flex items-center justify-center gap-2">Manual Entry</div>
+          </Tab>
+          <Tab
+            className={({ selected }) =>
+              `w-full rounded-lg py-2.5 text-sm font-medium leading-5
               ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
             }
           >
@@ -144,6 +211,91 @@ const MarketIntelligencePanel = () => {
             </div>
             <div className="mt-6">
               <PenaltyTable />
+            </div>
+          </TabPanel>
+
+          <TabPanel>
+            <div className="space-y-6">
+              {/* Port Selection */}
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Select Number of Ports</h3>
+                <div className="grid grid-cols-5 gap-3">
+                  {[4, 5, 6, 7, 8].map((portCount) => (
+                    <button
+                      key={portCount}
+                      onClick={() => setSelectedPorts(portCount)}
+                      className={`
+                      relative overflow-hidden rounded-lg transition-all duration-200
+                      ${selectedPorts === portCount ? "bg-blue-500 text-white shadow-lg scale-105" : "bg-white text-gray-600 hover:bg-blue-50"}
+                      p-4 border-2 border-transparent hover:border-blue-300
+                    `}
+                    >
+                      <div className="text-2xl font-bold mb-1">{portCount}</div>
+                      <div className="text-xs">Ports</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Tables */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {availablePorts[selectedPorts].map((origin) => (
+                  <div key={origin} className="bg-white rounded-lg shadow-sm p-4">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Origin: {origin}</h3>
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Destination</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Reefer</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Dry</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {availablePorts[selectedPorts]
+                          .filter((dest) => dest !== origin)
+                          .map((destination) => (
+                            <tr key={destination}>
+                              <td className="px-4 py-3 text-sm text-gray-900">{destination}</td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  className="w-full p-1 text-right border rounded"
+                                  value={manualPrices[origin]?.[destination]?.reefer || ""}
+                                  onChange={(e) => handlePriceChange(origin, destination, "reefer", e.target.value)}
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input type="number" className="w-full p-1 text-right border rounded" value={manualPrices[origin]?.[destination]?.dry || ""} onChange={(e) => handlePriceChange(origin, destination, "dry", e.target.value)} />
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSubmitPrices}
+                  disabled={isSubmitting}
+                  className={`
+              px-6 py-3 rounded-lg font-medium text-white
+              transition-all duration-200
+              ${isSubmitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 active:bg-blue-700"}
+            `}
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-t-2 border-white rounded-full animate-spin" />
+                      Saving...
+                    </div>
+                  ) : (
+                    "Save Market Intelligence Data"
+                  )}
+                </button>
+              </div>
             </div>
           </TabPanel>
 

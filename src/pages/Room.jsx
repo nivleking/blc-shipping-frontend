@@ -3,9 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import api from "../axios/axios";
 import { AppContext } from "../context/AppContext";
+import LeaderboardModal from "../components/rooms/LeaderboardModal";
+import { toast } from "react-toastify";
 
 const websocket = "http://localhost:5174";
 const socket = io.connect(websocket);
+
+const formatIDR = (value) => {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
+};
 
 const Room = () => {
   const { roomId } = useParams();
@@ -21,6 +27,8 @@ const Room = () => {
   const [assignedPorts, setAssignedPorts] = useState({});
   const { user, token } = useContext(AppContext);
   const navigate = useNavigate();
+  const [showRankings, setShowRankings] = useState(false);
+  const [rankings, setRankings] = useState([]);
 
   useEffect(() => {
     fetchRoomDetails();
@@ -49,13 +57,20 @@ const Room = () => {
       }));
     });
 
+    socket.on("rankings_updated", ({ roomId: updatedRoomId, rankings: updatedRankings }) => {
+      if (roomId === updatedRoomId) {
+        setRankings(updatedRankings);
+      }
+    });
+
     return () => {
       socket.off("user_added");
       socket.off("user_kicked");
       socket.off("start_simulation");
       socket.off("port_updated");
+      socket.off("rankings_updated");
     };
-  }, [roomId, token, user, navigate]);
+  }, [roomId, token, user, navigate, roomStatus]);
 
   async function fetchRoomDetails() {
     try {
@@ -244,7 +259,7 @@ const Room = () => {
 
   async function handleSwapBays() {
     try {
-      const res = await api.put(
+      await api.put(
         `/rooms/${roomId}/swap-bays`,
         {},
         {
@@ -255,9 +270,19 @@ const Room = () => {
       );
 
       socket.emit("swap_bays", roomId);
-      console.log(res);
+
+      // Show toast notification for admin
+      toast.info("Swapping bays - Players will be temporarily restricted", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } catch (error) {
       console.error("There was an error swapping bays!", error);
+      toast.error("Failed to swap bays");
     }
   }
 
@@ -289,6 +314,22 @@ const Room = () => {
       console.error("There was an error setting the ports!", error);
     }
   }
+
+  // Update fetchRankings to return the rankings
+  const fetchRankings = async () => {
+    try {
+      const response = await api.get(`/rooms/${roomId}/rankings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setRankings(response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching rankings:", error);
+      return [];
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -327,18 +368,54 @@ const Room = () => {
 
           {/* Enhanced Users Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <h3 className="text-xl font-semibold p-4 bg-gray-50 border-b">Players ({users.length})</h3>
+            <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
+              <h3 className="text-xl font-semibold">{showRankings ? "Leaderboard" : `Players (${users.length})`}</h3>
+              {roomStatus === "active" && (
+                <button
+                  onClick={() => {
+                    if (!showRankings) {
+                      fetchRankings();
+                    }
+                    setShowRankings(!showRankings);
+                  }}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-500 hover:bg-indigo-600"
+                >
+                  {showRankings ? "Show Players" : "Show Rankings"}
+                </button>
+              )}
+            </div>
+
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{showRankings ? "Rank" : "#"}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
-                  {user && user.is_admin === 1 && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{showRankings ? "Revenue" : "Port"}</th>
+                  {!showRankings && user && user.is_admin === 1 && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users && users.length > 0 ? (
+                {showRankings ? (
+                  rankings.length > 0 ? (
+                    rankings.map((rank, index) => (
+                      <tr key={rank.user_id} className={`hover:bg-gray-50 transition-colors ${index === 0 ? "bg-yellow-50" : ""}`}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="text-sm font-medium text-gray-900">{rank.user?.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{formatIDR(rank.revenue)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="px-6 py-4 text-center text-gray-500 italic">
+                        No rankings available yet.
+                      </td>
+                    </tr>
+                  )
+                ) : users && users.length > 0 ? (
                   users.map((singleUser, index) => (
                     <tr key={singleUser.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
@@ -436,6 +513,18 @@ const Room = () => {
                   END SIMULATION
                 </button>
               </>
+            )}
+
+            {user && user.is_admin === 1 && roomStatus === "finished" && (
+              <button
+                onClick={() => navigate(`/rooms/${roomId}/detail`)}
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                ROOM DETAIL
+              </button>
             )}
           </div>
         </div>
