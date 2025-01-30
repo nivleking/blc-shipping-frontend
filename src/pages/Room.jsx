@@ -6,7 +6,7 @@ import { AppContext } from "../context/AppContext";
 import LeaderboardModal from "../components/rooms/LeaderboardModal";
 import { toast } from "react-toastify";
 
-const websocket = "http://localhost:5174";
+const websocket = "https://websocket.slg.petra.ac.id";
 const socket = io.connect(websocket);
 
 const formatIDR = (value) => {

@@ -12,7 +12,7 @@ import { AiFillDelete, AiFillEye, AiFillFolderOpen } from "react-icons/ai";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
 
-const websocket = "http://localhost:5174";
+const websocket = "https://websocket.slg.petra.ac.id";
 const socket = io.connect(websocket);
 
 const AdminHome = () => {

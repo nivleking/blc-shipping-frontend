@@ -7,7 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./UserHome.css";
 
-const websocket = "http://localhost:5174";
+const websocket = "https://websocket.slg.petra.ac.id";
 const socket = io.connect(websocket);
 
 const LoadingOverlay = ({ messages, currentMessageIndex }) => (

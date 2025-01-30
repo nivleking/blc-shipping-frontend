@@ -14,7 +14,7 @@ import WeeklyPerformance from "../components/simulations/WeeklyPerformance";
 import MarketIntelligence from "../components/simulations/MarketIntelligence";
 import Stowage from "../components/simulations/Stowage";
 
-const websocket = "http://localhost:5174";
+const websocket = "https://websocket.slg.petra.ac.id";
 const socket = io.connect(websocket);
 
 const formatIDR = (value) => {
