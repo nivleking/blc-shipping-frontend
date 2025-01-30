@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import { FaBars, FaSignOutAlt } from "react-icons/fa";
-import api from "../axios/axios";
+import { api } from "../axios/axios";
 
 const UserNavbar = ({ toggleSidebar, isSidebarOpen }) => {
   const { user, token, setToken, setUser } = useContext(AppContext);

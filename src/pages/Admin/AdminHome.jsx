@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from "react";
 import { AppContext } from "../../context/AppContext";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../../axios/axios";
+import { api, socket } from "../../axios/axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactPaginate from "react-paginate";
@@ -11,9 +11,6 @@ import RenderShipBayLayout from "../../components/simulations/RenderShipBayLayou
 import { AiFillDelete, AiFillEye, AiFillFolderOpen } from "react-icons/ai";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
-
-const websocket = "https://websocket.slg.petra.ac.id";
-const socket = io.connect(websocket);
 
 const AdminHome = () => {
   const { user, token } = useContext(AppContext);

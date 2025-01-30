@@ -1,14 +1,11 @@
 import { useContext, useState, useEffect } from "react";
 import { AppContext } from "../../context/AppContext";
-import api from "../../axios/axios";
+import { api, socket } from "../../axios/axios";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./UserHome.css";
-
-const websocket = "https://websocket.slg.petra.ac.id";
-const socket = io.connect(websocket);
 
 const LoadingOverlay = ({ messages, currentMessageIndex }) => (
   <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">

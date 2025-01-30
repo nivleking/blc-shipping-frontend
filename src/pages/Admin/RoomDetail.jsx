@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import api from "../../axios/axios";
+import { api } from "../../axios/axios";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 import ShipBayVisualization from "../../components/details/ShipBayVisualization";
 import PlayerStats from "../../components/details/PlayerStats";

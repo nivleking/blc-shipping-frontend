@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import api from "../../axios/axios";
+import { api } from "../../axios/axios";
 import GenerateCardsNavbar from "../../components/cards/GenerateCardsNavbar";
 import MarketIntelligencePanel from "../../components/cards/MarketIntelligencePanel";
 import ConfigurationPanel from "../../components/cards/ConfigurationPanel";

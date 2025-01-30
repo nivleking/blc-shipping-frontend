@@ -1,13 +1,9 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { io } from "socket.io-client";
-import api from "../axios/axios";
+import { api, socket } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
 import LeaderboardModal from "../components/rooms/LeaderboardModal";
 import { toast } from "react-toastify";
-
-const websocket = "https://websocket.slg.petra.ac.id";
-const socket = io.connect(websocket);
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);

@@ -4,7 +4,7 @@ import { AiOutlineCopy } from "react-icons/ai";
 import StatsPanel from "./StatsPanel";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import api from "../../axios/axios";
+import { api } from "../../axios/axios";
 import { BiAnchor } from "react-icons/bi";
 import { FaShip } from "react-icons/fa";
 

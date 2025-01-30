@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../../axios/axios";
+import { api } from "../../axios/axios";
 import { Link } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { AiFillDelete, AiFillFolderOpen } from "react-icons/ai";

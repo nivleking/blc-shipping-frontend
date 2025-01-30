@@ -1,7 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { DndContext, DragOverlay } from "@dnd-kit/core";
-import api from "../axios/axios";
-import { io } from "socket.io-client";
+import { api, socket } from "../axios/axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import CapacityUptake from "../components/simulations/CapaticyUptake";
@@ -13,9 +11,6 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import WeeklyPerformance from "../components/simulations/WeeklyPerformance";
 import MarketIntelligence from "../components/simulations/MarketIntelligence";
 import Stowage from "../components/simulations/Stowage";
-
-const websocket = "https://websocket.slg.petra.ac.id";
-const socket = io.connect(websocket);
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);

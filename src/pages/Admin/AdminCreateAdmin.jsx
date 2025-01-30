@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import api from "../../axios/axios";
+import { api } from "../../axios/axios";
 import { AppContext } from "../../context/AppContext";
 import ReactPaginate from "react-paginate";
 import { AiFillEdit, AiFillDelete } from "react-icons/ai";
