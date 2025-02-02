@@ -5,13 +5,47 @@ import SalesCallCard from "./SalesCallCard";
 import DraggableContainer from "./DraggableContainer";
 import PortLegend from "../cards/PortLegend";
 
-const Stowage = ({ bayCount, baySize, droppedItems, draggingItem, dockSize, paginatedItems, salesCallCards, currentCardIndex, containers, formatIDR, handleAcceptCard, handleRejectCard, handleDragStart, handleDragEnd }) => {
+const Stowage = ({
+  bayCount,
+  baySize,
+  droppedItems,
+  draggingItem,
+  dockSize,
+  paginatedItems,
+  salesCallCards,
+  currentCardIndex,
+  containers,
+  formatIDR,
+  handleAcceptCard,
+  handleRejectCard,
+  handleDragStart,
+  handleDragEnd,
+  section,
+  onNextSection,
+  targetContainers,
+}) => {
   return (
     <>
       <PortLegend />
+
+      {/* Section Header */}
+      <div className="flex justify-between items-center mb-4 mt-4  bg-white rounded-xl shadow-sm p-4">
+        <h2 className="text-xl font-semibold text-gray-800">
+          Section {section}: {section === 1 ? "Unload Port Containers" : "Handle Sales Calls"}
+        </h2>
+        {section === 1 && (
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-600">Remaining containers to unload: {targetContainers.length}</div>
+            <button onClick={onNextSection} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              Proceed to Section 2
+            </button>
+          </div>
+        )}
+      </div>
+
       <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex flex-col gap-6">
-          {/* Ship Bay Section - Full Width */}
+          {/* Ship Bay Section */}
           <div className="w-full bg-white rounded-xl shadow-xl p-6 border border-gray-200">
             <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
               <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -39,20 +73,23 @@ const Stowage = ({ bayCount, baySize, droppedItems, draggingItem, dockSize, pagi
               </div>
             </div>
 
-            {/* Sales Call Cards Section */}
-            <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
-              <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                </svg>
-                Sales Calls
-              </h3>
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
+            {/* Sales Call Cards Section - Only show in section 2 */}
+            {section === 2 && (
+              <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
+                <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                  <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                  </svg>
+                  Sales Calls
+                </h3>
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
+
         <DragOverlay>
           {draggingItem && (
             <div className="rounded-lg" style={{ width: "100px", height: "60px" }}>

@@ -122,6 +122,7 @@ const Simulation = () => {
       setIsSwapping(true);
       setTimeout(() => {
         setIsSwapping(false);
+        setSection(1);
         fetchArenaData();
         fetchDockData();
       }, 3000);
@@ -275,6 +276,11 @@ const Simulation = () => {
   }, [salesCallCards, currentCardIndex]);
 
   async function handleAcceptCard(cardId) {
+    if (section !== 2) {
+      toast.error("Please complete section 1 first!");
+      return;
+    }
+
     try {
       const currentCard = salesCallCards.find((card) => card.id === cardId);
       const cardRevenue = parseFloat(currentCard.revenue) || 0;
@@ -681,6 +687,82 @@ const Simulation = () => {
   const [penalties, setPenalties] = useState(0);
   const [rank, setRank] = useState(1);
   const [section, setSection] = useState(1);
+  const [targetContainers, setTargetContainers] = useState([]);
+
+  // Add new function to fetch card
+  const fetchCardById = async (cardId) => {
+    try {
+      const response = await api.get(`/cards/${cardId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching card:", error);
+      return null;
+    }
+  };
+
+  // Update useEffect
+  useEffect(() => {
+    const fetchTargetContainers = async () => {
+      if (section === 1) {
+        const targets = [];
+
+        for (const item of droppedItems) {
+          // Only check items in bay
+          const isInBay = item.area.startsWith("bay-");
+          if (!isInBay) continue;
+
+          const container = containers.find((c) => c.id === item.id);
+          if (!container) continue;
+
+          const card = await fetchCardById(container.card_id);
+          if (!card) continue;
+
+          if (card.destination === port) {
+            targets.push(item);
+          }
+        }
+
+        console.log("Target Bay Containers:", targets);
+        setTargetContainers(targets);
+      }
+    };
+
+    fetchTargetContainers();
+  }, [droppedItems, containers, port, section, token]);
+
+  // Update validation
+  const canProceedToSectionTwo = async () => {
+    for (const item of droppedItems) {
+      const isInBay = item.area.startsWith("bay-");
+      if (!isInBay) continue;
+
+      const container = containers.find((c) => c.id === item.id);
+      if (!container) continue;
+
+      const card = await fetchCardById(container.card_id);
+      if (!card) continue;
+
+      if (card.destination === port) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Update handler
+  const handleNextSection = async () => {
+    const canProceed = await canProceedToSectionTwo();
+    if (!canProceed) {
+      toast.error("Please unload all containers destined for your port first!", {
+        position: "top-center",
+        autoClose: 3000,
+      });
+      return;
+    }
+    setSection(2);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-6">
@@ -790,6 +872,9 @@ const Simulation = () => {
                   handleRejectCard={handleRejectCard}
                   handleDragStart={handleDragStart}
                   handleDragEnd={handleDragEnd}
+                  section={section}
+                  onNextSection={handleNextSection}
+                  targetContainers={targetContainers}
                 />
               </TabPanel>
 
