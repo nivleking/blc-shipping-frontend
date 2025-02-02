@@ -321,7 +321,7 @@ const Simulation = () => {
         },
       });
 
-      socket.emit("update_rankings", {
+      socket.emit("rankings_updated", {
         roomId,
         rankings: response.data,
       });
