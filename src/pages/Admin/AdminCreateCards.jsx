@@ -265,11 +265,11 @@ const AdminCreateCards = () => {
                 portStats={portStats}
                 generateFormData={generateFormData}
                 generateErrors={generateErrors}
-                onGenerateChange={handleGenerateChange}
-                onPresetSelect={handlePresetSelect}
-                onPortSelect={handlePortSelect}
-                onRevenueSelect={handleRevenueSelect}
-                onQuantitySelect={handleQuantitySelect}
+                handleGenerateChange={handleGenerateChange}
+                handlePresetSelect={handlePresetSelect}
+                handlePortSelect={handlePortSelect}
+                handleRevenueSelect={handleRevenueSelect}
+                handleQuantitySelect={handleQuantitySelect}
                 formatIDR={formatIDR}
                 deckId={deckId}
                 refreshCards={fetchDeck}
