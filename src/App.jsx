@@ -15,6 +15,7 @@ import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import AdminDecks from "./pages/Admin/AdminDecks";
 import RoomDetail from "./pages/Admin/RoomDetail";
+import AdminCreateLayouts from "./pages/Admin/AdminCreateLayouts";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -90,6 +91,15 @@ const App = () => {
           element={
             <AdminLayout>
               <RoomDetail />
+            </AdminLayout>
+          }
+        />
+
+        <Route
+          path="/bay-layouts"
+          element={
+            <AdminLayout>
+              <AdminCreateLayouts />
             </AdminLayout>
           }
         />
