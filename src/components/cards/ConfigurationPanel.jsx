@@ -7,6 +7,63 @@ import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
 import { BiAnchor } from "react-icons/bi";
 import { FaShip } from "react-icons/fa";
+import { BsBoxSeam, BsGear, BsRocket, BsLightningCharge } from "react-icons/bs";
+
+// Add preset configs array
+const PRESET_CONFIGS = [
+  {
+    title: "Basic Setup",
+    desc: "15 containers, 8 sales calls per port with 250M revenue",
+    icon: <BsBoxSeam className="text-blue-500" size={24} />,
+    config: {
+      totalRevenueEachPort: 250000000,
+      totalContainerQuantityEachPort: 15,
+      salesCallCountEachPort: 8,
+      ports: 4,
+      quantityStandardDeviation: 1,
+      revenueStandardDeviation: 500000,
+    },
+  },
+  {
+    title: "Medium Volume",
+    desc: "25 containers, 10 sales calls per port with 350M revenue",
+    icon: <BsGear className="text-blue-500" size={24} />,
+    config: {
+      totalRevenueEachPort: 350000000,
+      totalContainerQuantityEachPort: 25,
+      salesCallCountEachPort: 10,
+      ports: 4,
+      quantityStandardDeviation: 1,
+      revenueStandardDeviation: 500000,
+    },
+  },
+  {
+    title: "High Revenue",
+    desc: "30 containers, 10 sales calls per port with 550M revenue",
+    icon: <BsRocket className="text-blue-500" size={24} />,
+    config: {
+      totalRevenueEachPort: 550000000,
+      totalContainerQuantityEachPort: 30,
+      salesCallCountEachPort: 10,
+      ports: 4,
+      quantityStandardDeviation: 1,
+      revenueStandardDeviation: 500000,
+    },
+  },
+  {
+    title: "Maximum Scale",
+    desc: "50 containers, 10 sales calls per port with 1B revenue",
+    icon: <BsLightningCharge className="text-blue-500" size={24} />,
+    config: {
+      totalRevenueEachPort: 1000000000,
+      totalContainerQuantityEachPort: 50,
+      salesCallCountEachPort: 10,
+      ports: 4,
+      quantityStandardDeviation: 1,
+      revenueStandardDeviation: 500000,
+    },
+  },
+];
 
 const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePresetSelect, handlePortSelect, handleRevenueSelect, handleQuantitySelect, handleGenerateChange, deckId, refreshCards, refreshContainers }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,14 +162,6 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
               >
                 Manual Generate
               </Tab>
-              {/* <Tab
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
-                ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
-                }
-              >
-                Quick Presets
-              </Tab> */}
               <Tab
                 className={({ selected }) =>
                   `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
@@ -120,6 +169,14 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                 }
               >
                 Auto Generate
+              </Tab>
+              <Tab
+                className={({ selected }) =>
+                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+                ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
+                }
+              >
+                Quick Presets
               </Tab>
             </TabList>
 
@@ -425,6 +482,31 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                   </div>
                 </div>
               </TabPanel>
+              <TabPanel>
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Presets</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {PRESET_CONFIGS.map((preset) => (
+                      <button
+                        key={preset.title}
+                        onClick={() => handlePresetSelect(preset.config)}
+                        className="group p-6 rounded-xl border-2 border-gray-200
+            hover:border-blue-500 transition-all duration-200
+            bg-white shadow-sm hover:shadow-md text-left"
+                      >
+                        <div className="flex items-center space-x-3 mb-3">
+                          <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">{preset.icon}</div>
+                          <h3 className="font-semibold text-gray-800">{preset.title}</h3>
+                        </div>
+                        <p className="text-sm text-gray-600">{preset.desc}</p>
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="text-xs text-gray-500">Revenue: {formatIDR(preset.config.totalRevenueEachPort)}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </TabPanel>
             </TabPanels>
           </TabGroup>
         </div>
@@ -434,55 +516,3 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
 };
 
 export default ConfigurationPanel;
-
-// <TabPanel>
-//                 <div className="grid grid-cols-2 gap-4">
-//                   {/* Preset Cards */}
-//                   {[
-//                     {
-//                       title: "Standard",
-//                       desc: "15 containers per port - 8 sales cards per port - 250M revenue",
-//                       icon: <BsBoxSeam className="text-blue-500" size={24} />,
-//                       config: {
-//                         totalRevenueEachPort: 250000000,
-//                         totalContainerQuantityEachPort: 15,
-//                         salesCallCountEachPort: 8,
-//                       },
-//                     },
-//                     {
-//                       title: "Medium Revenue",
-//                       desc: "35 containers per port - 10 sales cards per port - 350M revenue",
-//                       icon: <BsGear className="text-blue-500" size={24} />,
-//                       config: {
-//                         totalRevenueEachPort: 350000000,
-//                         totalContainerQuantityEachPort: 25,
-//                         salesCallCountEachPort: 10,
-//                       },
-//                     },
-//                     {
-//                       title: "High Volume",
-//                       desc: "50 containers per port - 10 sales cards per port - 1B revenue",
-//                       icon: <BsLightning className="text-blue-500" size={24} />,
-//                       config: {
-//                         totalRevenueEachPort: 1000000000,
-//                         totalContainerQuantityEachPort: 50,
-//                         salesCallCountEachPort: 10,
-//                       },
-//                     },
-//                   ].map((preset) => (
-//                     <button
-//                       key={preset.title}
-//                       onClick={() => handlePresetSelect(preset.config)}
-//                       className="p-6 rounded-xl border-2 border-gray-200
-//                                hover:border-blue-500 transition-colors
-//                                bg-white shadow-sm hover:shadow-md"
-//                     >
-//                       <div className="flex items-center space-x-3 mb-3">
-//                         {preset.icon}
-//                         <h3 className="font-semibold text-gray-800">{preset.title}</h3>
-//                       </div>
-//                       <p className="text-sm text-gray-600">{preset.desc}</p>
-//                     </button>
-//                   ))}
-//                 </div>
-//               </TabPanel>
