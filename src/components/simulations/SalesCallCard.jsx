@@ -1,4 +1,4 @@
-const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR, handleAcceptCard, handleRejectCard }) => {
+const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR, handleAcceptCard, handleRejectCard, isProcessingCard }) => {
   if (!salesCallCards.length || currentCardIndex >= salesCallCards.length) {
     return null;
   }
@@ -74,11 +74,23 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
           </tr>
           <tr>
             <td colSpan={2} className="font-medium py-2 text-center">
-              <button onClick={() => handleAcceptCard(currentCard.id)} className="p-2 bg-green-500 text-white rounded mr-2">
-                Accept
+              <button
+                onClick={() => handleAcceptCard(currentCard.id)}
+                disabled={isProcessingCard}
+                className={`p-2 bg-green-500 text-white rounded mr-2 transition-opacity
+                ${isProcessingCard ? "opacity-50 cursor-not-allowed" : "hover:bg-green-600"}
+              `}
+              >
+                {isProcessingCard ? "Processing..." : "Accept"}
               </button>
-              <button onClick={() => handleRejectCard(currentCard.id)} className="p-2 bg-red-500 text-white rounded">
-                Reject
+              <button
+                onClick={() => handleRejectCard(currentCard.id)}
+                disabled={isProcessingCard}
+                className={`p-2 bg-red-500 text-white rounded transition-opacity
+                ${isProcessingCard ? "opacity-50 cursor-not-allowed" : "hover:bg-red-600"}
+              `}
+              >
+                {isProcessingCard ? "Please wait..." : "Reject"}
               </button>
             </td>
           </tr>

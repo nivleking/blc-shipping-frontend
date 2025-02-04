@@ -8,6 +8,7 @@ import PortLegend from "../cards/PortLegend";
 const Stowage = ({
   bayCount,
   baySize,
+  bayTypes,
   droppedItems,
   draggingItem,
   dockSize,
@@ -54,7 +55,7 @@ const Stowage = ({
               Ship Bay
             </h3>
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <ShipBay bayCount={bayCount} baySize={baySize} droppedItems={droppedItems} draggingItem={draggingItem} />
+              <ShipBay bayCount={bayCount} baySize={baySize} bayTypes={bayTypes} droppedItems={droppedItems} draggingItem={draggingItem} containers={containers} />
             </div>
           </div>
 
@@ -69,7 +70,7 @@ const Stowage = ({
                 Ship Dock
               </h3>
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} />
+                <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} containers={containers} />
               </div>
             </div>
 
@@ -101,6 +102,7 @@ const Stowage = ({
                   transform: "scale(1.05)",
                   opacity: 0.9,
                 }}
+                type={containers.find((c) => c.id === draggingItem)?.type || "Dry"}
               />
             </div>
           )}

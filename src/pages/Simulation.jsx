@@ -24,6 +24,7 @@ const Simulation = () => {
   const [droppedItems, setDroppedItems] = useState([]);
   const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
   const [bayCount, setBayCount] = useState(1);
+  const [bayTypes, setBayTypes] = useState([]);
   const [bayData, setBayData] = useState([]);
   const [dockData, setDockData] = useState([]);
   const [dockSize, setDockSize] = useState({ rows: 3, columns: 5 });
@@ -38,6 +39,8 @@ const Simulation = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [revenue, setRevenue] = useState(0);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [showSwapAlert, setShowSwapAlert] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   const [selectedTab, setSelectedTab] = useState(1);
 
   useEffect(() => {
@@ -118,20 +121,39 @@ const Simulation = () => {
     fetchArenaData();
     fetchDockData();
 
-    socket.on("swap_bays", () => {
-      setIsSwapping(true);
-      setTimeout(() => {
-        setIsSwapping(false);
-        setSection(1);
-        fetchArenaData();
-        fetchDockData();
-      }, 3000);
+    socket.on("swap_bays", async () => {
+      setShowSwapAlert(true);
+
+      let timer = 5;
+      setCountdown(timer);
+
+      const countdownInterval = setInterval(() => {
+        timer -= 1;
+        setCountdown(timer);
+
+        if (timer === 0) {
+          clearInterval(countdownInterval);
+          setShowSwapAlert(false);
+          handleSwapProcess();
+        }
+      }, 1000);
     });
 
-    return () => {
-      socket.off("swap_bays");
-    };
+    return () => socket.off("swap_bays");
   }, [roomId, user, token]);
+
+  const handleSwapProcess = async () => {
+    setIsSwapping(true);
+    try {
+      await Promise.all([fetchArenaData(), fetchDockData()]);
+      setSection(1);
+    } catch (error) {
+      console.error("Error updating after swap:", error);
+      toast.error("Failed to update bay data");
+    } finally {
+      setIsSwapping(false);
+    }
+  };
 
   async function fetchArenaData() {
     if (!user || !user.id) {
@@ -261,9 +283,10 @@ const Simulation = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const { baySize, bayCount } = response.data;
+      const { baySize, bayCount, bayTypes } = response.data;
       setBaySize(baySize);
       setBayCount(bayCount);
+      setBayTypes(bayTypes || Array(bayCount).fill("dry")); // Set default if not provided
     } catch (error) {
       console.error("There was an error fetching the configuration!", error);
     }
@@ -275,14 +298,24 @@ const Simulation = () => {
     }
   }, [salesCallCards, currentCardIndex]);
 
+  const [isProcessingCard, setIsProcessingCard] = useState(false);
+
   async function handleAcceptCard(cardId) {
     if (section !== 2) {
       toast.error("Please complete section 1 first!");
       return;
     }
 
+    if (isProcessingCard) {
+      return; // Prevent duplicate submissions
+    }
+
     try {
+      setIsProcessingCard(true); // Disable actions
+
       const currentCard = salesCallCards.find((card) => card.id === cardId);
+      setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
+
       const cardRevenue = parseFloat(currentCard.revenue) || 0;
       const newRevenue = parseFloat(revenue) + cardRevenue;
 
@@ -350,48 +383,40 @@ const Simulation = () => {
         });
       });
 
-      const tempRes = await api.post(
-        "/ship-bays",
-        {
+      await Promise.all([
+        api.post("/ship-bays", {
           arena: newBayData,
           user_id: user.id,
           room_id: roomId,
           revenue: newRevenue,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("Temp res:", tempRes);
-
-      // Update dock
-      await api.post(
-        "/ship-docks",
-        {
+        }),
+        api.post("/ship-docks", {
           arena: newDockData,
           user_id: user.id,
           room_id: roomId,
           dock_size: dockSize,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        }),
+      ]);
 
       // Update states
       setBayData(newBayData);
       setDockData(newDockData);
-      setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
       setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
 
       toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
     } catch (error) {
-      console.error("Error accepting sales call card:", error);
-      toast.error("Failed to add containers to dock");
+      console.error("Error accepting card:", error);
+      toast.error("Failed to process card");
+
+      // Revert UI changes on error
+      // setSalesCallCards((prevCards) => {
+      //   if (!prevCards.find((c) => c.id === cardId)) {
+      //     return [...prevCards, currentCard];
+      //   }
+      //   return prevCards;
+      // });
+    } finally {
+      setIsProcessingCard(false); // Re-enable actions
     }
   }
 
@@ -518,11 +543,45 @@ const Simulation = () => {
     return false;
   };
 
+  // Add helper function to check container-bay compatibility
+  const isValidContainerForBay = (container, bayIndex) => {
+    if (!container || bayIndex === undefined) return false;
+
+    const bayType = bayTypes[bayIndex];
+
+    // Dry containers can go anywhere
+    if (container.type === "Dry") return true;
+
+    // Reefer containers can only go in reefer bays
+    if (container.type === "Reefer") {
+      return bayType === "reefer";
+    }
+
+    return false;
+  };
+
   async function handleDragEnd(event) {
     const { active, over } = event;
     setDraggingItem(null);
 
     if (!over) return;
+
+    const container = containers.find((c) => c.id === active.id);
+    if (!container) return;
+
+    const [type, bayIndex] = over.id.split("-");
+
+    // Only validate bay types for bay placements
+    if (type === "bay") {
+      // Check if container type is valid for this bay
+      if (!isValidContainerForBay(container, parseInt(bayIndex))) {
+        toast.error(container.type === "Reefer" ? "Reefer containers can only be placed in reefer bays" : "Invalid container placement", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        return;
+      }
+    }
 
     const activeItem = droppedItems.find((item) => item.id === active.id);
     if (activeItem && activeItem.area === over.id) return;
@@ -767,14 +826,22 @@ const Simulation = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-6">
       {/* Overlay Modal */}
-      {isSwapping && (
+      {(showSwapAlert || isSwapping) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl p-8 shadow-2xl max-w-md w-full mx-4">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-              <h3 className="text-xl font-semibold text-gray-800">Swapping Bays</h3>
-              <p className="text-gray-500 text-center">Please wait while the bays are being swapped...</p>
-            </div>
+            {showSwapAlert ? (
+              <div className="flex flex-col items-center space-y-4">
+                <div className="text-2xl font-bold text-red-600 animate-pulse">SWAPPING BAYS ALERT!!!</div>
+                <div className="text-6xl font-bold text-blue-600">{countdown}</div>
+                <p className="text-gray-600">Please wait, bay swap will begin shortly...</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+                <h3 className="text-xl font-semibold text-gray-800">Swapping Bays in Progress</h3>
+                <p className="text-gray-500 text-center">Please wait while the bays are being swapped...</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -860,6 +927,7 @@ const Simulation = () => {
                 <Stowage
                   bayCount={bayCount}
                   baySize={baySize}
+                  bayTypes={bayTypes}
                   droppedItems={droppedItems}
                   draggingItem={draggingItem}
                   dockSize={dockSize}

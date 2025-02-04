@@ -24,6 +24,7 @@ const AdminHome = () => {
     max_users: 0,
     bay_size: {},
     bay_count: "",
+    bay_types: [],
   });
   const [errors, setErrors] = useState({});
   const [decks, setDecks] = useState([]);
@@ -35,6 +36,7 @@ const AdminHome = () => {
   const [showConfigPopup, setShowConfigPopup] = useState(false);
   const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
   const [bayCount, setBayCount] = useState(1);
+  const [bayTypes, setBayTypes] = useState(Array(bayCount).fill("dry"));
   const [isBayConfigured, setIsBayConfigured] = useState(false);
 
   const [query, setQuery] = useState("");
@@ -224,8 +226,31 @@ const AdminHome = () => {
     }));
   };
 
+  useEffect(() => {
+    setBayTypes((prevTypes) => {
+      // Create new array with current bay count length
+      const newTypes = Array(bayCount).fill("dry");
+
+      // Copy existing types for bays that still exist
+      for (let i = 0; i < Math.min(prevTypes.length, bayCount); i++) {
+        newTypes[i] = prevTypes[i];
+      }
+
+      return newTypes;
+    });
+  }, [bayCount]);
+
   const handleBayCountChange = (e) => {
-    setBayCount(parseInt(e.target.value));
+    const newCount = parseInt(e.target.value);
+    setBayCount(newCount);
+  };
+
+  const handleBayTypeChange = (index, type) => {
+    setBayTypes((prev) => {
+      const newTypes = [...prev];
+      newTypes[index] = type;
+      return newTypes;
+    });
   };
 
   const handleSaveConfig = () => {
@@ -233,6 +258,7 @@ const AdminHome = () => {
       ...prevData,
       bay_size: baySize,
       bay_count: bayCount,
+      bay_types: bayTypes,
     }));
     setShowConfigPopup(false);
     setIsBayConfigured(true);
@@ -458,35 +484,46 @@ const AdminHome = () => {
 
       {showConfigPopup && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl overflow-auto" style={{ width: "1000px", height: "500px" }}>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Configure Ship</h2>
-              <div className="flex gap-2">
-                <button onClick={() => setShowConfigPopup(false)} className="p-2 bg-gray-500 text-white rounded">
-                  Close
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[80vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-xl font-bold text-gray-800">Configure Ship Layout</h2>
+              <div className="flex gap-3">
+                <button onClick={() => setShowConfigPopup(false)} className="px-4 py-2 text-gray-600 hover:text-gray-800">
+                  Cancel
                 </button>
-                <button onClick={handleSaveConfig} className="p-2 bg-blue-500 text-white rounded">
-                  Save
+                <button onClick={handleSaveConfig} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  Save Configuration
                 </button>
               </div>
             </div>
-            <div className="flex mb-4">
-              <div className="mr-4">
-                <label className="block mb-2">Bay Size (Rows x Columns):</label>
-                <div className="flex items-center">
-                  <input max="7" type="number" name="rows" value={baySize.rows} onChange={handleBaySizeChange} min="1" className="w-12 p-1 border border-gray-300 rounded mr-2" />
-                  x
-                  <input max="8" type="number" name="columns" value={baySize.columns} onChange={handleBaySizeChange} min="1" className="w-12 p-1 border border-gray-300 rounded ml-2" />
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto p-6">
+              {/* Controls */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700">Bay Size</label>
+                  <div className="flex items-center gap-2">
+                    <input type="number" name="rows" max="7" value={baySize.rows} onChange={handleBaySizeChange} className="w-20 p-2 border rounded-lg" />
+                    <span className="text-gray-500">×</span>
+                    <input type="number" name="columns" max="8" value={baySize.columns} onChange={handleBaySizeChange} className="w-20 p-2 border rounded-lg" />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-700">Number of Bays</label>
+                  <input type="number" max="8" value={bayCount} onChange={handleBayCountChange} className="w-20 p-2 border rounded-lg" />
                 </div>
               </div>
+
+              {/* Preview */}
               <div>
-                <label className="block mb-2">Number of Bays:</label>
-                <input max="8" type="number" value={bayCount} onChange={handleBayCountChange} min="1" className="w-12 p-1 border border-gray-300 rounded" />
+                <h3 className="text-sm font-medium text-gray-700 mb-4">Layout Preview</h3>
+                <div className="border rounded-lg bg-gray-50 p-4">
+                  <RenderShipBayLayout bayCount={bayCount} baySize={baySize} bayTypes={bayTypes} onBayTypeChange={handleBayTypeChange} />
+                </div>
               </div>
-            </div>
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">Ship Layout Preview</h3>
-              <RenderShipBayLayout bayCount={bayCount} baySize={baySize} />
             </div>
           </div>
         </div>

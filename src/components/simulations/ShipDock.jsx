@@ -2,7 +2,7 @@ import ContainerDock from "./ContainerDock";
 import DroppableCell from "./DroppableCell";
 import DraggableContainer from "./DraggableContainer";
 
-const ShipDock = ({ dockSize, paginatedItems, draggingItem }) => {
+const ShipDock = ({ dockSize, paginatedItems, draggingItem, containers }) => {
   return (
     <div className="flex flex-col items-center justify-center">
       <ContainerDock id="docks" rows={dockSize.rows} columns={dockSize.columns}>
@@ -19,6 +19,7 @@ const ShipDock = ({ dockSize, paginatedItems, draggingItem }) => {
                   text={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
                   isDragging={draggingItem === paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
                   color={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).color}
+                  type={containers.find((c) => c.id === paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id)?.type || "Dry"}
                 />
               )}
             </DroppableCell>

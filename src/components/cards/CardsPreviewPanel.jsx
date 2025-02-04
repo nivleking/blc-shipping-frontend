@@ -80,7 +80,7 @@ const CardsPreviewPanel = ({ currentCards, containers, formatIDR, filterType, se
             <div className="p-4">
               <div className="flex justify-between items-center mb-3">
                 <span className="font-semibold text-base">
-                  {card.origin} → {card.destination}
+                  ({card.id}) {card.origin} → {card.destination}
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-sm
