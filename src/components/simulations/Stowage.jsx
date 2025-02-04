@@ -24,6 +24,7 @@ const Stowage = ({
   section,
   onNextSection,
   targetContainers,
+  isProcessingCard,
 }) => {
   return (
     <>
@@ -84,7 +85,15 @@ const Stowage = ({
                   Sales Calls
                 </h3>
                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                  <SalesCallCard salesCallCards={salesCallCards} currentCardIndex={currentCardIndex} containers={containers} formatIDR={formatIDR} handleAcceptCard={handleAcceptCard} handleRejectCard={handleRejectCard} />
+                  <SalesCallCard
+                    salesCallCards={salesCallCards}
+                    currentCardIndex={currentCardIndex}
+                    containers={containers}
+                    formatIDR={formatIDR}
+                    handleAcceptCard={handleAcceptCard}
+                    handleRejectCard={handleRejectCard}
+                    isProcessingCard={isProcessingCard}
+                  />
                 </div>
               </div>
             )}

@@ -3,18 +3,21 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  preview: {
-    host: "0.0.0.0", // Changed from true to "0.0.0.0"
-    port: 5173,
-  },
   server: {
-    host: "0.0.0.0", // Added this line
+    host: true,
+    port: 5173,
+    strictPort: true,
     proxy: {
       "/api": {
-        target: "http://147.93.108.193host:8000",
+        target: "http://localhost:8000", // gunakan nama service
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        secure: false,
       },
     },
+  },
+  preview: {
+    host: true,
+    port: 5173,
+    strictPort: true,
   },
 });

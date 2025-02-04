@@ -27,10 +27,10 @@ const Simulation = () => {
   const [bayTypes, setBayTypes] = useState([]);
   const [bayData, setBayData] = useState([]);
   const [dockData, setDockData] = useState([]);
-  const [dockSize, setDockSize] = useState({ rows: 3, columns: 5 });
+  const [dockSize, setDockSize] = useState({ rows: 6, columns: 6 });
   const [currentPage, setCurrentPage] = useState(0);
   const [draggingItem, setDraggingItem] = useState(null);
-  const itemsPerPage = 15;
+  const itemsPerPage = 30;
 
   const [salesCallCards, setSalesCallCards] = useState([]);
   const [containers, setContainers] = useState([]);
@@ -142,6 +142,7 @@ const Simulation = () => {
     return () => socket.off("swap_bays");
   }, [roomId, user, token]);
 
+  // Update swap bays handler to reset section
   const handleSwapProcess = async () => {
     setIsSwapping(true);
     try {
@@ -182,6 +183,7 @@ const Simulation = () => {
       // Get revenue from response
       setRevenue(response.data.revenue || 0);
       setPort(response.data.port);
+      setSection(response.data.section === "section1" ? 1 : 2);
       console.log("Port:", response.data.port);
 
       const containersResponse = await api.get("/containers");
@@ -263,7 +265,7 @@ const Simulation = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const dockSize = JSON.parse(response.data.dock_size || '{"rows": 3, "columns": 5}');
+      const dockSize = JSON.parse(response.data.dock_size || '{"rows": 6, "columns": 6}');
       console.log("Dock Size:", dockSize);
 
       setDockSize(dockSize);
@@ -283,10 +285,10 @@ const Simulation = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const { baySize, bayCount, bayTypes } = response.data;
+      const { baySize, bayCount, bayTypes, section } = response.data;
       setBaySize(baySize);
       setBayCount(bayCount);
-      setBayTypes(bayTypes || Array(bayCount).fill("dry")); // Set default if not provided
+      setBayTypes(bayTypes || Array(bayCount).fill("dry"));
     } catch (error) {
       console.error("There was an error fetching the configuration!", error);
     }
@@ -402,6 +404,18 @@ const Simulation = () => {
       setBayData(newBayData);
       setDockData(newDockData);
       setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
+
+      await api.put(
+        `/ship-bays/${roomId}/${user.id}/section`,
+        {
+          section: "section2",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
     } catch (error) {
@@ -671,6 +685,18 @@ const Simulation = () => {
         room_id: roomId,
         revenue: revenue,
       });
+
+      await api.put(
+        `/ship-bays/${roomId}/${user.id}/section`,
+        {
+          section: section === 1 ? "section1" : "section2",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       console.log("API call successful for bays", resBay.data);
 
       const resDock = await api.post("/ship-docks", {
@@ -810,7 +836,7 @@ const Simulation = () => {
     return true;
   };
 
-  // Update handler
+  // Update handleNextSection to save section to database
   const handleNextSection = async () => {
     const canProceed = await canProceedToSectionTwo();
     if (!canProceed) {
@@ -820,7 +846,30 @@ const Simulation = () => {
       });
       return;
     }
-    setSection(2);
+
+    try {
+      // Update section in database
+      await api.put(
+        `/ship-bays/${roomId}/${user.id}/section`,
+        {
+          section: "section2",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update local state
+      setSection(2);
+    } catch (error) {
+      console.error("Error updating section:", error);
+      toast.error("Failed to update section", {
+        position: "top-center",
+        autoClose: 3000,
+      });
+    }
   };
 
   return (
@@ -943,6 +992,7 @@ const Simulation = () => {
                   section={section}
                   onNextSection={handleNextSection}
                   targetContainers={targetContainers}
+                  isProcessingCard={isProcessingCard}
                 />
               </TabPanel>
 

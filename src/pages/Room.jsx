@@ -170,7 +170,7 @@ const Room = () => {
       console.log("Users", users);
 
       const dockLayout = Array.from({ length: 3 }).map(() => Array(5).fill(null));
-      const dockSize = { rows: 3, columns: 5 };
+      const dockSize = { rows: 6, columns: 6 };
 
       for (let i = 0; i < users.length; i++) {
         const user = users[i];
@@ -255,6 +255,7 @@ const Room = () => {
 
   async function handleSwapBays() {
     try {
+      // First swap the bays
       await api.put(
         `/rooms/${roomId}/swap-bays`,
         {},
@@ -265,6 +266,32 @@ const Room = () => {
         }
       );
 
+      // Get all users in the room
+      const usersResponse = await api.get(`/rooms/${roomId}/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const roomUsers = usersResponse.data;
+
+      // Update section for each user's ship bay
+      await Promise.all(
+        roomUsers.map((user) =>
+          api.put(
+            `/ship-bays/${roomId}/${user.id}/section`,
+            {
+              section: "section1",
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+        )
+      );
+
+      // Emit swap_bays event to notify all clients
       socket.emit("swap_bays", roomId);
 
       // Show toast notification for admin
@@ -330,10 +357,10 @@ const Room = () => {
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Enhanced Header */}
-      <div className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 py-3 shadow-md">
-        <div className="relative overflow-hidden h-10">
-          <div className="absolute whitespace-nowrap animate-marquee-top text-white text-xl font-bold marquee-container italic flex items-center justify-center w-full">
-            <span className="mr-4">⚓</span> WAITING ROOM <span className="ml-4">⚓</span>
+      <div className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-4 shadow-lg">
+        <div className="container mx-auto">
+          <div className="flex items-center justify-start text-white">
+            <h1 className="text-xl font-bold tracking-wide">{user && user.name}</h1>
           </div>
         </div>
       </div>
