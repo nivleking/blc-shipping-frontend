@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaCcMastercard, FaHome, FaUserShield, FaUsers } from "react-icons/fa";
+import { FaCcMastercard, FaHome, FaShip, FaUserShield, FaUsers } from "react-icons/fa";
 
 const AdminSidebar = ({ isSidebarOpen }) => {
   return (
@@ -31,6 +31,12 @@ const AdminSidebar = ({ isSidebarOpen }) => {
             <Link to="/admin-decks" className="flex items-center p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors">
               <FaCcMastercard className={`mr-3 ${isSidebarOpen ? "text-lg" : "text-sm"}`} />
               <span className={`${!isSidebarOpen && "hidden"}`}>Cards & Decks</span>
+            </Link>
+          </li>
+          <li>
+            <Link to="/bay-layouts" className="flex items-center p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors">
+              <FaShip className={`mr-3 ${isSidebarOpen ? "text-lg" : "text-sm"}`} />
+              <span className={`${!isSidebarOpen && "hidden"}`}>Ship Bay Layouts</span>
             </Link>
           </li>
         </ul>
