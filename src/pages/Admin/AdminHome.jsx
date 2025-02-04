@@ -12,20 +12,24 @@ import { AiFillDelete, AiFillEye, AiFillFolderOpen } from "react-icons/ai";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
 
+const initialFormState = {
+  id: "",
+  name: "",
+  description: "",
+  deck_id: "",
+  max_users: 0,
+  bay_size: { rows: 1, columns: 1 },
+  bay_count: 1,
+  bay_types: ["dry"],
+  total_rounds: 1,
+  cards_limit_per_round: 1,
+};
+
 const AdminHome = () => {
   const { user, token } = useContext(AppContext);
   const [rooms, setRooms] = useState([]);
   const [admins, setAdmins] = useState({});
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    description: "",
-    deck_id: "",
-    max_users: 0,
-    bay_size: {},
-    bay_count: "",
-    bay_types: [],
-  });
+  const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [decks, setDecks] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: "name", direction: "ascending" });
@@ -41,6 +45,17 @@ const AdminHome = () => {
 
   const [query, setQuery] = useState("");
   const [selectedDeck, setSelectedDeck] = useState(null);
+
+  // Update form reset logic
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setBaySize({ rows: 1, columns: 1 });
+    setBayCount(1);
+    setBayTypes(["dry"]);
+    setSelectedDeck(null);
+    setIsBayConfigured(false);
+    setErrors({});
+  };
 
   useEffect(() => {
     if (token) {
@@ -88,6 +103,7 @@ const AdminHome = () => {
     }
   }
 
+  // Update createRoom function
   async function createRoom(e) {
     e.preventDefault();
     try {
@@ -99,21 +115,11 @@ const AdminHome = () => {
 
       if (response.status === 200) {
         setRooms((prevRooms) => [...prevRooms, response.data]);
-        toast.success("Room created successfully!", { toastId: "room-create" });
-        console.log("Room created:", response.data);
-        setIsBayConfigured(false);
-        setFormData({
-          id: "",
-          name: "",
-          description: "",
-          deck_id: "",
-          max_users: 0,
-          bay_size: {},
-          bay_count: "",
-        });
+        toast.success("Room created successfully!");
+        resetForm(); // Use new reset function
       }
     } catch (error) {
-      setErrors(error.response.data.errors);
+      setErrors(error.response?.data?.errors || {});
       console.error("Error creating room:", error);
     }
   }
@@ -155,7 +161,7 @@ const AdminHome = () => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value,
+      [name]: value || "",
     }));
   }
 
@@ -253,16 +259,17 @@ const AdminHome = () => {
     });
   };
 
+  // Update handleSaveConfig
   const handleSaveConfig = () => {
     setFormData((prevData) => ({
       ...prevData,
-      bay_size: baySize,
-      bay_count: bayCount,
-      bay_types: bayTypes,
+      bay_size: baySize || { rows: 1, columns: 1 },
+      bay_count: bayCount || 1,
+      bay_types: bayTypes.length ? bayTypes : ["dry"],
     }));
     setShowConfigPopup(false);
     setIsBayConfigured(true);
-    toast.success("Ship bay layout saved successfully!", { toastId: "config-save" });
+    toast.success("Ship bay layout saved successfully!");
   };
 
   // Add this filter function before return
@@ -382,6 +389,36 @@ const AdminHome = () => {
                 className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 readOnly
                 style={{ backgroundColor: "#f9f9f9", cursor: "not-allowed", color: "#666", fontWeight: "bold" }}
+              />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor="total_rounds" className="block text-gray-700 font-semibold">
+                Total Rounds (Weeks)
+              </label>
+              <input
+                type="number"
+                id="total_rounds"
+                name="total_rounds"
+                min="1"
+                value={formData.total_rounds}
+                onChange={handleChange}
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="Enter total rounds"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor="cards_limit_per_round" className="block text-gray-700 font-semibold">
+                Cards Limit Per Round
+              </label>
+              <input
+                type="number"
+                id="cards_limit_per_round"
+                name="cards_limit_per_round"
+                min="1"
+                value={formData.cards_limit_per_round}
+                onChange={handleChange}
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="Enter cards limit per round"
               />
             </div>
           </div>
