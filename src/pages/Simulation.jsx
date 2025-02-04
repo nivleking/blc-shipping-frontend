@@ -93,7 +93,9 @@ const Simulation = () => {
       const cardTemporaries = cardTemporaryResponse.data;
 
       const filteredCards = deckResponse.data.cards
-        .filter((card) => card.origin === userPort)
+        .filter((card) => {
+          return card.origin === userPort;
+        })
         .filter((card) => {
           const cardTemp = cardTemporaries.find((ct) => ct.card_id === card.id);
           return !cardTemp || cardTemp.status === "selected";
@@ -362,11 +364,6 @@ const Simulation = () => {
         },
       });
 
-      socket.emit("rankings_updated", {
-        roomId,
-        rankings: response.data,
-      });
-
       const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
         return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
           return Array.from({ length: baySize.columns }).map((_, colIndex) => {
@@ -418,6 +415,11 @@ const Simulation = () => {
       );
 
       toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
+
+      socket.emit("rankings_updated", {
+        roomId,
+        rankings: response.data,
+      });
     } catch (error) {
       console.error("Error accepting card:", error);
       toast.error("Failed to process card");

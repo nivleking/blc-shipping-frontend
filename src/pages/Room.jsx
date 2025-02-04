@@ -80,6 +80,7 @@ const Room = () => {
       setRoomStatus(roomResponse.data.status);
       setDeckId(deckId);
 
+      // Fetch admin details
       const adminResponse = await api.get(`/users/${adminId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -87,6 +88,7 @@ const Room = () => {
       });
       setAdminName(adminResponse.data.name);
 
+      // Fetch users
       const usersResponse = await api.get(`/rooms/${roomId}/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -94,12 +96,27 @@ const Room = () => {
       });
       setUsers(usersResponse.data || []);
 
+      // Fetch origins
       const originsResponse = await api.get(`/rooms/${roomId}/deck-origins`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       setOrigins(originsResponse.data);
+
+      const userPortsResponse = await api.get(`/rooms/${roomId}/user-port2`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const portAssignments = {};
+      userPortsResponse.data.forEach((shipBay) => {
+        portAssignments[shipBay.user_id] = shipBay.port;
+      });
+
+      setAssignedPorts(portAssignments);
+      setPortsSet(Object.keys(portAssignments).length > 0);
     } catch (error) {
       console.error("There was an error fetching the room details!", error);
     }
@@ -309,6 +326,67 @@ const Room = () => {
     }
   }
 
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [swapMap, setSwapMap] = useState({});
+
+  const handleSwapChange = (originPort, targetPort) => {
+    console.log(`Swapping from ${originPort} to ${targetPort}`);
+
+    setSwapMap((prev) => ({
+      ...prev,
+      [originPort]: targetPort,
+    }));
+  };
+
+  const handleCustomSwap = async () => {
+    try {
+      console.log("Sending swap map:", swapMap);
+
+      const response = await api.put(
+        `/rooms/${roomId}/swap-bays-custom`,
+        { swapMap },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Swapped bays:", response);
+
+      // Get all users in the room
+      const usersResponse = await api.get(`/rooms/${roomId}/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const roomUsers = usersResponse.data;
+
+      // Update section for each user's ship bay
+      await Promise.all(
+        roomUsers.map((user) =>
+          api.put(
+            `/ship-bays/${roomId}/${user.id}/section`,
+            {
+              section: "section1",
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+        )
+      );
+
+      toast.success("Bays swapped successfully");
+      setShowSwapModal(false);
+      socket.emit("swap_bays", roomId);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to swap bays");
+    }
+  };
+
   async function handleSetPorts() {
     try {
       const res = await api.put(
@@ -517,11 +595,11 @@ const Room = () => {
             {user && user.is_admin === 1 && roomStatus === "active" && (
               <>
                 <button
-                  onClick={handleSwapBays}
+                  onClick={() => setShowSwapModal(true)}
                   className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                   </svg>
                   SWAP BAYS
                 </button>
@@ -600,6 +678,84 @@ const Room = () => {
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Confirm Ports
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSwapModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-xl transform transition-all">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-800">Custom Bay Swap</h2>
+              <p className="mt-1 text-sm text-gray-500">Select origin ports for each destination port. Each destination can only be selected once.</p>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              {/* Map through users to show port selections */}
+              {users.map((user) => {
+                const originPort = assignedPorts[user.id];
+                const usedDestinations = Object.values(swapMap);
+
+                // Available destinations are ports that:
+                // 1. Are not the current origin port
+                // 2. Haven't been selected as destinations already
+                // 3. Exist in assignedPorts
+                const availableDestinations = Object.values(assignedPorts).filter((port) => port !== originPort && !usedDestinations.includes(port));
+
+                // If this origin already has a destination mapped, add it to available options
+                if (swapMap[originPort]) {
+                  availableDestinations.push(swapMap[originPort]);
+                }
+
+                return (
+                  <div key={user.id} className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      DESTINATION: {originPort} (Player: {user.name})
+                    </label>
+                    <select
+                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                      value={swapMap[originPort] || ""}
+                      onChange={(e) => handleSwapChange(originPort, e.target.value)}
+                    >
+                      <option value="">Select origin port</option>
+                      {availableDestinations.map((port) => (
+                        <option key={port} value={port}>
+                          {port}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 rounded-b-lg">
+              <button
+                onClick={() => {
+                  setShowSwapModal(false);
+                  setSwapMap({});
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // Check if all origins have destinations
+                  const originPorts = Object.values(assignedPorts);
+                  const allPortsMapped = originPorts.every((port) => swapMap[port]);
+
+                  if (allPortsMapped) {
+                    handleCustomSwap();
+                  } else {
+                    toast.error("Please assign destinations for all ports");
+                  }
+                }}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Confirm Swap
               </button>
             </div>
           </div>
