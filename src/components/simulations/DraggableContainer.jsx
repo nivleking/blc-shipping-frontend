@@ -6,9 +6,23 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "Dry" }
 
   const defaultStyle = {
     transform: CSS.Transform.toString(transform),
-    zIndex: isDragging ? 1000 : "auto",
-    position: isDragging ? "fixed" : "relative",
-    backgroundColor: color,
+    zIndex: isDragging ? 9999 : "auto",
+    // position: isDragging ? "fixed" : "relative",
+    backgroundColor:
+      color === "yellow"
+        ? "#F59E0B" // yellow-500
+        : color === "blue"
+        ? "#3B82F6" // blue-500
+        : color === "green"
+        ? "#22C55E" // green-500
+        : color === "red"
+        ? "#EF4444" // red-500
+        : color === "purple"
+        ? "#8B5CF6" // purple-500
+        : color === "pink"
+        ? "#EC4899" // pink-500
+        : "#6B7280", // gray-500 default
+    color: color === "yellow" ? "black" : "white",
     width: "80px",
     height: "60px",
   };
