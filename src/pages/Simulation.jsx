@@ -43,6 +43,22 @@ const Simulation = () => {
   const [countdown, setCountdown] = useState(5);
   const [selectedTab, setSelectedTab] = useState(1);
 
+  const [section, setSection] = useState(1);
+  const [targetContainers, setTargetContainers] = useState([]);
+
+  const paginatedItems = droppedItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+
+  const [penalties, setPenalties] = useState(0);
+  const [rank, setRank] = useState(1);
+  const [moveStats, setMoveStats] = useState({
+    loadMoves: 0,
+    dischargeMoves: 0,
+    acceptedCards: 0,
+    rejectedCards: 0,
+    loadPenalty: 0,
+    dischargePenalty: 0,
+  });
+
   useEffect(() => {
     if (user && token) {
       fetchSalesCallCards();
@@ -58,6 +74,13 @@ const Simulation = () => {
 
     setIsLoading(true);
     try {
+      // Check limit first
+      const limitExceeded = await checkLimitCard();
+      if (limitExceeded) {
+        setSalesCallCards([]);
+        return;
+      }
+
       const roomResponse = await api.get(`/rooms/${roomId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -150,6 +173,7 @@ const Simulation = () => {
     try {
       await Promise.all([fetchArenaData(), fetchDockData()]);
       setSection(1);
+      setIsLimitExceeded(false);
     } catch (error) {
       console.error("Error updating after swap:", error);
       toast.error("Failed to update bay data");
@@ -310,11 +334,30 @@ const Simulation = () => {
       return;
     }
 
+    if (isLimitExceeded) {
+      toast.error("Card limit reached for this round!");
+      return;
+    }
+
     if (isProcessingCard) {
       return; // Prevent duplicate submissions
     }
 
     try {
+      // Track card acceptance
+      await api.post(
+        `/ship-bays/${roomId}/${user.id}/cards`,
+        {
+          card_action: "accept",
+          count: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setIsProcessingCard(true); // Disable actions
 
       const currentCard = salesCallCards.find((card) => card.id === cardId);
@@ -358,7 +401,7 @@ const Simulation = () => {
 
       setDroppedItems(updatedDroppedItems);
 
-      const response = await api.get(`/rooms/${roomId}/rankings`, {
+      const rankResponse = await api.get(`/rooms/${roomId}/rankings`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -414,11 +457,19 @@ const Simulation = () => {
         }
       );
 
+      await checkLimitCard();
+
       toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
 
       socket.emit("rankings_updated", {
         roomId,
-        rankings: response.data,
+        rankings: rankResponse.data,
+      });
+
+      // Request updated stats after accepting card
+      socket.emit("stats_requested", {
+        roomId,
+        userId: user.id,
       });
     } catch (error) {
       console.error("Error accepting card:", error);
@@ -436,8 +487,64 @@ const Simulation = () => {
     }
   }
 
+  const [isLimitExceeded, setIsLimitExceeded] = useState(false);
+  // Update check limit function
+  const checkLimitCard = async () => {
+    try {
+      const [shipBayResponse, roomResponse] = await Promise.all([
+        api.get(`ship-bays/${roomId}/${user.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        api.get(`rooms/${roomId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      const shipBay = shipBayResponse.data;
+      const room = roomResponse.data;
+
+      const isExceeded = shipBay.current_round_cards >= room.cards_limit_per_round;
+      setIsLimitExceeded(isExceeded);
+      return isExceeded;
+    } catch (error) {
+      console.error("Error checking card limit:", error);
+      return false;
+    }
+  };
+
+  // Add useEffect to check limit whenever section or stats change
+  useEffect(() => {
+    if (section === 2) {
+      checkLimitCard();
+    }
+  }, [section, moveStats.acceptedCards, moveStats.rejectedCards]);
+
   async function handleRejectCard(cardId) {
     try {
+      if (section !== 2) {
+        toast.error("Please complete section 1 first!");
+        return;
+      }
+
+      if (isLimitExceeded) {
+        toast.error("Card limit reached for this round!");
+        return;
+      }
+
+      // Track card rejection
+      await api.post(
+        `/ship-bays/${roomId}/${user.id}/cards`,
+        {
+          card_action: "reject",
+          count: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       await api.post(
         "/card-temporary/reject",
         {
@@ -449,8 +556,17 @@ const Simulation = () => {
           },
         }
       );
+
+      await checkLimitCard();
+
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
       setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
+
+      // Request updated stats after rejecting card
+      socket.emit("stats_requested", {
+        roomId,
+        userId: user.id,
+      });
     } catch (error) {
       console.error("Error rejecting sales call card:", error);
     }
@@ -680,6 +796,25 @@ const Simulation = () => {
     console.log("Room ID:", roomId);
 
     try {
+      // Determine move type
+      const fromArea = activeItem.area;
+      const toArea = over.id;
+      const moveType = fromArea.startsWith("bay") ? "discharge" : "load";
+
+      // Track the move
+      await api.post(
+        `/ship-bays/${roomId}/${user.id}/moves`,
+        {
+          move_type: moveType,
+          count: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       console.log("Revenue:", revenue);
       const resBay = await api.post("/ship-bays", {
         arena: newBayData,
@@ -723,6 +858,12 @@ const Simulation = () => {
           },
         }
       );
+      // Request updated stats after move
+      socket.emit("stats_requested", {
+        roomId,
+        userId: user.id,
+      });
+
       console.log("API call successful for logs", resLog.data);
     } catch (error) {
       console.error("API call failed", error);
@@ -769,12 +910,79 @@ const Simulation = () => {
     };
   }, [roomId, navigate]);
 
-  const paginatedItems = droppedItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  useEffect(() => {
+    if (user && token) {
+      // Initial fetch
+      fetchStats();
 
-  const [penalties, setPenalties] = useState(0);
-  const [rank, setRank] = useState(1);
-  const [section, setSection] = useState(1);
-  const [targetContainers, setTargetContainers] = useState([]);
+      socket.on("stats_requested", async ({ roomId: requestedRoomId, userId: requestedUserId }) => {
+        if (roomId === requestedRoomId && user.id === requestedUserId) {
+          const stats = await fetchStats();
+          socket.emit("stats_updated", {
+            roomId,
+            userId: user.id,
+            stats,
+          });
+        }
+      });
+
+      // Update socket handler with null check
+      socket.on("stats_updated", ({ roomId: updatedRoomId, userId: updatedUserId, stats }) => {
+        if (roomId === updatedRoomId && user.id === updatedUserId && stats) {
+          setMoveStats({
+            loadMoves: stats.load_moves || 0,
+            dischargeMoves: stats.discharge_moves || 0,
+            acceptedCards: stats.accepted_cards || 0,
+            rejectedCards: stats.rejected_cards || 0,
+            loadPenalty: stats.load_penalty || 0,
+            dischargePenalty: stats.discharge_penalty || 0,
+          });
+          setPenalties(stats.penalty || 0);
+          setRank(stats.rank || 1);
+        }
+      });
+
+      return () => {
+        socket.off("stats_requested");
+        socket.off("stats_updated");
+      };
+    }
+  }, [user, token, roomId]);
+
+  // Add new function to fetch stats
+  const fetchStats = async () => {
+    try {
+      const shipBayResponse = await api.get(`/ship-bays/${roomId}/${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const stats = shipBayResponse.data;
+      setMoveStats({
+        loadMoves: stats.load_moves || 0,
+        dischargeMoves: stats.discharge_moves || 0,
+        acceptedCards: stats.accepted_cards || 0,
+        rejectedCards: stats.rejected_cards || 0,
+        loadPenalty: stats.load_penalty || 0,
+        dischargePenalty: stats.discharge_penalty || 0,
+      });
+      setPenalties(stats.penalty || 0);
+
+      // Fetch rankings to determine user's rank
+      const rankingsResponse = await api.get(`/rooms/${roomId}/rankings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const rankings = rankingsResponse.data || [];
+      const userRank = rankings.findIndex((r) => r.user_id === user.id) + 1;
+      setRank(userRank || 1);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
 
   // Add new function to fetch card
   const fetchCardById = async (cardId) => {
@@ -902,7 +1110,7 @@ const Simulation = () => {
         <LoadingSpinner />
       ) : (
         <div className="container mx-auto px-6 space-y-6">
-          <HeaderCards port={port} revenue={revenue} penalties={penalties} rank={rank} section={section} formatIDR={formatIDR} />
+          <HeaderCards port={port} revenue={revenue} penalties={penalties} rank={rank} section={section} formatIDR={formatIDR} moves={moveStats} />
 
           <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
             <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
@@ -983,7 +1191,8 @@ const Simulation = () => {
                   draggingItem={draggingItem}
                   dockSize={dockSize}
                   paginatedItems={paginatedItems}
-                  salesCallCards={salesCallCards}
+                  isLimitExceeded={isLimitExceeded}
+                  salesCallCards={isLimitExceeded ? [] : salesCallCards}
                   currentCardIndex={currentCardIndex}
                   containers={containers}
                   formatIDR={formatIDR}

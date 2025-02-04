@@ -25,6 +25,8 @@ const Room = () => {
   const navigate = useNavigate();
   const [showRankings, setShowRankings] = useState(false);
   const [rankings, setRankings] = useState([]);
+  const [currentRound, setCurrentRound] = useState(1);
+  const [totalRounds, setTotalRounds] = useState(1);
 
   useEffect(() => {
     fetchRoomDetails();
@@ -75,9 +77,11 @@ const Room = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+      console.log("room res", roomResponse);
       const adminId = roomResponse.data.admin_id;
       const deckId = roomResponse.data.deck_id;
       setRoomStatus(roomResponse.data.status);
+      setTotalRounds(roomResponse.data.total_rounds);
       setDeckId(deckId);
 
       // Fetch admin details
@@ -117,6 +121,25 @@ const Room = () => {
 
       setAssignedPorts(portAssignments);
       setPortsSet(Object.keys(portAssignments).length > 0);
+
+      // Get users array from room response
+      const usersArray = JSON.parse(roomResponse.data.users || "[]");
+
+      // Check if there are any users before trying to access
+      if (roomStatus === "active") {
+        if (usersArray.length > 0) {
+          const firstUserId = usersArray[0]; // Get first user ID
+
+          // Get current round from first user's ship bay
+          const shipBayResponse = await api.get(`ship-bays/${roomId}/${firstUserId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          setCurrentRound(shipBayResponse.data.current_round);
+        }
+      }
     } catch (error) {
       console.error("There was an error fetching the room details!", error);
     }
@@ -334,17 +357,26 @@ const Room = () => {
 
     setSwapMap((prev) => ({
       ...prev,
-      [originPort]: targetPort,
+      [originPort]: targetPort || "",
     }));
+  };
+
+  // Modal close handler
+  const handleCloseSwapModal = () => {
+    setShowSwapModal(false);
+    setSwapMap({}); // Reset map when closing
   };
 
   const handleCustomSwap = async () => {
     try {
       console.log("Sending swap map:", swapMap);
 
+      // Save the current swapMap before request
+      const currentSwapMap = { ...swapMap };
+
       const response = await api.put(
         `/rooms/${roomId}/swap-bays-custom`,
-        { swapMap },
+        { swapMap: currentSwapMap },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -381,7 +413,9 @@ const Room = () => {
 
       toast.success("Bays swapped successfully");
       setShowSwapModal(false);
+      setSwapMap({});
       socket.emit("swap_bays", roomId);
+      await fetchRoomDetails();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to swap bays");
     }
@@ -467,6 +501,14 @@ const Room = () => {
             </div>
           </div>
 
+          {roomStatus === "active" && (
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+              <h3 className="text-lg font-semibold text-blue-700">
+                Week {currentRound} of {totalRounds}
+              </h3>
+            </div>
+          )}
+
           {/* Enhanced Users Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
@@ -486,69 +528,120 @@ const Room = () => {
               )}
             </div>
 
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{showRankings ? "Rank" : "#"}</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{showRankings ? "Revenue" : "Port"}</th>
-                  {!showRankings && user && user.is_admin === 1 && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {showRankings ? (
-                  rankings.length > 0 ? (
-                    rankings.map((rank, index) => (
-                      <tr key={rank.user_id} className={`hover:bg-gray-50 transition-colors ${index === 0 ? "bg-yellow-50" : ""}`}>
+            {/* Add horizontal scroll container */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                      {showRankings ? "Rank" : "#"}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                      Player
+                    </th>
+                    {showRankings && (
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                        Total Revenue
+                      </th>
+                    )}
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                      {showRankings ? "Revenue" : "Port"}
+                    </th>
+                    {showRankings && (
+                      <>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                          Penalty
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                          Moves
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                          Cards
+                        </th>
+                      </>
+                    )}
+                    {!showRankings && user && user.is_admin === 1 && (
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Actions
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {showRankings ? (
+                    rankings.length > 0 ? (
+                      rankings.map((rank, index) => (
+                        <tr key={rank.user_id} className={`${index === 0 ? "bg-yellow-50" : ""} hover:bg-gray-50`}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-sm font-semibold rounded-full ${index === 0 ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>#{index + 1}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{rank.user?.name}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-green-600 font-medium">{formatIDR(rank.total_revenue)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-green-600">{formatIDR(rank.revenue)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-red-600">{formatIDR(rank.penalty)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col text-sm text-gray-500">
+                              <span>D: {rank.discharge_moves}</span>
+                              <span>L: {rank.load_moves}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col text-sm">
+                              <span className="text-green-600">A: {rank.accepted_cards}</span>
+                              <span className="text-red-600">R: {rank.rejected_cards}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="px-6 py-4 text-center text-gray-500 italic">
+                          No rankings available yet.
+                        </td>
+                      </tr>
+                    )
+                  ) : users && users.length > 0 ? (
+                    users.map((singleUser, index) => (
+                      <tr key={singleUser.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="text-sm font-medium text-gray-900">{rank.user?.name}</div>
+                            <div className="text-sm font-medium text-gray-900">{singleUser.name}</div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{formatIDR(rank.revenue)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignedPorts[singleUser.id] || "Not Assigned"}</td>
+                        {user && user.is_admin === 1 && (
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <button
+                              onClick={() => handleKickUser(singleUser.id)}
+                              className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white 
+                              ${roomStatus === "active" || roomStatus === "finished" ? "bg-gray-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"}`}
+                              disabled={roomStatus === "active" || roomStatus === "finished"}
+                            >
+                              Kick Player
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="3" className="px-6 py-4 text-center text-gray-500 italic">
-                        No rankings available yet.
+                      <td colSpan="4" className="px-6 py-4 text-center text-gray-500 italic">
+                        No players in the room.
                       </td>
                     </tr>
-                  )
-                ) : users && users.length > 0 ? (
-                  users.map((singleUser, index) => (
-                    <tr key={singleUser.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="text-sm font-medium text-gray-900">{singleUser.name}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignedPorts[singleUser.id] || "Not Assigned"}</td>
-                      {user && user.is_admin === 1 && (
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <button
-                            onClick={() => handleKickUser(singleUser.id)}
-                            className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white 
-                              ${roomStatus === "active" || roomStatus === "finished" ? "bg-gray-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"}`}
-                            disabled={roomStatus === "active" || roomStatus === "finished"}
-                          >
-                            Kick Player
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="px-6 py-4 text-center text-gray-500 italic">
-                      No players in the room.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Enhanced Button Group */}
@@ -562,7 +655,6 @@ const Room = () => {
               </svg>
               HOME
             </button>
-
             {user && user.is_admin === 1 && roomStatus !== "active" && roomStatus !== "finished" && (
               <>
                 <button
@@ -591,12 +683,14 @@ const Room = () => {
                 </button>
               </>
             )}
-
             {user && user.is_admin === 1 && roomStatus === "active" && (
               <>
                 <button
                   onClick={() => setShowSwapModal(true)}
-                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
+                  disabled={currentRound >= totalRounds}
+                  className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
+        ${currentRound >= totalRounds ? "bg-gray-400 cursor-not-allowed" : "bg-yellow-500 hover:bg-yellow-600"} 
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors`}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -606,7 +700,11 @@ const Room = () => {
 
                 <button
                   onClick={endSimulation}
-                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                  disabled={currentRound < totalRounds}
+                  className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
+        ${currentRound < totalRounds ? "bg-gray-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"} 
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors`}
+                  title={currentRound < totalRounds ? `Cannot end simulation until round ${totalRounds}` : "End simulation"}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -615,7 +713,6 @@ const Room = () => {
                 </button>
               </>
             )}
-
             {user && user.is_admin === 1 && roomStatus === "finished" && (
               <button
                 onClick={() => navigate(`/rooms/${roomId}/detail`)}
@@ -732,18 +829,11 @@ const Room = () => {
             </div>
 
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 rounded-b-lg">
-              <button
-                onClick={() => {
-                  setShowSwapModal(false);
-                  setSwapMap({});
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
+              <button onClick={handleCloseSwapModal} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
                 Cancel
               </button>
               <button
                 onClick={() => {
-                  // Check if all origins have destinations
                   const originPorts = Object.values(assignedPorts);
                   const allPortsMapped = originPorts.every((port) => swapMap[port]);
 
@@ -753,7 +843,7 @@ const Room = () => {
                     toast.error("Please assign destinations for all ports");
                   }
                 }}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
               >
                 Confirm Swap
               </button>

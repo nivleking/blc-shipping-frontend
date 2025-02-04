@@ -25,6 +25,7 @@ const Stowage = ({
   onNextSection,
   targetContainers,
   isProcessingCard,
+  isLimitExceeded,
 }) => {
   return (
     <>
@@ -84,17 +85,26 @@ const Stowage = ({
                   </svg>
                   Sales Calls
                 </h3>
-                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                  <SalesCallCard
-                    salesCallCards={salesCallCards}
-                    currentCardIndex={currentCardIndex}
-                    containers={containers}
-                    formatIDR={formatIDR}
-                    handleAcceptCard={handleAcceptCard}
-                    handleRejectCard={handleRejectCard}
-                    isProcessingCard={isProcessingCard}
-                  />
-                </div>
+                {isLimitExceeded ? (
+                  <div className="text-center p-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-600">You have reached the maximum number of cards for this round. Please wait for the next round.</p>
+                  </div>
+                ) : salesCallCards.length > 0 ? (
+                  // Existing card display logic
+                  <div className="grid gap-4">
+                    <SalesCallCard
+                      salesCallCards={salesCallCards}
+                      currentCardIndex={currentCardIndex}
+                      containers={containers}
+                      formatIDR={formatIDR}
+                      handleAcceptCard={handleAcceptCard}
+                      handleRejectCard={handleRejectCard}
+                      isProcessingCard={isProcessingCard}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500">No sales call cards available</p>
+                )}
               </div>
             )}
           </div>

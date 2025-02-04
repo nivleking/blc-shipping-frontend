@@ -1,12 +1,22 @@
-const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR }) => {
+const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves = {} }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
       {/* Revenue Card */}
       <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
           <div className="text-white">
-            <p className="text-sm font-medium opacity-80">Total Revenue</p>
+            <p className="text-sm font-medium opacity-80">Revenue</p>
             <h3 className="text-2xl font-bold">{formatIDR(revenue)}</h3>
+            <div className="flex gap-4 mt-1">
+              <div>
+                <p className="text-xs opacity-80">Accepted Cards</p>
+                <p className="text-xl font-bold">{moves.acceptedCards || 0}</p>
+              </div>
+              <div>
+                <p className="text-xs opacity-80">Rejected Cards</p>
+                <p className="text-xl font-bold">{moves.rejectedCards || 0}</p>
+              </div>
+            </div>
           </div>
           <div className="p-2 bg-white/20 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,7 +35,7 @@ const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR }) => 
       <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
           <div className="text-white">
-            <p className="text-sm font-medium opacity-80">Penalties</p>
+            <p className="text-sm font-medium opacity-80">Expenses</p>
             <h3 className="text-2xl font-bold">{formatIDR(penalties)}</h3>
           </div>
           <div className="p-2 bg-white/20 rounded-lg">
@@ -42,6 +52,12 @@ const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR }) => 
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Current Rank</p>
             <h3 className="text-2xl font-bold">#{rank}</h3>
+            <div className="flex gap-4 mt-1">
+              <div>
+                <p className="text-xs opacity-80">Total Revenue</p>
+                <p className="text-xl font-bold">{formatIDR(revenue - penalties) || 0}</p>
+              </div>
+            </div>
           </div>
           <div className="p-2 bg-white/20 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,12 +86,23 @@ const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR }) => 
           </div>
         </div>
       </div>
-      {/* Section Card */}
+
+      {/* Port Card */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Port</p>
             <h3 className="text-2xl font-bold">{port}</h3>
+            <div className="flex gap-4 mt-1">
+              <div>
+                <p className="text-xs opacity-80">Load Moves</p>
+                <p className="text-xl font-bold">{moves.loadMoves || 0}</p>
+              </div>
+              <div>
+                <p className="text-xs opacity-80">Discharge Moves</p>
+                <p className="text-xl font-bold">{moves.dischargeMoves || 0}</p>
+              </div>
+            </div>
           </div>
           <div className="p-2 bg-white/20 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
