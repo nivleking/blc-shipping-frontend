@@ -4,6 +4,7 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
   }
 
   const currentCard = salesCallCards[currentCardIndex];
+  const isCommitted = currentCard?.priority?.toLowerCase() === "committed";
 
   return (
     <div key={currentCard.id} className="bg-white rounded-lg shadow-md p-4 w-full">
@@ -11,7 +12,10 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
         <tbody>
           <tr className="font-bold">
             <td>{currentCard.origin}</td>
-            <td>Booking {currentCard.id}</td>
+            <td>
+              Booking {currentCard.id} 
+              {isCommitted && <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full border border-yellow-300">COMMITED!</span>}
+            </td>
           </tr>
           <tr>
             <td colSpan={2}>
@@ -20,31 +24,31 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
           </tr>
           <tr>
             <td className="font-medium py-2">Type:</td>
-            <td className="py-2">{salesCallCards[currentCardIndex].type}</td>
+            <td className="py-2">{currentCard.type}</td>
           </tr>
           <tr>
             <td className="font-medium py-2">Priority:</td>
-            <td className="py-2">{salesCallCards[currentCardIndex].priority}</td>
+            <td className="py-2">{currentCard.priority}</td>
           </tr>
           <tr>
             <td className="font-medium py-2">Origin:</td>
-            <td className="py-2">{salesCallCards[currentCardIndex].origin}</td>
+            <td className="py-2">{currentCard.origin}</td>
           </tr>
           <tr>
             <td className="font-medium py-2">Destination:</td>
-            <td className="py-2">{salesCallCards[currentCardIndex].destination}</td>
+            <td className="py-2">{currentCard.destination}</td>
           </tr>
           <tr>
             <td className="font-medium py-2">Quantity:</td>
-            <td className="py-2">{salesCallCards[currentCardIndex].quantity}</td>
+            <td className="py-2">{currentCard.quantity}</td>
           </tr>
           <tr>
             <td className="font-medium py-2">Revenue/Container:</td>
-            <td className="py-2">{formatIDR(salesCallCards[currentCardIndex].revenue / salesCallCards[currentCardIndex].quantity)}</td>
+            <td className="py-2">{formatIDR(currentCard.revenue / currentCard.quantity)}</td>
           </tr>
           <tr>
             <td className="font-medium py-2">Total Revenue:</td>
-            <td className="py-2">{formatIDR(salesCallCards[currentCardIndex].revenue)}</td>
+            <td className="py-2">{formatIDR(currentCard.revenue)}</td>
           </tr>
           <tr>
             <td colSpan={2} className="font-medium py-2 text-center">
@@ -52,10 +56,10 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
             </td>
           </tr>
           <tr>
-            <td colSpan="1" className="py-2">
+            <td colSpan={2} className="py-2">
               <div className="grid grid-cols-3 gap-2">
                 {containers
-                  .filter((container) => container.card_id === salesCallCards[currentCardIndex].id)
+                  .filter((container) => container.card_id === currentCard.id)
                   .map((container) => (
                     <div
                       key={container.id}
@@ -78,20 +82,22 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
                 onClick={() => handleAcceptCard(currentCard.id)}
                 disabled={isProcessingCard}
                 className={`p-2 bg-green-500 text-white rounded mr-2 transition-opacity
-                ${isProcessingCard ? "opacity-50 cursor-not-allowed" : "hover:bg-green-600"}
-              `}
+                  ${isProcessingCard ? "opacity-50 cursor-not-allowed" : "hover:bg-green-600"}
+                `}
               >
                 {isProcessingCard ? "Processing..." : "Accept"}
               </button>
               <button
                 onClick={() => handleRejectCard(currentCard.id)}
-                disabled={isProcessingCard}
+                disabled={isProcessingCard || isCommitted}
                 className={`p-2 bg-red-500 text-white rounded transition-opacity
-                ${isProcessingCard ? "opacity-50 cursor-not-allowed" : "hover:bg-red-600"}
-              `}
+                  ${isProcessingCard || isCommitted ? "opacity-50 cursor-not-allowed" : "hover:bg-red-600"}
+                `}
+                title={isCommitted ? "Committed bookings cannot be rejected" : ""}
               >
                 {isProcessingCard ? "Please wait..." : "Reject"}
               </button>
+              {isCommitted && <div className="text-xs text-gray-500 mt-2">* This is a committed booking and must be accepted</div>}
             </td>
           </tr>
         </tbody>
