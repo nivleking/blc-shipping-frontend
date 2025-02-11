@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { AiFillDelete, AiFillFolderOpen } from "react-icons/ai";
 import "./AdminHome.css";
+import LoadingOverlay from "../../components/rooms/LoadingOverlay";
+import ConfirmationModal from "../../components/rooms/ConfirmationModal";
 
 const AdminDecks = () => {
   const [decks, setDecks] = useState([]);
@@ -11,6 +13,42 @@ const AdminDecks = () => {
   const [errors, setErrors] = useState({});
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
+  const [isLoading, setIsLoading] = useState(false);
+  const loadingMessages = ["Creating your deck..."];
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    deckId: null,
+  });
+
+  // Replace handleDeleteDeck with these two functions
+  const handleDeleteClick = (deckId) => {
+    setConfirmModal({
+      isOpen: true,
+      deckId,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/decks/${confirmModal.deckId}`);
+      setDecks(decks.filter((deck) => deck.id !== confirmModal.deckId));
+      setConfirmModal({ isOpen: false, deckId: null });
+    } catch (error) {
+      setErrors(error.response.data.errors);
+      console.error("Error deleting deck:", error);
+    }
+  };
+
+  useEffect(() => {
+    let interval;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setLoadingMessageIndex((prev) => (prev === loadingMessages.length - 1 ? 0 : prev + 1));
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   useEffect(() => {
     fetchDecks();
@@ -41,6 +79,8 @@ const AdminDecks = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setIsLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     try {
       const response = await api.post("/decks", formData);
       setDecks([...decks, response.data]);
@@ -48,6 +88,9 @@ const AdminDecks = () => {
     } catch (error) {
       setErrors(error.response.data.errors);
       console.error("Error creating deck:", error);
+    } finally {
+      setIsLoading(false);
+      setLoadingMessageIndex(0);
     }
   }
 
@@ -82,6 +125,8 @@ const AdminDecks = () => {
 
   return (
     <div className="container mx-auto p-4">
+      {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Creating New Deck" />}
+
       <div className="mb-4">
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-lg space-y-6">
           <div className="w-full">
@@ -140,7 +185,7 @@ const AdminDecks = () => {
                     <Link to={`/admin-create-sales-call-cards/${deck.id}`} className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300 flex items-center">
                       <AiFillFolderOpen className="mr-1" /> View
                     </Link>
-                    <button onClick={() => handleDeleteDeck(deck.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300 flex items-center">
+                    <button onClick={() => handleDeleteClick(deck.id)} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300 flex items-center">
                       <AiFillDelete className="mr-1" /> Delete
                     </button>
                   </div>
@@ -150,6 +195,14 @@ const AdminDecks = () => {
           </div>
         )}
       </div>
+      {/* Add ConfirmationModal component */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, deckId: null })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Deck"
+        message="Are you sure you want to delete this deck? This action cannot be undone and all cards within this deck will be deleted."
+      />
     </div>
   );
 };
