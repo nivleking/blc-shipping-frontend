@@ -2,11 +2,12 @@
 .vscode
 .dockerignore
 .gitignore
-.env
 config
 build
-node_modules/
+node_modules
+npm-debug.log
 docker-compose.yaml
 Dockerfile
-package-lock.json
 README.md
+dist
+*.log

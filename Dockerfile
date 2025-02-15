@@ -5,15 +5,12 @@ WORKDIR /app/frontend
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Copy application files
 COPY . .
 
-# Build application
-RUN npm run build
+EXPOSE 5174
 
-EXPOSE 5173
-
-CMD ["npm", "run", "preview"]
+ENTRYPOINT ["docker-entrypoint.sh"]
