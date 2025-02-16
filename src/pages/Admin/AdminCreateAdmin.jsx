@@ -3,13 +3,16 @@ import { api } from "../../axios/axios";
 import { AppContext } from "../../context/AppContext";
 import ReactPaginate from "react-paginate";
 import { AiFillEdit, AiFillDelete } from "react-icons/ai";
+import { IoEyeOutline, IoEyeOffOutline, IoTimeOutline, IoCreateOutline, IoRefreshOutline, IoEnterOutline, IoStatsChartOutline, IoShieldCheckmark } from "react-icons/io5";
+import Tooltip from "../../components/Tooltip";
+import PasswordConfirmationModal from "../../components/rooms/PasswordConfirmationModal";
 import "./AdminHome.css";
 import ConfirmationModal from "../../components/rooms/ConfirmationModal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const AdminCreateAdmin = () => {
-  const { token } = useContext(AppContext);
+  const { user, token } = useContext(AppContext);
   const [formData, setFormData] = useState({
     name: "",
     is_admin: true,
@@ -25,10 +28,64 @@ const AdminCreateAdmin = () => {
     isOpen: false,
     adminId: null,
   });
-  const [currentAdmin, setCurrentAdmin] = useState(null);
-  const [currentAdminId, setCurrentAdminId] = useState(null);
+  const [passwordVisibility, setPasswordVisibility] = useState({});
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+  // Add these state declarations after other useState declarations
+  const [passwordModal, setPasswordModal] = useState({
+    isOpen: false,
+    adminId: null,
+  });
 
-  // Modify handleDeleteClick to check if admin is trying to delete themselves
+  // Add this function to handle password visibility
+  const togglePasswordVisibility = async (adminId) => {
+    if (visiblePasswords[adminId]) {
+      setVisiblePasswords((prev) => {
+        const newState = { ...prev };
+        delete newState[adminId];
+        return newState;
+      });
+    } else {
+      setPasswordModal({
+        isOpen: true,
+        adminId: adminId,
+      });
+    }
+  };
+
+  // Add password confirmation handler
+  const handlePasswordConfirm = async (superAdminPassword) => {
+    try {
+      const response = await api.post(
+        `/users/${passwordModal.adminId}/password`,
+        { super_admin_password: superAdminPassword },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.password) {
+        setVisiblePasswords((prev) => ({
+          ...prev,
+          [passwordModal.adminId]: response.data.password,
+        }));
+        setPasswordVisibility((prev) => ({
+          ...prev,
+          [passwordModal.adminId]: false,
+        }));
+        toast.success("Password retrieved successfully");
+      }
+
+      setPasswordModal({ isOpen: false, adminId: null });
+    } catch (error) {
+      console.error("Error fetching password:", error);
+      toast.error(error.response?.data?.message || "Failed to retrieve password");
+      setPasswordModal({ isOpen: false, adminId: null });
+    }
+  };
+
   const handleDeleteClick = (admin) => {
     if (admin.is_super_admin) {
       setFormErrors({
@@ -37,7 +94,7 @@ const AdminCreateAdmin = () => {
       return;
     }
 
-    if (admin.id === currentAdminId) {
+    if (admin.id === user.id) {
       setFormErrors({
         delete: ["You cannot delete your own account"],
       });
@@ -69,36 +126,31 @@ const AdminCreateAdmin = () => {
 
   useEffect(() => {
     if (token) {
-      fetchCurrentAdmin();
       fetchAdmins();
     }
   }, [token]);
 
-  // Modify fetchCurrentAdmin to store full admin details
-  async function fetchCurrentAdmin() {
-    try {
-      const response = await api.get("/user", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setCurrentAdmin(response.data);
-      setCurrentAdminId(response.data.id);
-    } catch (error) {
-      console.error("Error fetching current admin:", error);
-    }
-  }
-
   async function fetchAdmins() {
     try {
-      const adminsResponse = await api.get("/all-admins", {
+      const response = await api.get("/all-admins", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setAdmins(adminsResponse.data);
+
+      const processedAdmins = response.data.map((admin) => ({
+        ...admin,
+        status: admin.status || "active",
+        login_count: admin.login_count || 0,
+        last_login_at: admin.last_login_at || null,
+        created_by: admin.created_by || { name: "System" },
+        updated_by: admin.updated_by || null,
+      }));
+
+      setAdmins(processedAdmins);
     } catch (error) {
       console.error("Error fetching admins:", error);
+      toast.error("Failed to fetch admins");
     }
   }
 
@@ -176,84 +228,91 @@ const AdminCreateAdmin = () => {
   };
 
   const offset = currentPage * itemsPerPage;
-  const currentPageData = admins.slice(offset, offset + itemsPerPage);
-  const pageCount = Math.ceil(admins.length / itemsPerPage);
+  const [searchTerm, setSearchTerm] = useState("");
+  const filteredAdmins = admins.filter((admin) => admin.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const currentPageData = filteredAdmins.slice(offset, offset + itemsPerPage);
+  const pageCount = Math.ceil(filteredAdmins.length / itemsPerPage);
 
-  // Only show create form for super admin
   const renderCreateForm = () => {
-    if (!currentAdmin?.is_super_admin) return null;
+    if (!user?.is_super_admin) return null;
 
     return (
-      <div className="mb-6 p-6 bg-white rounded-lg shadow-lg border border-gray-100">
-        <div className="flex items-center mb-4">
+      <div className="bg-white p-8 rounded-lg shadow-lg mb-4">
+        <div className="flex items-center mb-6">
           <div className="p-2 bg-blue-100 rounded-lg">
             <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
-          <h2 className="ml-3 text-xl font-bold text-gray-900">{editingAdmin ? "Edit Admin" : "Create New Admin"}</h2>
+          <h3 className="ml-3 text-1xl font-bold text-gray-800">{editingAdmin ? "Edit Admin" : "Create New Admin"}</h3>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Admin Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter admin name"
-              />
-              {formErrors.name && <p className="mt-1 text-sm text-red-500">{formErrors.name[0]}</p>}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Admin Name Field */}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <label htmlFor="name" className="block text-gray-700 font-semibold">
+                  Admin Name
+                </label>
+                <Tooltip>Enter a unique name for the admin. This name will be used for identification purposes.</Tooltip>
+              </div>
+              <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter admin name" />
+              {formErrors.name && <p className="text-red-500 mt-1 text-sm">{formErrors.name[0]}</p>}
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+            {/* Password Field */}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <label htmlFor="password" className="block text-gray-700 font-semibold">
+                  Password
+                </label>
+                <Tooltip>Password must be at least 8 characters long, include at least one number, include at least one special character (@$!%*#?&)</Tooltip>
+              </div>
               <input
                 type="password"
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter password"
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder={editingAdmin ? "Leave blank to keep current password" : "Enter password"}
               />
-              {formErrors.password && <p className="mt-1 text-sm text-red-500">{formErrors.password[0]}</p>}
+              {formErrors.password && <p className="text-red-500 mt-1 text-sm">{formErrors.password[0]}</p>}
             </div>
 
-            <div>
-              <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
+            {/* Password Confirmation Field */}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <label htmlFor="password_confirmation" className="block text-gray-700 font-semibold">
+                  Confirm Password
+                </label>
+                <Tooltip>Re-enter the password to confirm. Both passwords must match.</Tooltip>
+              </div>
               <input
                 type="password"
                 id="password_confirmation"
                 name="password_confirmation"
                 value={formData.password_confirmation}
                 onChange={handleChange}
-                className="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 placeholder="Confirm password"
               />
             </div>
           </div>
 
-          <button type="submit" className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-            {editingAdmin ? "Update Admin" : "Create Admin"}
-          </button>
+          <div className="flex justify-start">
+            <button type="submit" className="p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">
+              {editingAdmin ? "Update Admin" : "Create Admin"}
+            </button>
+          </div>
         </form>
       </div>
     );
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
+    <div className="container mx-auto p-4">
       <ToastContainer
         position="top-right"
         autoClose={2000}
@@ -276,16 +335,30 @@ const AdminCreateAdmin = () => {
         }}
       />
       {renderCreateForm()}
-
       <div className="bg-white rounded-lg shadow-lg border border-gray-100">
         <div className="p-6">
-          <div className="flex items-center mb-6">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+          <div className="flex justify-between items-center mb-6">
+            {/* Left side - Title and Icon */}
+            <div className="flex items-center">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <h3 className="ml-3 text-xl font-bold text-gray-900">Admin List</h3>
             </div>
-            <h3 className="ml-3 text-xl font-bold text-gray-900">Admin List</h3>
+
+            {/* Right side - Search Box */}
+            <div className="w-72">
+              <div className="relative">
+                <input type="text" placeholder="Search admins..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg pr-10 focus:outline-none focus:border-blue-500" />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
 
           {formErrors.delete && (
@@ -318,34 +391,159 @@ const AdminCreateAdmin = () => {
           ) : (
             <div className="space-y-4">
               {currentPageData.map((admin, index) => (
-                <div key={admin.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-blue-600 font-medium">{admin.name.charAt(0).toUpperCase()}</span>
+                <div key={admin.id} className="flex flex-col sm:flex-row items-start justify-between p-6 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-start space-x-6 w-full">
+                    {/* Avatar and Status Column */}
+                    <div className="flex flex-col items-center space-y-3 pt-2">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                        <span className="text-white font-medium text-xl">{admin.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div className="flex flex-col items-center space-y-2">
+                        <span
+                          className={`px-3 py-1 text-xs font-medium rounded-full flex items-center space-x-1
+            ${admin.is_super_admin ? "bg-yellow-100 text-yellow-800" : "bg-indigo-100 text-indigo-800"}`}
+                        >
+                          <IoShieldCheckmark className="w-4 h-4 mr-1" />
+                          {admin.is_super_admin ? "Super Admin" : "Admin"}
+                        </span>
+                        <span
+                          className={`px-3 py-1 text-xs font-medium rounded-full 
+            ${admin.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
+                        >
+                          {admin.status}
+                        </span>
                       </div>
                     </div>
-                    <div>
-                      <p className="text-lg font-semibold text-gray-900">{admin.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {admin.is_super_admin ? "Super Admin" : "Admin"}
-                        {admin.id === currentAdminId && " (You)"}
-                      </p>
+
+                    {/* Admin Details Column */}
+                    <div className="flex flex-col flex-grow">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <span className="text-sm font-medium text-gray-500">#{offset + index + 1}</span>
+                        <h3 className="text-lg font-semibold text-gray-900">{admin.name}</h3>
+                        {user && admin.id === user.id && <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">You</span>}
+                      </div>
+
+                      {/* Password Field - jika dibutuhkan */}
+                      {visiblePasswords[admin.id] && (
+                        <div className="mb-4 flex items-center space-x-2">
+                          <div className="relative flex items-center">
+                            <input type={passwordVisibility[admin.id] ? "text" : "password"} value={visiblePasswords[admin.id]} readOnly className="pr-10 pl-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm w-48" />
+                            <button
+                              onClick={() =>
+                                setPasswordVisibility((prev) => ({
+                                  ...prev,
+                                  [admin.id]: !prev[admin.id],
+                                }))
+                              }
+                              className="absolute right-2 p-1 text-gray-500 hover:text-gray-700"
+                              type="button"
+                            >
+                              {passwordVisibility[admin.id] ? <IoEyeOffOutline className="w-4 h-4" /> : <IoEyeOutline className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          <button onClick={() => togglePasswordVisibility(admin.id)} className="text-sm px-3 py-1 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200">
+                            Hide
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Admin Activity Details */}
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        {/* Creation Info */}
+                        <div className="flex flex-col space-y-2">
+                          <div className="flex items-center space-x-2 text-gray-600">
+                            <IoCreateOutline className="w-4 h-4 text-blue-500" />
+                            <span className="font-medium">Created by:</span>
+                            <span className="text-blue-600">{admin.created_by?.name || "System"}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-gray-600">
+                            <IoTimeOutline className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium">Created at:</span>
+                            <span>
+                              {new Date(admin.created_at).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Last Edit Info */}
+                        {admin.updated_by && (
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex items-center space-x-2 text-gray-600">
+                              <IoRefreshOutline className="w-4 h-4 text-yellow-500" />
+                              <span className="font-medium">Last edited by:</span>
+                              <span className="text-blue-600">{admin.updated_by?.name}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-gray-600">
+                              <IoTimeOutline className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium">Last edited at:</span>
+                              <span>
+                                {new Date(admin.updated_at).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Login Statistics */}
+                        <div className="flex flex-col space-y-2">
+                          <div className="flex items-center space-x-2 text-gray-600">
+                            <IoEnterOutline className="w-4 h-4 text-green-500" />
+                            <span className="font-medium">Last login:</span>
+                            <span>
+                              {admin.last_login_at
+                                ? new Date(admin.last_login_at).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "Never"}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 text-gray-600">
+                            <IoStatsChartOutline className="w-4 h-4 text-purple-500" />
+                            <span className="font-medium">Login count:</span>
+                            <span>{admin.login_count || 0}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {currentAdmin?.is_super_admin && !admin.is_super_admin && admin.id !== currentAdminId && (
-                    <div className="flex space-x-3">
+                  {/* Action Buttons */}
+                  {user && user.is_super_admin && !admin.is_super_admin && admin.id !== user.id && (
+                    <div className="flex flex-col space-y-2 mt-4 sm:mt-0 min-w-[120px]">
+                      {!visiblePasswords[admin.id] && (
+                        <button
+                          onClick={() => togglePasswordVisibility(admin.id)}
+                          className="inline-flex items-center justify-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                        >
+                          <IoEyeOutline className="mr-2 h-4 w-4" />
+                          Password
+                        </button>
+                      )}
                       <button
                         onClick={() => handleEdit(admin)}
-                        className="inline-flex items-center px-3 py-2 border border-yellow-300 rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                        className="inline-flex items-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors duration-200"
                       >
                         <AiFillEdit className="mr-2 h-4 w-4" />
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteClick(admin)}
-                        className="inline-flex items-center px-3 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
                       >
                         <AiFillDelete className="mr-2 h-4 w-4" />
                         Delete
@@ -381,7 +579,6 @@ const AdminCreateAdmin = () => {
           )}
         </div>
       </div>
-
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false, adminId: null })}
@@ -389,6 +586,8 @@ const AdminCreateAdmin = () => {
         title="Delete Admin"
         message="Are you sure you want to delete this admin? This action cannot be undone."
       />
+
+      <PasswordConfirmationModal isOpen={passwordModal.isOpen} onClose={() => setPasswordModal({ isOpen: false, adminId: null })} onConfirm={handlePasswordConfirm} />
     </div>
   );
 };
