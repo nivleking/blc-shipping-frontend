@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ReactPaginate from "react-paginate";
 import "./AdminHome.css";
 import io from "socket.io-client";
+import Tooltip from "../../components/Tooltip";
 import RenderShipBayLayout from "../../components/simulations/RenderShipBayLayout";
 import { AiFillDelete, AiFillEye, AiFillFolderOpen } from "react-icons/ai";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
@@ -284,24 +285,38 @@ const AdminHome = () => {
             <h3 className="text-1xl font-bold text-gray-900">Create New Room</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Room ID Field */}
             <div className="flex flex-col">
-              <label htmlFor="id" className="block text-gray-700 font-semibold">
-                Room ID
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="id" className="block text-gray-700 font-semibold">
+                  Room ID
+                </label>
+                <Tooltip>Enter a unique identifier for the room. This ID will be used to join the room.</Tooltip>
+              </div>
               <input type="text" id="id" name="id" value={formData.id} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter Room ID" />
               {errors.id && <p className="text-red-500 mt-1">{errors.id[0]}</p>}
             </div>
+
+            {/* Room Name Field */}
             <div className="flex flex-col">
-              <label htmlFor="name" className="block text-gray-700 font-semibold">
-                Room Name
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="name" className="block text-gray-700 font-semibold">
+                  Room Name
+                </label>
+                <Tooltip>Enter a descriptive name for the room. This will help users identify the room's purpose.</Tooltip>
+              </div>
               <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter Room Name" />
               {errors.name && <p className="text-red-500 mt-1">{errors.name[0]}</p>}
             </div>
+
+            {/* Description Field */}
             <div className="flex flex-col">
-              <label htmlFor="description" className="block text-gray-700 font-semibold">
-                Room Description
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="description" className="block text-gray-700 font-semibold">
+                  Room Description
+                </label>
+                <Tooltip>Provide additional details about the room's purpose and activities.</Tooltip>
+              </div>
               <input
                 type="text"
                 id="description"
@@ -313,10 +328,15 @@ const AdminHome = () => {
               />
               {errors.description && <p className="text-red-500 mt-1">{errors.description[0]}</p>}
             </div>
+
+            {/* Deck Selection */}
             <div className="flex flex-col relative">
-              <label htmlFor="deck_id" className="block text-gray-700 font-semibold">
-                Deck
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="deck_id" className="block text-gray-700 font-semibold">
+                  Deck
+                </label>
+                <Tooltip>Select a deck of cards to be used in this room. The deck determines the available cards and port count.</Tooltip>
+              </div>
               <Combobox
                 value={selectedDeck}
                 onChange={(deck) => {
@@ -374,12 +394,16 @@ const AdminHome = () => {
                   )}
                 </div>
               </Combobox>
-              {errors.deck_id && <p className="text-red-500 mt-1">{errors.deck_id[0]}</p>}
             </div>
+
+            {/* Total Ports Field */}
             <div className="flex flex-col">
-              <label htmlFor="max_users" className="block text-gray-700 font-semibold">
-                Total Ports (Users)
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="max_users" className="block text-gray-700 font-semibold">
+                  Total Ports (Users)
+                </label>
+                <Tooltip>Maximum number of users that can join this room. This is automatically set based on the selected deck.</Tooltip>
+              </div>
               <input
                 type="number"
                 id="max_users"
@@ -391,10 +415,15 @@ const AdminHome = () => {
                 style={{ backgroundColor: "#f9f9f9", cursor: "not-allowed", color: "#666", fontWeight: "bold" }}
               />
             </div>
+
+            {/* Total Rounds Field */}
             <div className="flex flex-col">
-              <label htmlFor="total_rounds" className="block text-gray-700 font-semibold">
-                Total Rounds (Weeks)
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="total_rounds" className="block text-gray-700 font-semibold">
+                  Total Rounds (Weeks)
+                </label>
+                <Tooltip>Set the number of rounds for the simulation. Each round represents one week of gameplay.</Tooltip>
+              </div>
               <input
                 type="number"
                 id="total_rounds"
@@ -406,10 +435,15 @@ const AdminHome = () => {
                 placeholder="Enter total rounds"
               />
             </div>
+
+            {/* Cards Limit Field */}
             <div className="flex flex-col">
-              <label htmlFor="cards_limit_per_round" className="block text-gray-700 font-semibold">
-                Cards Limit Per Round
-              </label>
+              <div className="flex items-center">
+                <label htmlFor="cards_limit_per_round" className="block text-gray-700 font-semibold">
+                  Cards Limit Per Round
+                </label>
+                <Tooltip>Set the maximum number of cards that can be played per round by each user.</Tooltip>
+              </div>
               <input
                 type="number"
                 id="cards_limit_per_round"
@@ -422,6 +456,8 @@ const AdminHome = () => {
               />
             </div>
           </div>
+
+          {/* Ship Bay Layout Button */}
           <div className="flex justify-start space-x-4">
             <button
               type="button"
@@ -429,7 +465,10 @@ const AdminHome = () => {
               className={`p-3 text-white rounded-lg transition duration-300 flex items-center gap-2
     ${isBayConfigured ? "bg-green-500 hover:bg-green-600" : "bg-orange-500 hover:bg-orange-600"}`}
             >
-              {isBayConfigured ? "✓ Edit Ship Bay Layout" : "Ship Bay Layout"}
+              <div className="flex items-center">
+                <span>{isBayConfigured ? "✓ Edit Ship Bay Layout" : "Ship Bay Layout"}</span>
+                <Tooltip>Configure the ship's bay layout including size, count, and types of containers.</Tooltip>
+              </div>
             </button>
             <button type="submit" className="p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">
               Create
