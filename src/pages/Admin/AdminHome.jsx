@@ -146,10 +146,9 @@ const AdminHome = () => {
         if (response.status === 200) {
           setRooms((prevRooms) => prevRooms.filter((room) => room.id !== roomId));
           toast.success("Room deleted successfully!", { toastId: "room-delete" });
-          console.log("Room deleted:", roomId);
 
           userIds.forEach((userId) => {
-            socket.emit("user_kicked", userId);
+            socket.emit("user_kicked", { roomId, userId });
           });
         }
       } catch (error) {

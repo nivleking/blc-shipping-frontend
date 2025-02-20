@@ -146,25 +146,33 @@ const Simulation = () => {
     fetchArenaData();
     fetchDockData();
 
-    socket.on("swap_bays", async () => {
-      setShowSwapAlert(true);
+    socket.on("swap_bays", ({ roomId: receivedRoomId }) => {
+      if (receivedRoomId === roomId) {
+        setShowSwapAlert(true);
 
-      let timer = 5;
-      setCountdown(timer);
-
-      const countdownInterval = setInterval(() => {
-        timer -= 1;
+        let timer = 5;
         setCountdown(timer);
 
-        if (timer === 0) {
-          clearInterval(countdownInterval);
-          setShowSwapAlert(false);
-          handleSwapProcess();
-        }
-      }, 1000);
+        const countdownInterval = setInterval(() => {
+          timer -= 1;
+          setCountdown(timer);
+
+          if (timer === 0) {
+            clearInterval(countdownInterval);
+            setShowSwapAlert(false);
+            handleSwapProcess();
+          }
+        }, 1000);
+      }
+
+      return () => {
+        socket.off("swap_bays");
+      };
     });
 
-    return () => socket.off("swap_bays");
+    return () => {
+      socket.off("swap_bays");
+    };
   }, [roomId, user, token]);
 
   // Update swap bays handler to reset section
@@ -899,7 +907,7 @@ const Simulation = () => {
   }, [droppedItems, baySize, bayCount]);
 
   useEffect(() => {
-    socket.on("end_simulation", (endedRoomId) => {
+    socket.on("end_simulation", ({ roomId: endedRoomId }) => {
       if (endedRoomId === roomId) {
         navigate("/user-home");
       }

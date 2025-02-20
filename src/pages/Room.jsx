@@ -31,28 +31,34 @@ const Room = () => {
   useEffect(() => {
     fetchRoomDetails();
 
-    socket.on("user_added", (newUser) => {
-      setUsers((prevUsers) => [...prevUsers, newUser]);
-    });
-
-    socket.on("user_kicked", (userId) => {
-      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
-      if (user.id === userId) {
-        navigate("/user-home");
+    socket.on("user_added", ({ roomId: receivedRoomId, newUser }) => {
+      if (receivedRoomId === roomId) {
+        setUsers((prevUsers) => [...prevUsers, newUser]);
       }
     });
 
-    socket.on("start_simulation", (roomId) => {
-      if (user.is_admin !== 1) {
+    socket.on("user_kicked", ({ roomId: receivedRoomId, userId }) => {
+      if (receivedRoomId === roomId) {
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
+        if (user.id === userId) {
+          navigate("/user-home");
+        }
+      }
+    });
+
+    socket.on("start_simulation", ({ roomId: receivedRoomId }) => {
+      if (receivedRoomId === roomId && user.is_admin !== 1) {
         navigate(`/simulation/${roomId}`);
       }
     });
 
-    socket.on("port_updated", ({ userId, port }) => {
-      setAssignedPorts((prev) => ({
-        ...prev,
-        [userId]: port,
-      }));
+    socket.on("port_updated", ({ roomId: receivedRoomId, userId, port }) => {
+      if (receivedRoomId === roomId) {
+        setAssignedPorts((prev) => ({
+          ...prev,
+          [userId]: port,
+        }));
+      }
     });
 
     socket.on("rankings_updated", ({ roomId: updatedRoomId, rankings: updatedRankings }) => {
@@ -153,7 +159,7 @@ const Room = () => {
         },
       })
       .then(() => {
-        socket.emit("user_kicked", userId);
+        socket.emit("user_kicked", { roomId, userId });
       })
       .catch((error) => {
         console.error("There was an error kicking the user!", error);
@@ -262,7 +268,7 @@ const Room = () => {
   }
 
   const handleStartSimulation = () => {
-    socket.emit("start_simulation", roomId);
+    socket.emit("start_simulation", { roomId });
     startSimulation();
   };
 
@@ -284,7 +290,7 @@ const Room = () => {
         socket.emit("user_kicked", users[i].id);
       }
 
-      socket.emit("end_simulation", roomId);
+      socket.emit("end_simulation", { roomId });
 
       setRoomStatus("finished");
       console.log(res);
@@ -332,7 +338,7 @@ const Room = () => {
       );
 
       // Emit swap_bays event to notify all clients
-      socket.emit("swap_bays", roomId);
+      socket.emit("swap_bays", { roomId });
 
       // Show toast notification for admin
       toast.info("Swapping bays - Players will be temporarily restricted", {
@@ -414,7 +420,7 @@ const Room = () => {
       toast.success("Bays swapped successfully");
       setShowSwapModal(false);
       setSwapMap({});
-      socket.emit("swap_bays", roomId);
+      socket.emit("swap_bays", { roomId });
       await fetchRoomDetails();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to swap bays");
