@@ -1,6 +1,6 @@
 import "./RenderShipBayLayout.css";
 
-const RenderShipBayLayout = ({ bayCount, baySize, bayTypes, onBayTypeChange }) => {
+const RenderShipBayLayout = ({ bayCount, baySize, bayTypes, onBayTypeChange, readonly }) => {
   // Helper function untuk menghitung ukuran cell yang responsif
   const calculateCellSize = () => {
     const maxWidth = 32; // Ukuran maksimum cell
@@ -23,14 +23,13 @@ const RenderShipBayLayout = ({ bayCount, baySize, bayTypes, onBayTypeChange }) =
             ${bayTypes?.[bayIndex] === "reefer" ? "bg-blue-50 border-blue-300" : "bg-gray-50 border-gray-300"} 
             border-2 rounded-lg p-3`}
           style={{
-            width: `${Math.max(200, cellSize * baySize.columns + 32)}px`, // Minimum width atau width berdasarkan cells
+            width: `${Math.max(200, cellSize * baySize.columns + 32)}px`,
           }}
         >
           <div className="text-center mb-2">
             <h5 className="text-lg font-semibold">Bay {bayIndex + 1}</h5>
           </div>
 
-          {/* Wrapper untuk grid dengan scroll vertikal jika perlu */}
           <div className="w-full overflow-y-auto max-h-[400px] custom-scrollbar">
             <div
               className="grid gap-1 mb-4 mx-auto"
@@ -53,14 +52,22 @@ const RenderShipBayLayout = ({ bayCount, baySize, bayTypes, onBayTypeChange }) =
             </div>
           </div>
 
-          <label
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors w-full justify-center
-              ${bayTypes?.[bayIndex] === "reefer" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}
-            `}
-          >
-            <input type="checkbox" checked={bayTypes?.[bayIndex] === "reefer"} onChange={(e) => onBayTypeChange(bayIndex, e.target.checked ? "reefer" : "dry")} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-            <span className="text-sm font-medium">Reefer</span>
-          </label>
+          {/* Only show the checkbox if not readonly */}
+          {!readonly && onBayTypeChange && (
+            <label
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors w-full justify-center
+                ${bayTypes?.[bayIndex] === "reefer" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}
+              `}
+            >
+              <input
+                type="checkbox"
+                checked={bayTypes?.[bayIndex] === "reefer"}
+                onChange={(e) => onBayTypeChange(bayIndex, e.target.checked ? "reefer" : "dry")}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium">Reefer</span>
+            </label>
+          )}
         </div>
       ))}
     </div>

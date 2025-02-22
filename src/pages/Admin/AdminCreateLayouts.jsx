@@ -13,6 +13,8 @@ import { FiHelpCircle } from "react-icons/fi";
 import { GiShipBow } from "react-icons/gi";
 import { BiGrid, BiCube } from "react-icons/bi";
 import { MdOutlineGridOn } from "react-icons/md";
+import ShipLayout3D from "./ShipLayout3D";
+import GuideModal from "./GuideModal";
 
 const initialFormState = {
   name: "",
@@ -508,7 +510,13 @@ const AdminCreateLayouts = () => {
               <span className="text-xs text-gray-500 ml-2">(Click on bays to toggle between dry and reefer types)</span>
             </h3>
             <div className="border rounded-lg bg-gray-50 p-4">
-              <RenderShipBayLayout bayCount={formData.bay_count} baySize={formData.bay_size} bayTypes={formData.bay_types} onBayTypeChange={handleBayTypeChange} />
+              <RenderShipBayLayout
+                bayCount={formData.bay_count}
+                baySize={formData.bay_size}
+                bayTypes={formData.bay_types}
+                onBayTypeChange={handleBayTypeChange}
+                readonly={false} // Allow editing
+              />
             </div>
           </div>
         </div>
@@ -557,106 +565,6 @@ const AdminCreateLayouts = () => {
   // Add new state
   const [showGuideModal, setShowGuideModal] = useState(false);
 
-  // Add the guide modal component
-  const renderGuideModal = () => (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b">
-          <div className="flex items-center gap-3">
-            <GiShipBow className="w-8 h-8 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-800">Understanding Ship Bay Layouts</h2>
-          </div>
-          <button onClick={() => setShowGuideModal(false)} className="text-gray-600 hover:text-gray-800">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* 3D Visualization */}
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <BiCube className="text-blue-600" />
-                3D Ship Bay Visualization
-              </h3>
-              <div className="aspect-square bg-white rounded-lg shadow-inner border border-gray-200 flex items-center justify-center">
-                {/* Here you can integrate a 3D visualization library like Three.js */}
-                <img src="/ship-bay-3d-guide.png" alt="Ship Bay 3D Guide" className="max-w-full h-auto" />
-              </div>
-            </div>
-
-            {/* Layout Components Explanation */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <BiGrid className="text-blue-600" />
-                  Layout Components
-                </h3>
-
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 flex-shrink-0 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <MdOutlineGridOn className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Rows & Columns</h4>
-                      <p className="text-sm text-gray-600">Rows represent vertical spaces (max 7), while columns represent horizontal spaces (max 8) in each bay. This forms the container grid pattern.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 flex-shrink-0 bg-green-100 rounded-lg flex items-center justify-center">
-                      <BiCube className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Bay Count</h4>
-                      <p className="text-sm text-gray-600">Represents the number of container sections from front to back of the ship. Each ship can have up to 8 bays.</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 flex-shrink-0 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">Bay Types</h4>
-                      <p className="text-sm text-gray-600">Each bay can be either a dry container bay (regular cargo) or a reefer bay (temperature-controlled). Toggle between types by clicking on the bay.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <FiHelpCircle className="text-blue-600" />
-                  Tips & Best Practices
-                </h3>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500">•</span>
-                    Start with smaller layouts and gradually increase complexity
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500">•</span>
-                    Consider weight distribution when planning bay types
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-500">•</span>
-                    Group reefer bays together for efficient power management
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="container mx-auto p-4">
       <ToastContainer />
@@ -664,7 +572,7 @@ const AdminCreateLayouts = () => {
       {showCreateForm && renderModal(false)}
       {showEditForm && renderModal(true)}
       {showPreviewModal && selectedLayout && renderPreviewModal()}
-      {showGuideModal && renderGuideModal()}
+      {showGuideModal && <GuideModal onClose={() => setShowGuideModal(false)} />}
       <ConfirmationModal
         isOpen={deleteModalOpen}
         onClose={() => {

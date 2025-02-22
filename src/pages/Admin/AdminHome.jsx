@@ -576,7 +576,12 @@ const AdminHome = () => {
               </button>
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
-              <RenderShipBayLayout bayCount={selectedLayout.bay_count} baySize={selectedLayout.bay_size} bayTypes={selectedLayout.bay_types} readonly={true} />
+              <RenderShipBayLayout
+                bayCount={selectedLayout.bay_count}
+                baySize={selectedLayout.bay_size}
+                bayTypes={selectedLayout.bay_types}
+                readonly={true} // Disable editing
+              />
             </div>
             <div className="mt-4 flex justify-end">
               <button onClick={() => setShowLayoutPreview(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
