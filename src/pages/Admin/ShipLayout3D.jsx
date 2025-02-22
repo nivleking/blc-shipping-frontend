@@ -18,6 +18,11 @@ const ContainerSlot = ({ position, size, color = "#3b82f6", opacity = 0.6, label
     [color, opacity]
   );
 
+  // Guard against undefined baySize
+  if (!baySize) {
+    return null;
+  }
+
   // Updated container ID calculation to match RenderShipBayLayout format
   // Format: bay + row + col (e.g., 102 means bay 1, row 0, column 2)
   const containerId = `${bayIndex + 1}${baySize.rows - row - 1}${col}`;
@@ -39,16 +44,14 @@ const BaySection = ({ position, size, highlighted, label, baySize }) => {
   const highlightColor = "#059669"; // Using a more solid green color
   const defaultColor = "#3b82f6";
 
+  // Guard against undefined position or size
+  if (!position || !size || !baySize) {
+    return null;
+  }
+
   return (
     <group position={position} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
-      <ContainerSlot
-        position={[0, 0, 0]}
-        size={size}
-        color={highlighted ? highlightColor : defaultColor}
-        opacity={highlighted ? 0.9 : hovered ? 0.8 : 0.6} // Increased opacity for highlighted state
-        label={label}
-        baySize={baySize}
-      />
+      <ContainerSlot position={[0, 0, 0]} size={size} color={highlighted ? highlightColor : defaultColor} opacity={0.5} label={label} baySize={baySize} row={0} col={0} bayIndex={0} />
     </group>
   );
 };
@@ -57,9 +60,17 @@ const ShipLayout3D = ({ baySize = { rows: 4, columns: 6 }, bayCount = 3 }) => {
   const [activeExample, setActiveExample] = useState("none");
   const [showContainerIds, setShowContainerIds] = useState(false);
 
+  // Memoize camera position based on bay count and size
+  const cameraPosition = useMemo(() => {
+    const x = Math.max(15, bayCount * 4);
+    const y = Math.max(12, baySize.rows * 2);
+    const z = Math.max(15, baySize.columns * 2);
+    return [x, y, z];
+  }, [bayCount, baySize]);
+
   return (
     <div className="relative h-[600px]" style={{ background: "linear-gradient(to bottom, #f8fafc, #e2e8f0)" }}>
-      <Canvas shadows gl={{ antialias: true }} camera={{ position: [15, 12, 15], fov: 45 }} dpr={[1, 2]}>
+      <Canvas shadows gl={{ antialias: true }} camera={{ position: cameraPosition, fov: 45 }} dpr={[1, 2]}>
         <color attach="background" args={["#f8fafc"]} />
         <fog attach="fog" args={["#f8fafc", 30, 40]} />
 
