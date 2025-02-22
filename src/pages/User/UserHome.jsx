@@ -59,7 +59,7 @@ const UserHome = () => {
       }
     } catch (error) {
       console.error("Error joining room:", error);
-      toast.error("No room found with that ID");
+      toast.error(error.response?.data?.message || "An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }

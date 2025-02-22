@@ -30,7 +30,7 @@ const GuideModal = ({ onClose }) => {
         <div className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-3">
             <GiShipBow className="w-8 h-8 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-800">Understanding Ship Bay Layouts</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Layout Guide</h2>
           </div>
           <button onClick={onClose} className="text-gray-600 hover:text-gray-800">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

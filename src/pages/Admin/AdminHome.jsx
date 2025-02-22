@@ -17,7 +17,7 @@ const initialFormState = {
   name: "",
   description: "",
   deck: "",
-  ship_layout: "", // Add this
+  ship_layout: "",
   max_users: 0,
   bay_size: null,
   bay_count: 0,
@@ -48,6 +48,8 @@ const AdminHome = () => {
   const [query, setQuery] = useState("");
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [selectedLayout, setSelectedLayout] = useState(null);
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
 
   // Update form reset logic
   const resetForm = () => {
@@ -65,6 +67,7 @@ const AdminHome = () => {
       fetchRooms();
       fetchDecks();
       fetchLayouts();
+      fetchAvailableUsers();
     }
   }, [token]);
 
@@ -120,6 +123,20 @@ const AdminHome = () => {
     }
   };
 
+  const fetchAvailableUsers = async () => {
+    try {
+      const response = await api.get("/rooms/available-users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setAvailableUsers(response.data);
+      console.log("Available users fetched:", response.data);
+    } catch (error) {
+      console.error("Error fetching available users:", error);
+    }
+  };
+
   // Update createRoom function
   async function createRoom(e) {
     e.preventDefault();
@@ -134,6 +151,7 @@ const AdminHome = () => {
       max_users: formData.max_users,
       total_rounds: formData.total_rounds,
       cards_limit_per_round: formData.cards_limit_per_round,
+      assigned_users: selectedUsers,
     };
 
     console.log("Submitting form data:", payload);
@@ -257,14 +275,6 @@ const AdminHome = () => {
   const currentPageData = sortedRooms().slice(offset, offset + itemsPerPage);
   const pageCount = Math.ceil(rooms.length / itemsPerPage);
 
-  const handleBaySizeChange = (e) => {
-    const { name, value } = e.target;
-    setBaySize((prevSize) => ({
-      ...prevSize,
-      [name]: parseInt(value),
-    }));
-  };
-
   useEffect(() => {
     setBayTypes((prevTypes) => {
       // Create new array with current bay count length
@@ -382,6 +392,72 @@ const AdminHome = () => {
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
           />
           {errors.cards_limit_per_round && <p className="text-red-500 mt-1">{errors.cards_limit_per_round[0]}</p>}
+        </div>
+
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label className="block text-gray-700 font-semibold">Assign Group Users</label>
+            <Tooltip>Select group users who can join this room</Tooltip>
+          </div>
+          <Combobox multiple value={selectedUsers} onChange={(userIds) => setSelectedUsers(userIds)}>
+            <div className="relative">
+              <div className="relative w-full">
+                <ComboboxInput
+                  className="w-full rounded-lg border border-gray-300 bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search and select group users..."
+                  displayValue={(selectedIds) =>
+                    selectedIds
+                      .map((id) => availableUsers.find((user) => user.id === id)?.name)
+                      .filter(Boolean)
+                      .join(", ")
+                  }
+                />
+                <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <HiChevronUpDown className="h-5 w-5 text-gray-400" />
+                </ComboboxButton>
+              </div>
+              <ComboboxOptions className="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white py-2 text-base shadow-xl ring-1 ring-black/5 focus:outline-none sm:text-sm">
+                {availableUsers.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-gray-500">No group users available</div>
+                ) : (
+                  <>
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500">{selectedUsers.length} group users selected</span>
+                        {selectedUsers.length > 0 && (
+                          <button onClick={() => setSelectedUsers([])} className="text-xs text-red-500 hover:text-red-700">
+                            Clear all
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {availableUsers
+                      .filter((user) => user.name.toLowerCase().includes(query.toLowerCase()))
+                      .map((user) => (
+                        <ComboboxOption
+                          key={user.id}
+                          value={user.id}
+                          className={({ active, selected }) => `relative cursor-pointer select-none px-4 py-3 text-sm transition-colors ${active ? "bg-blue-50" : ""} ${selected ? "bg-blue-50" : ""}`}
+                        >
+                          {({ active, selected }) => (
+                            <div className="flex items-center justify-between">
+                              <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>{user.name}</span>
+                              {selected && (
+                                <span className={`flex items-center ${active ? "text-blue-700" : "text-blue-600"}`}>
+                                  <HiCheck className="h-5 w-5" />
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </ComboboxOption>
+                      ))}
+                  </>
+                )}
+              </ComboboxOptions>
+            </div>
+          </Combobox>
+          {errors.assigned_users && <p className="text-red-500 mt-1">{errors.assigned_users[0]}</p>}
         </div>
 
         <div className="col-span-full space-y-6">
