@@ -44,12 +44,6 @@ const AdminHome = () => {
   const itemsPerPage = 5;
   const navigate = useNavigate();
 
-  const [showConfigPopup, setShowConfigPopup] = useState(false);
-  const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
-  const [bayCount, setBayCount] = useState(1);
-  const [bayTypes, setBayTypes] = useState(Array(bayCount).fill("dry"));
-  const [isBayConfigured, setIsBayConfigured] = useState(false);
-
   const [query, setQuery] = useState("");
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [selectedLayout, setSelectedLayout] = useState(null);
@@ -61,11 +55,9 @@ const AdminHome = () => {
   // Update form reset logic
   const resetForm = () => {
     setFormData(initialFormState);
-    setBaySize({ rows: 1, columns: 1 });
-    setBayCount(1);
-    setBayTypes(["dry"]);
     setSelectedDeck(null);
-    setIsBayConfigured(false);
+    setSelectedLayout(null);
+    setSelectedUsers([]);
     setErrors({});
   };
 
@@ -527,20 +519,6 @@ const AdminHome = () => {
   const currentPageData = sortedRooms().slice(offset, offset + itemsPerPage);
   const pageCount = Math.ceil(rooms.length / itemsPerPage);
 
-  useEffect(() => {
-    setBayTypes((prevTypes) => {
-      // Create new array with current bay count length
-      const newTypes = Array(bayCount).fill("dry");
-
-      // Copy existing types for bays that still exist
-      for (let i = 0; i < Math.min(prevTypes.length, bayCount); i++) {
-        newTypes[i] = prevTypes[i];
-      }
-
-      return newTypes;
-    });
-  }, [bayCount]);
-
   const filteredDecks = query === "" ? decks : decks.filter((deck) => deck.name.toLowerCase().includes(query.toLowerCase()));
 
   // Add this with other state declarations
@@ -719,7 +697,6 @@ const AdminHome = () => {
                       bay_count: layout.bay_count,
                       bay_types: layout.bay_types,
                     }));
-                    setIsBayConfigured(true);
                   }
                 }}
               >

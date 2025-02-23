@@ -44,12 +44,12 @@ const GuideModal = ({ onClose }) => {
           <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm mb-4">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <FiHelpCircle className="text-blue-600" />
-              Tips & Best Practices
+              Description
             </h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li className="flex items-start gap-2">
                 <span className="text-blue-500">•</span>
-                Adjust the controls above to see how different configurations look
+                Adjust the controls below to see how different configurations look
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-500">•</span>

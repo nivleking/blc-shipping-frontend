@@ -234,7 +234,6 @@ const AdminCreateCards = () => {
         <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateSubmit} onInfoClick={() => setShowInfoModal(true)} />
         <TabGroup>
           <TabList className="flex space-x-1 rounded-xl bg-white shadow-sm p-1 mb-6 mt-4">
-            <Tab className={({ selected }) => `w-full rounded-lg py-2.5 text-sm font-medium leading-5 ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`}>Market Intelligence</Tab>
             <Tab
               className={({ selected }) =>
                 `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
@@ -243,6 +242,7 @@ const AdminCreateCards = () => {
             >
               Configuration
             </Tab>
+            <Tab className={({ selected }) => `w-full rounded-lg py-2.5 text-sm font-medium leading-5 ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`}>Market Intelligence</Tab>
             <Tab
               className={({ selected }) =>
                 `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
@@ -254,11 +254,6 @@ const AdminCreateCards = () => {
           </TabList>
 
           <TabPanels>
-            {/* Market Intelligence Tab */}
-            <TabPanel>
-              <MarketIntelligencePanel />
-              <div className="bg-white rounded-lg shadow"></div>
-            </TabPanel>
             {/* Configuration Tab */}
             <TabPanel>
               <ConfigurationPanel
@@ -275,6 +270,12 @@ const AdminCreateCards = () => {
                 refreshCards={fetchDeck}
                 refreshContainers={fetchContainers}
               />
+            </TabPanel>
+
+            {/* Market Intelligence Tab */}
+            <TabPanel>
+              <MarketIntelligencePanel />
+              <div className="bg-white rounded-lg shadow"></div>
             </TabPanel>
 
             {/* Generated Cards Tab */}

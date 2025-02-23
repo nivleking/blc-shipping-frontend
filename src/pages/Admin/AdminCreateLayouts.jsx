@@ -290,7 +290,15 @@ const AdminCreateLayouts = () => {
                         <div className="flex items-center text-gray-600">
                           <IoTimeOutline className="w-4 h-4 text-gray-400 mr-2" />
                           <span className="font-medium">Created:</span>
-                          <span className="ml-2">{new Date(layout.created_at).toLocaleDateString()}</span>
+                          <span className="ml-2">
+                            {new Date(layout.created_at).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
                         </div>
                       </div>
 
