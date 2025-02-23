@@ -49,7 +49,7 @@ const Login = () => {
         sessionStorage.setItem("token", response.data.token);
         sessionStorage.setItem("refreshToken", response.data.refresh_token);
         setToken(response.data.token);
-        if (response.data.is_admin === 1) {
+        if (response.data.is_admin === 1 || response.data.is_admin === true) {
           navigate("/admin-home");
         } else {
           navigate("/user-home");
