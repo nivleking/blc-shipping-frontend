@@ -2,8 +2,8 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api, socket } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
-import LeaderboardModal from "../components/rooms/LeaderboardModal";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import AssignPortModal from "../components/rooms/AssignPortModal";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
@@ -47,7 +47,7 @@ const Room = () => {
     });
 
     socket.on("start_simulation", ({ roomId: receivedRoomId }) => {
-      if (receivedRoomId === roomId && user.is_admin !== 1) {
+      if (receivedRoomId === roomId && user.is_admin === false) {
         navigate(`/simulation/${roomId}`);
       }
     });
@@ -63,7 +63,16 @@ const Room = () => {
 
     socket.on("rankings_updated", ({ roomId: updatedRoomId, rankings: updatedRankings }) => {
       if (roomId === updatedRoomId) {
+        console.log("Receiving rankings update:", updatedRankings);
         setRankings(updatedRankings);
+
+        setShowRankings((prev) => {
+          if (prev) {
+            setShowRankings(false);
+            setTimeout(() => setShowRankings(true), 0);
+          }
+          return prev;
+        });
       }
     });
 
@@ -167,7 +176,7 @@ const Room = () => {
   };
 
   const handleBack = () => {
-    if (user.is_admin === 1) {
+    if (user.is_admin === true) {
       navigate("/admin-home");
     } else {
       api
@@ -181,7 +190,7 @@ const Room = () => {
           }
         )
         .then(() => {
-          socket.emit("user_kicked", user.id);
+          socket.emit("user_kicked", { roomId, userId: user.id });
           navigate("/user-home");
         })
         .catch((error) => {
@@ -299,62 +308,6 @@ const Room = () => {
     }
   }
 
-  async function handleSwapBays() {
-    try {
-      // First swap the bays
-      await api.put(
-        `/rooms/${roomId}/swap-bays`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // Get all users in the room
-      const usersResponse = await api.get(`/rooms/${roomId}/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const roomUsers = usersResponse.data;
-
-      // Update section for each user's ship bay
-      await Promise.all(
-        roomUsers.map((user) =>
-          api.put(
-            `/ship-bays/${roomId}/${user.id}/section`,
-            {
-              section: "section1",
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-        )
-      );
-
-      // Emit swap_bays event to notify all clients
-      socket.emit("swap_bays", { roomId });
-
-      // Show toast notification for admin
-      toast.info("Swapping bays - Players will be temporarily restricted", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-    } catch (error) {
-      console.error("There was an error swapping bays!", error);
-      toast.error("Failed to swap bays");
-    }
-  }
-
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [swapMap, setSwapMap] = useState({});
 
@@ -451,12 +404,12 @@ const Room = () => {
       setShipBay(res.data.shipbays);
       setShowPortPopup(false);
       setPortsSet(true);
+      toast.success("Ports assigned successfully!");
     } catch (error) {
       console.error("There was an error setting the ports!", error);
     }
   }
 
-  // Update fetchRankings to return the rankings
   const fetchRankings = async () => {
     try {
       const response = await api.get(`/rooms/${roomId}/rankings`, {
@@ -465,6 +418,7 @@ const Room = () => {
         },
       });
       setRankings(response.data);
+
       return response.data;
     } catch (error) {
       console.error("Error fetching rankings:", error);
@@ -474,6 +428,8 @@ const Room = () => {
 
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+
       {/* Enhanced Header */}
       <div className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-4 shadow-lg">
         <div className="container mx-auto">
@@ -518,7 +474,7 @@ const Room = () => {
           {/* Enhanced Users Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
-              <h3 className="text-xl font-semibold">{showRankings ? "Leaderboard" : `Players (${users.length})`}</h3>
+              <h3 className="text-xl font-semibold">{showRankings ? "Leaderboard" : `Group Users (${users.length})`}</h3>
               {roomStatus === "active" && (
                 <button
                   onClick={() => {
@@ -529,7 +485,7 @@ const Room = () => {
                   }}
                   className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-500 hover:bg-indigo-600"
                 >
-                  {showRankings ? "Show Players" : "Show Rankings"}
+                  {showRankings ? "Show Group Users" : "Show Rankings"}
                 </button>
               )}
             </div>
@@ -566,7 +522,7 @@ const Room = () => {
                         </th>
                       </>
                     )}
-                    {!showRankings && user && user.is_admin === 1 && (
+                    {!showRankings && user && user.is_admin === true && (
                       <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Actions
                       </th>
@@ -577,7 +533,7 @@ const Room = () => {
                   {showRankings ? (
                     rankings.length > 0 ? (
                       rankings.map((rank, index) => (
-                        <tr key={rank.user_id} className={`${index === 0 ? "bg-yellow-50" : ""} hover:bg-gray-50`}>
+                        <tr key={`rank-${rank.user_id}-${index}`} className={`${index === 0 ? "bg-yellow-50" : ""} hover:bg-gray-50`}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 text-sm font-semibold rounded-full ${index === 0 ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>#{index + 1}</span>
                           </td>
@@ -616,7 +572,7 @@ const Room = () => {
                     )
                   ) : users && users.length > 0 ? (
                     users.map((singleUser, index) => (
-                      <tr key={singleUser.id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={`user-${singleUser.id}-${index}`} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -624,7 +580,7 @@ const Room = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignedPorts[singleUser.id] || "Not Assigned"}</td>
-                        {user && user.is_admin === 1 && (
+                        {user && user.is_admin === true && (
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <button
                               onClick={() => handleKickUser(singleUser.id)}
@@ -641,7 +597,7 @@ const Room = () => {
                   ) : (
                     <tr>
                       <td colSpan="4" className="px-6 py-4 text-center text-gray-500 italic">
-                        No players in the room.
+                        No group Users in the room.
                       </td>
                     </tr>
                   )}
@@ -661,7 +617,7 @@ const Room = () => {
               </svg>
               HOME
             </button>
-            {user && user.is_admin === 1 && roomStatus !== "active" && roomStatus !== "finished" && (
+            {user && user.is_admin === true && roomStatus !== "active" && roomStatus !== "finished" && (
               <>
                 <button
                   onClick={() => setShowPortPopup(true)}
@@ -689,7 +645,7 @@ const Room = () => {
                 </button>
               </>
             )}
-            {user && user.is_admin === 1 && roomStatus === "active" && (
+            {user && user.is_admin === true && roomStatus === "active" && (
               <>
                 <button
                   onClick={() => setShowSwapModal(true)}
@@ -719,7 +675,7 @@ const Room = () => {
                 </button>
               </>
             )}
-            {user && user.is_admin === 1 && roomStatus === "finished" && (
+            {user && user.is_admin === true && roomStatus === "finished" && (
               <button
                 onClick={() => navigate(`/rooms/${roomId}/detail`)}
                 className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-500 hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
@@ -743,50 +699,10 @@ const Room = () => {
         </div>
       </div>
 
-      {/* Enhanced Modal */}
-      {showPortPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800">Assign Ports to Players</h2>
-            </div>
-            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-              {users.map((singleUser) => (
-                <div key={singleUser.id} className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">{singleUser.name}</label>
-                  <select
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                    value={ports[singleUser.id] || ""}
-                    onChange={(e) => setPorts({ ...ports, [singleUser.id]: e.target.value })}
-                  >
-                    <option value="">Select a port</option>
-                    {Object.values(origins).map((origin) => (
-                      <option key={origin} value={origin}>
-                        {origin}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 rounded-b-lg">
-              <button
-                onClick={() => setShowPortPopup(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSetPorts}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Confirm Ports
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Assign Port Modal */}
+      {showPortPopup && <AssignPortModal users={users} origins={origins} ports={ports} setPorts={setPorts} onClose={() => setShowPortPopup(false)} onConfirm={handleSetPorts} />}
 
+      {/* Enhanced Modal */}
       {showSwapModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-xl transform transition-all">

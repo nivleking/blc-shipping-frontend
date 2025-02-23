@@ -352,7 +352,8 @@ const Simulation = () => {
     }
 
     try {
-      // Track card acceptance
+      setIsProcessingCard(true);
+
       await api.post(
         `/ship-bays/${roomId}/${user.id}/cards`,
         {
@@ -365,8 +366,6 @@ const Simulation = () => {
           },
         }
       );
-
-      setIsProcessingCard(true); // Disable actions
 
       const currentCard = salesCallCards.find((card) => card.id === cardId);
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
@@ -386,6 +385,22 @@ const Simulation = () => {
         }
       );
       setRevenue(newRevenue);
+
+      const rankResponse = await api.get(`/rooms/${roomId}/rankings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      socket.emit("rankings_updated", {
+        roomId,
+        rankings: rankResponse.data,
+      });
+
+      socket.emit("stats_requested", {
+        roomId,
+        userId: user.id,
+      });
 
       const newContainers = containers.filter((container) => container.card_id === cardId);
       const updatedDroppedItems = [...droppedItems];
@@ -409,12 +424,6 @@ const Simulation = () => {
 
       setDroppedItems(updatedDroppedItems);
 
-      const rankResponse = await api.get(`/rooms/${roomId}/rankings`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
       const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
         return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
           return Array.from({ length: baySize.columns }).map((_, colIndex) => {
@@ -433,21 +442,6 @@ const Simulation = () => {
         });
       });
 
-      await Promise.all([
-        api.post("/ship-bays", {
-          arena: newBayData,
-          user_id: user.id,
-          room_id: roomId,
-          revenue: newRevenue,
-        }),
-        api.post("/ship-docks", {
-          arena: newDockData,
-          user_id: user.id,
-          room_id: roomId,
-          dock_size: dockSize,
-        }),
-      ]);
-
       // Update states
       setBayData(newBayData);
       setDockData(newDockData);
@@ -465,33 +459,29 @@ const Simulation = () => {
         }
       );
 
+      await Promise.all([
+        api.post("/ship-bays", {
+          arena: newBayData,
+          user_id: user.id,
+          room_id: roomId,
+          revenue: newRevenue,
+        }),
+        api.post("/ship-docks", {
+          arena: newDockData,
+          user_id: user.id,
+          room_id: roomId,
+          dock_size: dockSize,
+        }),
+      ]);
+
       await checkLimitCard();
 
       toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
-
-      socket.emit("rankings_updated", {
-        roomId,
-        rankings: rankResponse.data,
-      });
-
-      // Request updated stats after accepting card
-      socket.emit("stats_requested", {
-        roomId,
-        userId: user.id,
-      });
     } catch (error) {
       console.error("Error accepting card:", error);
       toast.error("Failed to process card");
-
-      // Revert UI changes on error
-      // setSalesCallCards((prevCards) => {
-      //   if (!prevCards.find((c) => c.id === cardId)) {
-      //     return [...prevCards, currentCard];
-      //   }
-      //   return prevCards;
-      // });
     } finally {
-      setIsProcessingCard(false); // Re-enable actions
+      setIsProcessingCard(false);
     }
   }
 
