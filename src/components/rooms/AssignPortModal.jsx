@@ -49,7 +49,7 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
 
         <div className="p-6">
           <div className="mb-6">
-            <div className="flex space-x-4 mb-6">
+            <div className="flex items-center justify-center space-x-4 mb-6">
               <button onClick={() => setAssignmentMode("manual")} className={`px-4 py-2 rounded-md ${assignmentMode === "manual" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}`}>
                 Manual Assignment
               </button>

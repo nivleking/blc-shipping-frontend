@@ -26,6 +26,7 @@ const Stowage = ({
   targetContainers,
   isProcessingCard,
   isLimitExceeded,
+  isCardVisible,
 }) => {
   return (
     <>
@@ -87,11 +88,10 @@ const Stowage = ({
                 </h3>
                 {isLimitExceeded ? (
                   <div className="text-center p-8 bg-gray-50 rounded-lg">
-                    <p className="text-gray-600">You have reached the maximum number of cards for this round. Please wait for the next round.</p>
+                    <p className="text-gray-600">You have reached the maximum number of cards for this round.</p>
                   </div>
                 ) : salesCallCards.length > 0 ? (
-                  // Existing card display logic
-                  <div className="grid gap-4">
+                  <div className={`transition-opacity duration-300 ${isCardVisible ? "opacity-100" : "opacity-0"}`}>
                     <SalesCallCard
                       salesCallCards={salesCallCards}
                       currentCardIndex={currentCardIndex}

@@ -88,12 +88,6 @@ const Simulation = () => {
       });
       const deckId = roomResponse.data.deck_id;
 
-      if (!user.id) {
-        toast.error("User session invalid");
-        navigate("/");
-        return;
-      }
-
       const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -164,10 +158,6 @@ const Simulation = () => {
           }
         }, 1000);
       }
-
-      return () => {
-        socket.off("swap_bays");
-      };
     });
 
     return () => {
@@ -175,13 +165,21 @@ const Simulation = () => {
     };
   }, [roomId, user, token]);
 
-  // Update swap bays handler to reset section
   const handleSwapProcess = async () => {
     setIsSwapping(true);
     try {
-      await Promise.all([fetchArenaData(), fetchDockData()]);
+      await Promise.all([fetchArenaData(), fetchDockData(), fetchSalesCallCards()]);
+
+      // Reset states
       setSection(1);
       setIsLimitExceeded(false);
+      setSalesCallCards([]);
+      setCurrentCardIndex(0);
+
+      // Refetch sales cards after a short delay
+      setTimeout(() => {
+        fetchSalesCallCards();
+      }, 500);
     } catch (error) {
       console.error("Error updating after swap:", error);
       toast.error("Failed to update bay data");
@@ -218,7 +216,6 @@ const Simulation = () => {
       setRevenue(response.data.revenue || 0);
       setPort(response.data.port);
       setSection(response.data.section === "section1" ? 1 : 2);
-      console.log("Port:", response.data.port);
 
       const containersResponse = await api.get("/containers");
       const containerData = containersResponse.data;
@@ -273,6 +270,11 @@ const Simulation = () => {
         .filter(Boolean);
 
       setDroppedItems([...dockItems, ...newDroppedItems]);
+
+      const currentSection = response.data.section;
+      if (currentSection) {
+        setSection(currentSection === "section1" ? 1 : 2);
+      }
     } catch (error) {
       console.error("Error fetching arena data:", error);
       const emptyBayData = Array(bayCount)
@@ -335,6 +337,20 @@ const Simulation = () => {
   }, [salesCallCards, currentCardIndex]);
 
   const [isProcessingCard, setIsProcessingCard] = useState(false);
+  const [isCardVisible, setIsCardVisible] = useState(true);
+
+  async function fetchRankings() {
+    const rankResponse = await api.get(`/rooms/${roomId}/rankings`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    socket.emit("rankings_updated", {
+      roomId,
+      rankings: rankResponse.data,
+    });
+  }
 
   async function handleAcceptCard(cardId) {
     if (section !== 2) {
@@ -353,6 +369,7 @@ const Simulation = () => {
 
     try {
       setIsProcessingCard(true);
+      setIsCardVisible(false);
 
       await api.post(
         `/ship-bays/${roomId}/${user.id}/cards`,
@@ -385,22 +402,6 @@ const Simulation = () => {
         }
       );
       setRevenue(newRevenue);
-
-      const rankResponse = await api.get(`/rooms/${roomId}/rankings`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      socket.emit("rankings_updated", {
-        roomId,
-        rankings: rankResponse.data,
-      });
-
-      socket.emit("stats_requested", {
-        roomId,
-        userId: user.id,
-      });
 
       const newContainers = containers.filter((container) => container.card_id === cardId);
       const updatedDroppedItems = [...droppedItems];
@@ -465,6 +466,7 @@ const Simulation = () => {
           user_id: user.id,
           room_id: roomId,
           revenue: newRevenue,
+          section: "section2",
         }),
         api.post("/ship-docks", {
           arena: newDockData,
@@ -476,10 +478,23 @@ const Simulation = () => {
 
       await checkLimitCard();
 
+      setTimeout(() => {
+        setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
+        setIsCardVisible(true);
+      }, 1500);
+
       toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
+
+      fetchRankings();
+
+      socket.emit("stats_requested", {
+        roomId,
+        userId: user.id,
+      });
     } catch (error) {
       console.error("Error accepting card:", error);
       toast.error("Failed to process card");
+      setIsCardVisible(true);
     } finally {
       setIsProcessingCard(false);
     }
@@ -502,6 +517,7 @@ const Simulation = () => {
       const room = roomResponse.data;
 
       const isExceeded = shipBay.current_round_cards >= room.cards_limit_per_round;
+      console.log("Is limit exceeded:", isExceeded);
       setIsLimitExceeded(isExceeded);
       return isExceeded;
     } catch (error) {
@@ -510,9 +526,9 @@ const Simulation = () => {
     }
   };
 
-  // Add useEffect to check limit whenever section or stats change
   useEffect(() => {
     if (section === 2) {
+      fetchSalesCallCards();
       checkLimitCard();
     }
   }, [section, moveStats.acceptedCards, moveStats.rejectedCards]);
@@ -529,7 +545,8 @@ const Simulation = () => {
         return;
       }
 
-      // Track card rejection
+      setIsCardVisible(false);
+
       await api.post(
         `/ship-bays/${roomId}/${user.id}/cards`,
         {
@@ -555,18 +572,35 @@ const Simulation = () => {
         }
       );
 
+      await api.put(
+        `/ship-bays/${roomId}/${user.id}/section`,
+        {
+          section: "section2",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       await checkLimitCard();
 
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
       setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
 
-      // Request updated stats after rejecting card
+      setTimeout(() => {
+        setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
+        setIsCardVisible(true);
+      }, 1500);
+
       socket.emit("stats_requested", {
         roomId,
         userId: user.id,
       });
     } catch (error) {
       console.error("Error rejecting sales call card:", error);
+      setIsCardVisible(true);
     }
   }
 
@@ -861,6 +895,8 @@ const Simulation = () => {
         roomId,
         userId: user.id,
       });
+
+      fetchRankings();
 
       console.log("API call successful for logs", resLog.data);
     } catch (error) {
@@ -1202,6 +1238,7 @@ const Simulation = () => {
                   onNextSection={handleNextSection}
                   targetContainers={targetContainers}
                   isProcessingCard={isProcessingCard}
+                  isCardVisible={isCardVisible}
                 />
               </TabPanel>
 

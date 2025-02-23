@@ -187,7 +187,7 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                   <div className="mb-8">
                     <div className="flex items-center">
                       <BiAnchor className="text-blue-500 text-2xl mr-2" />
-                      <h3 className="text-xl font-bold text-gray-800 mb-3">Port Configuration</h3>
+                      <h3 className="text-1xl font-bold text-gray-800 mb-3">Port Configuration</h3>
                     </div>
                     <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
                       <div className="grid grid-cols-5 gap-3">
@@ -208,7 +208,7 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                 p-4 border-2 border-transparent hover:border-blue-300
               `}
                           >
-                            <div className="text-2xl font-bold mb-1">{portCount}</div>
+                            <div className="text-1xl font-bold mb-1">{portCount}</div>
                             <div className="text-xs">Ports</div>
                           </button>
                         ))}
@@ -232,7 +232,7 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                       <div className="p-6 border-b border-gray-200">
                         <div className="flex items-center mb-4">
                           <FaShip className="text-blue-500 text-xl mr-2" />
-                          <h3 className="text-lg font-bold text-gray-800">Create Sales Call Card</h3>
+                          <h3 className="text-1xl font-bold text-gray-800">Create Sales Call Card</h3>
                         </div>
 
                         <div className="grid grid-cols-2 gap-6">
