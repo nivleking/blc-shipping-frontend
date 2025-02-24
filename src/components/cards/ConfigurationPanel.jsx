@@ -8,6 +8,7 @@ import { api } from "../../axios/axios";
 import { BiAnchor } from "react-icons/bi";
 import { FaShip } from "react-icons/fa";
 import { BsBoxSeam, BsGear, BsRocket, BsLightningCharge } from "react-icons/bs";
+import FileGeneratePanel from "./FileGeneratePanel";
 
 // Add preset configs array
 const PRESET_CONFIGS = [
@@ -169,6 +170,14 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                 }
               >
                 Auto Generate
+              </Tab>
+              <Tab
+                className={({ selected }) =>
+                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+      ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
+                }
+              >
+                File Generate
               </Tab>
               <Tab
                 className={({ selected }) =>
@@ -481,6 +490,12 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                     </div>
                   </div>
                 </div>
+              </TabPanel>
+              <TabPanel>
+                <FileGeneratePanel deckId={deckId} refreshCards={refreshCards} refreshContainers={refreshContainers} />
+              </TabPanel>{" "}
+              <TabPanel>
+                <FileGeneratePanel deckId={deckId} refreshCards={refreshCards} refreshContainers={refreshContainers} />
               </TabPanel>
               <TabPanel>
                 <div className="bg-white rounded-xl shadow-sm p-6">
