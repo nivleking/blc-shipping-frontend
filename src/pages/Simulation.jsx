@@ -634,28 +634,6 @@ const Simulation = () => {
     return !containerAbove;
   };
 
-  // Add new helper function to check if container is at bottom row
-  const isBottomContainer = (sourceArea, targetArea) => {
-    const [srcType, srcBayIndex, srcCellIndex] = sourceArea.split("-");
-    const [targetType, targetBayIndex, targetCellIndex] = targetArea.split("-");
-
-    if (srcType !== "bay" || targetType !== "bay") return false;
-
-    const srcRow = Math.floor(srcCellIndex / baySize.columns);
-    const srcCol = srcCellIndex % baySize.columns;
-
-    // Check if source is bottom row
-    if (srcRow === baySize.rows - 1) {
-      const targetRow = Math.floor(targetCellIndex / baySize.columns);
-      // Prevent moving up if source is bottom container
-      if (targetRow < srcRow) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
   const checkSpace = (droppedItems, baySize, targetArea) => {
     const [type, bayIndex, cellIndex] = targetArea.split("-");
 
@@ -689,7 +667,6 @@ const Simulation = () => {
     return true;
   };
 
-  // Add this helper function after other helper functions
   const isBlockedByContainerAbove = (droppedItems, sourceArea) => {
     const [type, bayIndex, cellIndex] = sourceArea.split("-");
 
@@ -698,7 +675,6 @@ const Simulation = () => {
     const row = Math.floor(cellIndex / baySize.columns);
     const col = cellIndex % baySize.columns;
 
-    // Check if there's a container above
     if (row > 0) {
       const aboveCellId = `bay-${bayIndex}-${(row - 1) * baySize.columns + col}`;
       return droppedItems.some((item) => item.area === aboveCellId);
@@ -707,22 +683,38 @@ const Simulation = () => {
     return false;
   };
 
-  // Add helper function to check container-bay compatibility
   const isValidContainerForBay = (container, bayIndex) => {
     if (!container || bayIndex === undefined) return false;
 
     const bayType = bayTypes[bayIndex];
 
-    // Dry containers can go anywhere
     if (container.type === "Dry") return true;
 
-    // Reefer containers can only go in reefer bays
     if (container.type === "Reefer") {
       return bayType === "reefer";
     }
 
     return false;
   };
+
+  function isDirectUpperMove(fromArea, toArea, baySize) {
+    const [fromType, fromBayIndex, fromCellIndex] = fromArea.split("-");
+    const [toType, toBayIndex, toCellIndex] = toArea.split("-");
+
+    // Pastikan kedua area adalah bay dan dari bay yang sama
+    if (fromType !== "bay" || toType !== "bay" || fromBayIndex !== toBayIndex) {
+      return false;
+    }
+
+    const fromRow = Math.floor(parseInt(fromCellIndex, 10) / baySize.columns);
+    const fromCol = parseInt(fromCellIndex, 10) % baySize.columns;
+    const toRow = Math.floor(parseInt(toCellIndex, 10) / baySize.columns);
+    const toCol = parseInt(toCellIndex, 10) % baySize.columns;
+
+    // Jika target berada tepat di atas (baris berkurang 1 dan kolom sama),
+    // pindahan dianggap tidak valid karena akan menyebabkan container tanpa penopang.
+    return toRow === fromRow - 1 && toCol === fromCol;
+  }
 
   async function handleDragEnd(event) {
     const { active, over } = event;
@@ -735,9 +727,7 @@ const Simulation = () => {
 
     const [type, bayIndex] = over.id.split("-");
 
-    // Only validate bay types for bay placements
     if (type === "bay") {
-      // Check if container type is valid for this bay
       if (!isValidContainerForBay(container, parseInt(bayIndex))) {
         toast.error(container.type === "Reefer" ? "Reefer containers can only be placed in reefer bays" : "Invalid container placement", {
           position: "top-right",
@@ -750,7 +740,14 @@ const Simulation = () => {
     const activeItem = droppedItems.find((item) => item.id === active.id);
     if (activeItem && activeItem.area === over.id) return;
 
-    // Check if source container is blocked by containers above
+    if (activeItem && isDirectUpperMove(activeItem.area, over.id, baySize)) {
+      toast.error("Invalid placement - container cannot float", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
     const isSourceBlocked = isBlockedByContainerAbove(droppedItems, activeItem.area);
     if (isSourceBlocked) {
       toast.error("Cannot move container - blocked by container above", {
@@ -791,7 +788,6 @@ const Simulation = () => {
       return;
     }
 
-    // Existing update logic...
     const updatedDroppedItems = droppedItems.map((item) => (item.id === active.id ? { ...item, area: over.id } : item));
     setDroppedItems(updatedDroppedItems);
 
