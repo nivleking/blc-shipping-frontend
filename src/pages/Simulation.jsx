@@ -12,6 +12,17 @@ import WeeklyPerformance from "../components/simulations/WeeklyPerformance";
 import MarketIntelligence from "../components/simulations/MarketIntelligence";
 import Stowage from "../components/simulations/Stowage";
 
+const PORT_COLORS = {
+  SBY: "#EF4444", // red
+  MKS: "#3B82F6", // blue
+  MDN: "#10B981", // green
+  JYP: "#EAB308", // yellow
+  BPN: "#8B5CF6", // purple
+  BKS: "#F97316", // orange
+  BGR: "#EC4899", // pink
+  BTH: "#92400E", // brown
+};
+
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
 };
@@ -57,6 +68,11 @@ const Simulation = () => {
     rejectedCards: 0,
     loadPenalty: 0,
     dischargePenalty: 0,
+  });
+
+  const [swapInfo, setSwapInfo] = useState({
+    receivesFrom: "",
+    sendsTo: "",
   });
 
   useEffect(() => {
@@ -140,11 +156,40 @@ const Simulation = () => {
     fetchArenaData();
     fetchDockData();
 
-    socket.on("swap_bays", ({ roomId: receivedRoomId }) => {
+    socket.on("swap_bays", async ({ roomId: receivedRoomId }) => {
       if (receivedRoomId === roomId) {
-        setShowSwapAlert(true);
+        try {
+          // Get room swap config
+          const roomResponse = await api.get(`/rooms/${roomId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-        let timer = 5;
+          let swapConfig = {};
+          if (roomResponse.data.swap_config) {
+            try {
+              swapConfig = typeof roomResponse.data.swap_config === "string" ? JSON.parse(roomResponse.data.swap_config) : roomResponse.data.swap_config;
+
+              // Find where user's port receives from
+              const receivesFrom = Object.entries(swapConfig).find(([from, to]) => to === port)?.[0] || "Unknown";
+              // Find where user's port sends to
+              const sendsTo = swapConfig[port] || "Unknown";
+
+              setSwapInfo({
+                receivesFrom,
+                sendsTo,
+              });
+            } catch (e) {
+              console.error("Error parsing swap config");
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching swap configuration:", error);
+        }
+
+        setShowSwapAlert(true);
+        let timer = 10;
         setCountdown(timer);
 
         const countdownInterval = setInterval(() => {
@@ -1113,23 +1158,67 @@ const Simulation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-6">
-      {/* Overlay Modal */}
-      {(showSwapAlert || isSwapping) && (
+      {showSwapAlert && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-8 shadow-2xl max-w-md w-full mx-4">
-            {showSwapAlert ? (
-              <div className="flex flex-col items-center space-y-4">
-                <div className="text-2xl font-bold text-red-600 animate-pulse">SWAPPING BAYS ALERT!!!</div>
-                <div className="text-6xl font-bold text-blue-600">{countdown}</div>
-                <p className="text-gray-600">Please wait, bay swap will begin shortly...</p>
+          <div className="bg-white rounded-xl p-6 shadow-2xl max-w-md w-full mx-4">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="text-2xl font-bold text-red-600 animate-pulse mb-1">SWAPPING BAYS ALERT!</div>
+              <div className="text-5xl font-bold text-blue-600">{countdown}</div>
+
+              {/* Port linked list visualization - similar to PortLegend */}
+              <div className="w-full bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 className="font-medium text-lg text-center mb-3 text-blue-800">Container Flow Update</h3>
+
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  {/* Port that receives from user */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: PORT_COLORS[swapInfo.sendsTo?.substring(0, 3)?.toUpperCase()] || "#64748B" }}>
+                      {swapInfo.sendsTo?.substring(0, 1)?.toUpperCase() || "-"}
+                    </div>
+                    <span className="text-xs font-medium mt-1 block">{swapInfo.sendsTo || "Unknown"}</span>
+                  </div>
+
+                  {/* First arrow */}
+                  <svg className="w-8 h-5 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+
+                  {/* User's port (highlighted) */}
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold
+    border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
+                      style={{ backgroundColor: PORT_COLORS[port?.substring(0, 3)?.toUpperCase()] || "#64748B" }}
+                    >
+                      {port?.substring(0, 1)?.toUpperCase()}
+                    </div>
+                    <span className="text-sm font-bold mt-1 block text-blue-900">{port}</span>
+                    <span className="text-xs font-medium text-blue-800">(Your Port)</span>
+                  </div>
+
+                  {/* Second arrow */}
+                  <svg className="w-8 h-5 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+
+                  {/* Port that sends to user */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: PORT_COLORS[swapInfo.receivesFrom?.substring(0, 3)?.toUpperCase()] || "#64748B" }}>
+                      {swapInfo.receivesFrom?.substring(0, 1)?.toUpperCase() || "-"}
+                    </div>
+                    <span className="text-xs font-medium mt-1 block">{swapInfo.receivesFrom || "Unknown"}</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-2 border-t border-blue-200">
+                  <p className="text-sm text-center text-blue-800 font-medium">
+                    After swapping, containers from <span className="font-bold">{swapInfo.sendsTo}</span> will arrive at your port, and you will send containers to <span className="font-bold">{swapInfo.receivesFrom}</span>.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="flex flex-col items-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-                <h3 className="text-xl font-semibold text-gray-800">Swapping Bays in Progress</h3>
-                <p className="text-gray-500 text-center">Please wait while the bays are being swapped...</p>
-              </div>
-            )}
+
+              <p className="text-red-600 font-bold text-center">Please wait while containers are being swapped!</p>
+            </div>
           </div>
         </div>
       )}

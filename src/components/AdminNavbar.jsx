@@ -88,16 +88,16 @@ const AdminNavbar = ({ toggleSidebar, isSidebarOpen }) => {
       {/* Right side */}
       <div className="flex items-center gap-2 md:gap-4">
         {/* Notifications */}
-        <button className="p-2 rounded-full hover:bg-gray-800 relative">
+        {/* <button className="p-2 rounded-full hover:bg-gray-800 relative">
           <FaBell className="w-5 h-5 text-white" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        </button> */}
 
         {/* Admin Menu */}
         <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
           <div className="relative">
             <FaUserCircle className="w-8 h-8 text-white" />
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full" />
+            {/* <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full" /> */}
           </div>
 
           <div className="hidden md:block">

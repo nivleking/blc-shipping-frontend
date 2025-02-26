@@ -4,6 +4,18 @@ import { api, socket } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
 import { toast, ToastContainer } from "react-toastify";
 import AssignPortModal from "../components/rooms/AssignPortModal";
+import SwapConfigModal from "../components/SwapConfigModal";
+
+const PORT_COLORS = {
+  SBY: "#EF4444", // red
+  MKS: "#3B82F6", // blue
+  MDN: "#10B981", // green
+  JYP: "#EAB308", // yellow
+  BPN: "#8B5CF6", // purple
+  BKS: "#F97316", // orange
+  BGR: "#EC4899", // pink
+  BTH: "#92400E", // brown
+};
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
@@ -303,6 +315,11 @@ const Room = () => {
   };
 
   async function endSimulation() {
+    if (currentRound < totalRounds) {
+      toast.error(`Simulation can only be ended on the final week (Week ${totalRounds})`);
+      return;
+    }
+
     try {
       const res = await api.put(
         `/rooms/${roomId}`,
@@ -317,75 +334,113 @@ const Room = () => {
       );
 
       for (let i = 0; i < users.length; i++) {
-        socket.emit("user_kicked", users[i].id);
+        socket.emit("user_kicked", { roomId, userId: users[i].id });
       }
 
       socket.emit("end_simulation", { roomId });
 
       setRoomStatus("finished");
-      console.log(res);
+      toast.success("Simulation has been successfully completed!");
     } catch (error) {
       console.error("There was an error ending the simulation!", error);
+      toast.error("Failed to end simulation. Please try again.");
     }
   }
 
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [swapConfig, setSwapConfig] = useState({});
   const [showSwapConfirmation, setShowSwapConfirmation] = useState(false);
+  const [showSwapConfigModal, setShowSwapConfigModal] = useState(false);
+  const [deckOrigins, setDeckOrigins] = useState([]);
+  const [currentSwapConfig, setCurrentSwapConfig] = useState(null);
+
+  useEffect(() => {
+    if (roomId && token && room.deck_id) {
+      fetchDeckOrigins();
+    }
+  }, [roomId, token, room.deck_id]);
+
+  const fetchDeckOrigins = async () => {
+    try {
+      const response = await api.get(`/rooms/${roomId}/deck-origins`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const originsArray = Array.isArray(response.data) ? response.data : Object.values(response.data).filter((value) => typeof value === "string");
+
+      setDeckOrigins(originsArray);
+
+      if (room.swap_config) {
+        try {
+          const parsedConfig = typeof room.swap_config === "string" ? JSON.parse(room.swap_config) : room.swap_config;
+
+          setCurrentSwapConfig(parsedConfig);
+          setSwapConfig(parsedConfig);
+        } catch (e) {
+          console.error("Error parsing swap config:", e);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching deck origins:", error);
+      toast.error("Failed to fetch port information");
+    }
+  };
+
+  const handleSwapConfigSave = async (newSwapConfig) => {
+    setSwapConfig(newSwapConfig);
+    setShowSwapConfigModal(false);
+
+    try {
+      // Update the room with the new swap configuration
+      await api.put(
+        `/rooms/${roomId}/swap-config`,
+        {
+          swap_config: newSwapConfig,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setCurrentSwapConfig(newSwapConfig);
+      toast.success("Port swap configuration saved successfully!");
+    } catch (error) {
+      console.error("Error saving swap configuration:", error);
+      toast.error("Failed to save port swap configuration");
+    }
+  };
 
   const handleSwapBays = async () => {
-    // Show confirmation dialog first
+    if (!currentSwapConfig || Object.keys(currentSwapConfig).length === 0) {
+      setShowSwapConfigModal(true);
+      return;
+    }
+
     setShowSwapConfirmation(true);
   };
 
   const executeSwap = async () => {
-    try {
-      // Close confirmation dialog
-      setShowSwapConfirmation(false);
+    setShowSwapConfirmation(false);
 
-      // No need to send a swap map - the backend will use the room's swap_config
-      const response = await api.put(
+    try {
+      await api.put(
         `/rooms/${roomId}/swap-bays`,
         {},
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      console.log("Swapped bays:", response);
-
-      // Get all users in the room
-      const usersResponse = await api.get(`/rooms/${roomId}/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const roomUsers = usersResponse.data;
-
-      // Update section for each user's ship bay
-      await Promise.all(
-        roomUsers.map((user) =>
-          api.put(
-            `/ship-bays/${roomId}/${user.id}/section`,
-            {
-              section: "section1",
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-        )
-      );
-
-      toast.success("Bays swapped successfully");
       socket.emit("swap_bays", { roomId });
-      await fetchRoomDetails();
+
+      setCurrentRound((prev) => prev + 1);
+
+      toast.success("Bays swapped successfully!");
+
+      fetchRankings();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to swap bays");
+      console.error("Error swapping bays:", error);
+      toast.error("Failed to swap bays");
     }
   };
 
@@ -437,7 +492,7 @@ const Room = () => {
 
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
 
       {/* Enhanced Header */}
       <div className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-4 shadow-lg">
@@ -654,36 +709,57 @@ const Room = () => {
                 </button>
               </>
             )}
-            {user && user.is_admin === true && roomStatus === "active" && (
+
+            {user?.is_admin && roomStatus === "active" && (
               <>
+                {/* Configure Port Swap Button */}
                 <button
-                  onClick={handleSwapBays}
-                  disabled={currentRound >= totalRounds}
-                  className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
-  ${currentRound >= totalRounds ? "bg-gray-400 cursor-not-allowed" : "bg-yellow-500 hover:bg-yellow-600"} 
-  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors`}
+                  onClick={() => setShowSwapConfigModal(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-yellow-400 border-2 border-yellow-500 text-white rounded-lg hover:bg-yellow-500 transition-all duration-200 shadow-sm"
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                      clipRule="evenodd"
+                    />
                   </svg>
-                  SWAP BAYS
+                  EDIT SWAP
                 </button>
 
+                {/* Swap Bays Button */}
+                <button onClick={handleSwapBays} className="flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
+                  </svg>
+                  SWAP
+                </button>
+
+                {/* End Simulation Button */}
                 <button
                   onClick={endSimulation}
                   disabled={currentRound < totalRounds}
-                  className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
-        ${currentRound < totalRounds ? "bg-gray-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"} 
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors`}
-                  title={currentRound < totalRounds ? `Cannot end simulation until round ${totalRounds}` : "End simulation"}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-md transition-all duration-200 ${
+                    currentRound >= totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
+                  title={currentRound < totalRounds ? `Can only end simulation on the final week (${totalRounds})` : "End simulation"}
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
                   </svg>
-                  END SIMULATION
+                  END
+                  {currentRound < totalRounds && (
+                    <span className="text-xs ml-1">
+                      (Week {currentRound}/{totalRounds})
+                    </span>
+                  )}
                 </button>
               </>
             )}
+
+            {/* Port Swap Configuration Modal */}
+            <SwapConfigModal isOpen={showSwapConfigModal} onClose={() => setShowSwapConfigModal(false)} deckOrigins={deckOrigins} initialConfig={currentSwapConfig} onSave={handleSwapConfigSave} />
+
             {user && user.is_admin === true && roomStatus === "finished" && (
               <button
                 onClick={() => navigate(`/rooms/${roomId}/detail`)}
@@ -711,20 +787,67 @@ const Room = () => {
       {/* Assign Port Modal */}
       {showPortPopup && <AssignPortModal users={users} origins={origins} ports={ports} setPorts={setPorts} onClose={() => setShowPortPopup(false)} onConfirm={handleSetPorts} />}
 
-      {/* Enhanced Modal */}
       {showSwapConfirmation && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all p-6">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Confirm Bay Swap</h2>
-              <p className="mt-2 text-sm text-gray-600">This will swap the bays according to the predefined configuration. Are you sure you want to proceed?</p>
-            </div>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">Confirm Bay Swap</h3>
+            <p className="mb-4">Are you sure you want to swap bays and advance to week {currentRound + 1}? This action cannot be undone.</p>
+
+            {Object.keys(swapConfig).length > 0 && (
+              <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="p-3 bg-blue-500 text-white">
+                  <h4 className="font-semibold text-center">Week {currentRound + 1} Port Swapping</h4>
+                </div>
+
+                <div className="p-4 max-h-[250px] overflow-y-auto pr-1">
+                  <div className="grid gap-3">
+                    {Object.entries(swapConfig).map(([from, to], index) => {
+                      // Get port colors or use default colors
+                      const fromPortCode = from.substring(0, 3).toUpperCase();
+                      const toPortCode = to.substring(0, 3).toUpperCase();
+                      const fromColor = PORT_COLORS[fromPortCode] || "#64748B"; // Default gray
+                      const toColor = PORT_COLORS[toPortCode] || "#64748B"; // Default gray
+
+                      return (
+                        <div key={from} className="flex items-center border rounded-md p-3 hover:bg-gray-50">
+                          {/* To Port (Destination) */}
+                          <div className="flex items-center w-24">
+                            <span className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm mr-2" style={{ backgroundColor: toColor }}>
+                              {to.substring(0, 1).toUpperCase()}
+                            </span>
+                            <span className="font-medium text-sm">{to}</span>
+                          </div>
+
+                          {/* Arrow indicating "sends to" */}
+                          <div className="flex-1 flex justify-center px-2">
+                            <div className="flex items-center text-xs text-gray-500">
+                              <span>sends to</span>
+                              <svg className="w-4 h-4 ml-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14m-7-7l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </div>
+
+                          {/* From Port (Origin) */}
+                          <div className="flex items-center w-24">
+                            <span className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm mr-2" style={{ backgroundColor: fromColor }}>
+                              {from.substring(0, 1).toUpperCase()}
+                            </span>
+                            <span className="font-medium text-sm">{from}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end space-x-3">
-              <button onClick={() => setShowSwapConfirmation(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <button onClick={() => setShowSwapConfirmation(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                 Cancel
               </button>
-              <button onClick={executeSwap} className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+              <button onClick={executeSwap} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
                 Confirm Swap
               </button>
             </div>

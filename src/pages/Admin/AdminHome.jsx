@@ -8,7 +8,6 @@ import ReactPaginate from "react-paginate";
 import "./AdminHome.css";
 import Tooltip from "../../components/Tooltip";
 import RenderShipBayLayout from "../../components/simulations/RenderShipBayLayout";
-import SwapConfigModal from "../../components/SwapConfigModal";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import { AiFillDelete, AiFillEye, AiFillFolderOpen } from "react-icons/ai";
 import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
@@ -33,7 +32,7 @@ const initialFormState = {
 };
 
 const AdminHome = () => {
-  const { user, token } = useContext(AppContext);
+  const { token } = useContext(AppContext);
   const [rooms, setRooms] = useState([]);
   const [admins, setAdmins] = useState({});
   const [formData, setFormData] = useState(initialFormState);
@@ -52,38 +51,6 @@ const AdminHome = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
-
-  const [showSwapConfig, setShowSwapConfig] = useState(false);
-  const [deckOrigins, setDeckOrigins] = useState([]);
-
-  useEffect(() => {
-    if (selectedDeck?.id) {
-      console.log("Fetching deck origins for deck:", selectedDeck);
-      api
-        .get(`/decks/${selectedDeck.id}/origins`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((response) => {
-          // Transform object into array of values, removing the numeric keys
-          const originsArray = Object.values(response.data).filter((value) => typeof value === "string");
-          console.log("Transformed deck origins:", originsArray);
-          setDeckOrigins(originsArray);
-        })
-        .catch((error) => {
-          console.error("Error fetching deck origins:", error);
-          toast.error("Failed to fetch deck origins");
-          setDeckOrigins([]);
-        });
-    }
-  }, [selectedDeck, token]);
-
-  const handleSwapConfigSave = (swapConfig) => {
-    setFormData((prev) => ({
-      ...prev,
-      swap_config: swapConfig,
-    }));
-    setShowSwapConfig(false);
-  };
 
   // Update form reset logic
   const resetForm = () => {
@@ -183,7 +150,6 @@ const AdminHome = () => {
       total_rounds: formData.total_rounds,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
-      swap_config: formData.swap_config,
     };
 
     console.log("Submitting form data:", payload);
@@ -902,65 +868,6 @@ const AdminHome = () => {
               {errors.deck && <p className="text-red-500 mt-1">{errors.deck[0]}</p>}
             </div>
 
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center">
-                <label className="block text-gray-700 font-semibold">Configure Port Swapping</label>
-                <Tooltip>Configure port swapping for the selected deck</Tooltip>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSwapConfig(true)}
-                disabled={!formData.deck}
-                className={`relative group w-full rounded-lg transition-all duration-200 py-2.5 px-4 
-      ${formData.deck ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  {/* Icon for the button */}
-                  {/* <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`h-5 w-5 ${formData.deck ? "text-white" : "text-gray-400"} transition-transform group-hover:rotate-180 duration-500`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg> */}
-
-                  {/* <span className="font-medium">Configure Port Swapping</span> */}
-
-                  {/* Badge showing status */}
-                  <span
-                    className={`absolute right-2 top-2 flex h-2.5 w-2.5 rounded-full 
-        ${formData.swap_config ? "bg-green-400" : "bg-yellow-400"}`}
-                  >
-                    <span
-                      className={`animate-ping absolute h-full w-full rounded-full 
-          ${formData.swap_config ? "bg-green-400" : "bg-yellow-400"} opacity-75`}
-                    ></span>
-                  </span>
-                </div>
-
-                {/* Conditional status text */}
-                {formData.swap_config ? (
-                  <div className="text-xs mt-1 text-blue-100">Configuration complete</div>
-                ) : formData.deck ? (
-                  <div className="text-xs mt-1 text-blue-100">Needs configuration</div>
-                ) : (
-                  <div className="text-xs mt-1 text-gray-400">Select a deck first</div>
-                )}
-              </button>
-
-              {/* Additional info text about configuration status */}
-              {formData.swap_config && (
-                <div className="text-xs text-green-600 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Port swapping configured ({Object.keys(formData.swap_config).length} ports)
-                </div>
-              )}
-            </div>
-
             {/* Total Ports Field */}
             <div className="flex flex-col">
               <div className="flex items-center">
@@ -1171,8 +1078,6 @@ const AdminHome = () => {
           </>
         )}
       </div>
-
-      <SwapConfigModal isOpen={showSwapConfig} onClose={() => setShowSwapConfig(false)} deckOrigins={deckOrigins} onSave={handleSwapConfigSave} />
     </div>
   );
 };

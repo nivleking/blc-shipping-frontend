@@ -45,7 +45,7 @@ const SwapDiagram = ({ origins, swapConfig }) => {
     <div className="mb-8 bg-gray-50 rounded-lg">
       {/* Show warning banner if there are unassigned ports */}
       {unassignedPorts.length > 0 && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <HiExclamation className="h-5 w-5 text-yellow-400" aria-hidden="true" />
