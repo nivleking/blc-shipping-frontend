@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { api, socket } from "../axios/axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
-import CapacityUptake from "../components/simulations/CapaticyUptake";
+import CapacityUptake from "../components/simulations/CapacityUptake";
 import HeaderCards from "../components/simulations/stowages/HeaderCards";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -32,6 +32,11 @@ const Simulation = () => {
   const { user, token } = useContext(AppContext);
   const [port, setPort] = useState("");
   const navigate = useNavigate();
+  const [countdown, setCountdown] = useState(5);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = useState(1);
+
+  // Stowage states
   const [droppedItems, setDroppedItems] = useState([]);
   const [baySize, setBaySize] = useState({ rows: 1, columns: 1 });
   const [bayCount, setBayCount] = useState(1);
@@ -42,23 +47,15 @@ const Simulation = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [draggingItem, setDraggingItem] = useState(null);
   const itemsPerPage = 30;
-
   const [salesCallCards, setSalesCallCards] = useState([]);
   const [containers, setContainers] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
-
-  const [isLoading, setIsLoading] = useState(true);
   const [revenue, setRevenue] = useState(0);
   const [isSwapping, setIsSwapping] = useState(false);
   const [showSwapAlert, setShowSwapAlert] = useState(false);
-  const [countdown, setCountdown] = useState(5);
-  const [selectedTab, setSelectedTab] = useState(1);
-
   const [section, setSection] = useState(1);
   const [targetContainers, setTargetContainers] = useState([]);
-
   const paginatedItems = droppedItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
-
   const [penalties, setPenalties] = useState(0);
   const [rank, setRank] = useState(1);
   const [moveStats, setMoveStats] = useState({
@@ -69,11 +66,291 @@ const Simulation = () => {
     loadPenalty: 0,
     dischargePenalty: 0,
   });
-
   const [swapInfo, setSwapInfo] = useState({
     receivesFrom: "",
     sendsTo: "",
   });
+  const handlePageChange = (direction) => {
+    setCurrentPage((prevPage) => prevPage + direction);
+  };
+
+  // Capacity Uptake states
+  const [capacityData, setCapacityData] = useState({
+    maxCapacity: { dry: 0, reefer: 0, total: 0 },
+    cargoData: {
+      onBoard: {
+        nextPort: { dry: 0, reefer: 0 },
+        laterPort: { dry: 0, reefer: 0 },
+      },
+      newBookings: {
+        nextPort: { dry: 0, reefer: 0 },
+        laterPort: { dry: 0, reefer: 0 },
+      },
+    },
+    week: 1,
+    nextPort: "",
+    laterPorts: [],
+  });
+  const [isCapacityLoading, setIsCapacityLoading] = useState(true);
+
+  const fetchContainerData = async (nextPort, laterPorts) => {
+    try {
+      // Get current ship bay data which contains the container arena
+      const shipBayResponse = await api.get(`/ship-bays/${roomId}/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Get room configuration for bay details
+      const roomConfigResponse = await api.get(`/rooms/${roomId}/config`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Calculate max capacity based on bay configuration
+      const { baySize, bayCount, bayTypes } = roomConfigResponse.data;
+
+      // Calculate max capacity based on bay types
+      let dryCapacity = 0;
+      let reeferCapacity = 0;
+
+      // If bayTypes is available, count by type
+      if (bayTypes && Array.isArray(bayTypes)) {
+        for (let i = 0; i < bayTypes.length; i++) {
+          const bayType = bayTypes[i];
+          const cellsInBay = baySize.rows * baySize.columns;
+
+          if (bayType === "reefer") {
+            reeferCapacity += cellsInBay;
+          } else {
+            dryCapacity += cellsInBay;
+          }
+        }
+      } else {
+        // Fallback: assume all bays are dry except last one
+        const cellsInBay = baySize.rows * baySize.columns;
+        dryCapacity = (bayCount - 1) * cellsInBay;
+        reeferCapacity = 1 * cellsInBay; // Assume last bay is reefer
+      }
+
+      const maxCapacity = {
+        dry: dryCapacity,
+        reefer: reeferCapacity,
+        get total() {
+          return this.dry + this.reefer;
+        },
+      };
+
+      console.log("Calculated max capacity:", maxCapacity);
+
+      if (!shipBayResponse.data || !shipBayResponse.data.arena) {
+        console.error("No ship bay data available");
+        return { maxCapacity, cargoData: capacityData.cargoData };
+      }
+
+      // Parse arena data
+      let arena;
+      try {
+        arena = JSON.parse(shipBayResponse.data.arena);
+      } catch (error) {
+        console.error("Error parsing arena data:", error);
+        return { maxCapacity, cargoData: capacityData.cargoData };
+      }
+
+      // Extract valid container IDs from the arena
+      let validContainerIds = [];
+      for (let i = 0; i < arena.length; i++) {
+        const row = arena[i];
+        for (let j = 0; j < row.length; j++) {
+          const anotherRow = row[j];
+          if (Array.isArray(anotherRow)) {
+            for (let k = 0; k < anotherRow.length; k++) {
+              const value = anotherRow[k];
+              if (value) {
+                validContainerIds.push(value);
+              }
+            }
+          }
+        }
+      }
+
+      console.log("Valid Container IDs:", validContainerIds);
+
+      // Process each container ID
+      const containers = [];
+      for (const id of validContainerIds) {
+        try {
+          const response = await api.get(`/containers/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          containers.push(response.data);
+        } catch (error) {
+          console.warn(`Failed to fetch container with ID ${id}:`, error.message);
+        }
+      }
+
+      // Initialize container counts
+      const nextPortCargo = { dry: 0, reefer: 0 };
+      const laterPortCargo = { dry: 0, reefer: 0 };
+
+      // Process containers based on their destination
+      containers.forEach((container) => {
+        if (!container || !container.card) return;
+
+        const destination = container.card.destination;
+        const type = container.type?.toLowerCase() || "dry";
+
+        if (destination === nextPort) {
+          if (type === "dry") nextPortCargo.dry++;
+          else if (type === "reefer") nextPortCargo.reefer++;
+        } else if (laterPorts.includes(destination)) {
+          if (type === "dry") laterPortCargo.dry++;
+          else if (type === "reefer") laterPortCargo.reefer++;
+        }
+      });
+
+      const cardsResponse = await api.get(`/card-temporary/${roomId}/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          include: "card",
+        },
+      });
+
+      const inclusiveBacklogCards = cardsResponse.data.filter((cardTemp) => cardTemp.status === "accepted" || !cardTemp.status);
+
+      const nextPortBookings = { dry: 0, reefer: 0 };
+      const laterPortBookings = { dry: 0, reefer: 0 };
+
+      inclusiveBacklogCards.forEach((cardTemp) => {
+        const card = cardTemp.card;
+        console.log("Processing card:", card);
+        if (!card) return;
+
+        const destination = card.destination;
+        const quantity = card.quantity || 1;
+        const type = card.type?.toLowerCase();
+
+        if (type === "dry") {
+          if (destination === nextPort) {
+            nextPortBookings.dry += quantity;
+          } else if (laterPorts.includes(destination)) {
+            laterPortBookings.dry += quantity;
+          }
+        } else if (type === "reefer") {
+          if (destination === nextPort) {
+            nextPortBookings.reefer += quantity;
+          } else if (laterPorts.includes(destination)) {
+            laterPortBookings.reefer += quantity;
+          }
+        }
+      });
+
+      // Return the updated data
+      return {
+        maxCapacity,
+        cargoData: {
+          onBoard: {
+            nextPort: nextPortCargo,
+            laterPort: laterPortCargo,
+          },
+          newBookings: {
+            nextPort: nextPortBookings,
+            laterPort: laterPortBookings,
+          },
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching container data:", error);
+      return {
+        maxCapacity: { dry: 0, reefer: 0, total: 0 },
+        cargoData: {
+          onBoard: {
+            nextPort: { dry: 0, reefer: 0 },
+            laterPort: { dry: 0, reefer: 0 },
+          },
+          newBookings: {
+            nextPort: { dry: 0, reefer: 0 },
+            laterPort: { dry: 0, reefer: 0 },
+          },
+        },
+      };
+    }
+  };
+
+  const fetchCapacityData = async () => {
+    console.log("Fetching capacity data in parent component...");
+    setIsCapacityLoading(true);
+    try {
+      // Get swap configuration from room data
+      const roomResponse = await api.get(`/rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Get the swap configuration
+      let swapConfig = {};
+      if (roomResponse.data.swap_config) {
+        try {
+          swapConfig = typeof roomResponse.data.swap_config === "string" ? JSON.parse(roomResponse.data.swap_config) : roomResponse.data.swap_config;
+        } catch (e) {
+          console.error("Error parsing swap config:", e);
+        }
+      }
+
+      // Get week/round
+      const week = roomResponse.data.current_round || 1;
+
+      // Determine the port sequence (next ports)
+      const nextPorts = determineNextPorts(port, swapConfig);
+      const nextPort = nextPorts[0] || "MDN";
+      const laterPorts = nextPorts.slice(1, 3) || ["SUB", "MKS"];
+
+      // Now fetch container data based on the updated ports
+      const { maxCapacity, cargoData } = await fetchContainerData(nextPort, laterPorts);
+
+      // Set the complete capacity data
+      setCapacityData({
+        maxCapacity,
+        cargoData,
+        week,
+        nextPort,
+        laterPorts,
+      });
+
+      console.log("Capacity data fetched successfully in parent!");
+      return { maxCapacity, cargoData, week, nextPort, laterPorts };
+    } catch (error) {
+      console.error("Error fetching capacity data in parent:", error);
+      return null;
+    } finally {
+      setIsCapacityLoading(false);
+    }
+  };
+
+  // Add a function to determine next ports (copied from CapacityUptake)
+  const determineNextPorts = (currentPort, swapConfig) => {
+    const nextPorts = [];
+    let portTracker = currentPort;
+
+    for (let i = 0; i < 3; i++) {
+      portTracker = swapConfig[portTracker] || "";
+      if (!portTracker) break;
+      nextPorts.push(portTracker);
+    }
+
+    if (nextPorts.length === 0) return ["MDN", "SUB", "MKS"];
+    if (nextPorts.length === 1) return [nextPorts[0], "SUB", "MKS"];
+    if (nextPorts.length === 2) return [nextPorts[0], nextPorts[1], "MKS"];
+
+    return nextPorts;
+  };
+
+  // Add effect to fetch capacity data when tab changes to CapacityUptake
+  useEffect(() => {
+    if (selectedTab === 0) {
+      console.log("Tab changed to Capacity Uptake, fetching data");
+      fetchCapacityData();
+    }
+  }, [selectedTab]);
 
   useEffect(() => {
     if (user && token) {
@@ -944,10 +1221,6 @@ const Simulation = () => {
     }
   }
 
-  const handlePageChange = (direction) => {
-    setCurrentPage((prevPage) => prevPage + direction);
-  };
-
   useEffect(() => {
     const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
       return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
@@ -1335,7 +1608,7 @@ const Simulation = () => {
             <TabPanels className="mt-4">
               {/* Capacity & Uptake Tab */}
               <TabPanel>
-                <CapacityUptake />
+                <CapacityUptake port={port} capacityData={capacityData} isLoading={isCapacityLoading} refreshData={fetchCapacityData} />
               </TabPanel>
 
               <TabPanel>
