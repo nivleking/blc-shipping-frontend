@@ -391,7 +391,6 @@ const Room = () => {
     setShowSwapConfigModal(false);
 
     try {
-      // Update the room with the new swap configuration
       await api.put(
         `/rooms/${roomId}/swap-config`,
         {
@@ -403,6 +402,9 @@ const Room = () => {
       );
 
       setCurrentSwapConfig(newSwapConfig);
+
+      socket.emit("port_config_updated", { roomId });
+
       toast.success("Port swap configuration saved successfully!");
     } catch (error) {
       console.error("Error saving swap configuration:", error);

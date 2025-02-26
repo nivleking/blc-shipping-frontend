@@ -984,6 +984,36 @@ const Simulation = () => {
     };
   }, [roomId, navigate]);
 
+  const fetchSwapConfig = async () => {
+    try {
+      const roomResponse = await api.get(`/rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      let swapConfig = {};
+      if (roomResponse.data.swap_config) {
+        try {
+          swapConfig = typeof roomResponse.data.swap_config === "string" ? JSON.parse(roomResponse.data.swap_config) : roomResponse.data.swap_config;
+        } catch (e) {
+          console.error("Error parsing swap config");
+        }
+      }
+
+      // Find where user's port receives from and sends to
+      const receivesFrom = Object.entries(swapConfig).find(([from, to]) => to === port)?.[0] || "Unknown";
+      const sendsTo = swapConfig[port] || "Unknown";
+
+      setSwapInfo({
+        receivesFrom,
+        sendsTo,
+      });
+    } catch (error) {
+      console.error("Error fetching swap configuration:", error);
+    }
+  };
+
   useEffect(() => {
     if (user && token) {
       // Initial fetch
@@ -1016,9 +1046,17 @@ const Simulation = () => {
         }
       });
 
+      socket.on("port_config_updated", ({ roomId: updatedRoomId }) => {
+        if (updatedRoomId === roomId) {
+          // Update swap info
+          fetchSwapConfig();
+        }
+      });
+
       return () => {
         socket.off("stats_requested");
         socket.off("stats_updated");
+        socket.off("port_config_updated");
       };
     }
   }, [user, token, roomId]);
@@ -1158,11 +1196,11 @@ const Simulation = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-6">
-      {showSwapAlert && (
+      {showSwapAlert && swapInfo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 shadow-2xl max-w-md w-full mx-4">
             <div className="flex flex-col items-center space-y-4">
-              <div className="text-2xl font-bold text-red-600 animate-pulse mb-1">SWAPPING BAYS ALERT!</div>
+              <div className="text-2xl font-bold text-red-600 animate-pulse mb-1">SWAP ALERT!</div>
               <div className="text-5xl font-bold text-blue-600">{countdown}</div>
 
               {/* Port linked list visualization - similar to PortLegend */}

@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { api } from "../../axios/axios";
+import { api, socket } from "../../axios/axios";
 import { AppContext } from "../../context/AppContext";
 
 const PORT_COLORS = {
@@ -24,56 +24,64 @@ const PortLegend = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPortConfiguration = async () => {
-      try {
-        setIsLoading(true);
+  const fetchPortConfiguration = async () => {
+    try {
+      setIsLoading(true);
 
-        // Get user port
-        const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const userPort = portResponse.data.port;
+      // Get user port
+      const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const userPort = portResponse.data.port;
 
-        // Get room swap config
-        const roomResponse = await api.get(`/rooms/${roomId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      // Get room swap config
+      const roomResponse = await api.get(`/rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        let swapConfig = {};
-        if (roomResponse.data.swap_config) {
-          try {
-            swapConfig = typeof roomResponse.data.swap_config === "string" ? JSON.parse(roomResponse.data.swap_config) : roomResponse.data.swap_config;
-          } catch (e) {
-            console.error("Error parsing swap config");
-          }
+      let swapConfig = {};
+      if (roomResponse.data.swap_config) {
+        try {
+          swapConfig = typeof roomResponse.data.swap_config === "string" ? JSON.parse(roomResponse.data.swap_config) : roomResponse.data.swap_config;
+        } catch (e) {
+          console.error("Error parsing swap config");
         }
-
-        // Find where user's port receives from
-        const receivesFrom = Object.entries(swapConfig).find(([from, to]) => to === userPort)?.[0] || "Unknown";
-
-        // Find where user's port sends to
-        const sendsTo = swapConfig[userPort] || "Unknown";
-
-        setPortInfo({
-          userPort,
-          receivesFrom,
-          sendsTo,
-        });
-      } catch (error) {
-        console.error("Error fetching port configuration:", error);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
+      const receivesFrom = Object.entries(swapConfig).find(([from, to]) => to === userPort)?.[0] || "Unknown";
+
+      const sendsTo = swapConfig[userPort] || "Unknown";
+
+      setPortInfo({
+        userPort,
+        receivesFrom,
+        sendsTo,
+      });
+    } catch (error) {
+      console.error("Error fetching port configuration:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (user && token && roomId) {
       fetchPortConfiguration();
     }
+
+    socket.on("port_config_updated", ({ roomId: updatedRoomId }) => {
+      if (updatedRoomId === roomId) {
+        fetchPortConfiguration();
+      }
+    });
+
+    return () => {
+      socket.off("port_config_updated");
+    };
   }, [user, token, roomId]);
 
   const getPortColor = (port) => {
@@ -143,10 +151,10 @@ const PortLegend = () => {
           </svg>
           <div>
             <p className="mb-1">
-              You receive containers from <span className="font-medium">{portInfo.sendsTo}</span>
+              You will receive containers from <span className="font-medium">{portInfo.sendsTo}</span>
             </p>
             <p>
-              Your port <span className="font-medium">{portInfo.userPort}</span> sends containers to <span className="font-medium">{portInfo.receivesFrom}</span>
+              Your container port's (<span className="font-medium">{portInfo.userPort}</span>) will be sent to <span className="font-medium">{portInfo.receivesFrom}</span>
             </p>
           </div>
         </div>

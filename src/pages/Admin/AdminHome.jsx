@@ -32,7 +32,7 @@ const initialFormState = {
 };
 
 const AdminHome = () => {
-  const { token } = useContext(AppContext);
+  const { user, token } = useContext(AppContext);
   const [rooms, setRooms] = useState([]);
   const [admins, setAdmins] = useState({});
   const [formData, setFormData] = useState(initialFormState);
@@ -1053,9 +1053,9 @@ const AdminHome = () => {
                       <button
                         onClick={() => handleOpenRoom(room.id)}
                         className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
-                          room.status === "active" ? "border-gray-300 text-gray-700 bg-gray-50 cursor-not-allowed" : "border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100"
+                          room.status === "active" && user.id !== room.admin_id ? "border-gray-300 text-gray-700 bg-gray-50 cursor-not-allowed" : "border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100"
                         }`}
-                        disabled={room.status === "active"}
+                        disabled={room.status === "active" && user.id !== room.admin_id}
                       >
                         <AiFillFolderOpen className="mr-2 h-4 w-4" /> Open
                       </button>
