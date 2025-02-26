@@ -8,6 +8,7 @@ import ReactPaginate from "react-paginate";
 import "./AdminHome.css";
 import Tooltip from "../../components/Tooltip";
 import RenderShipBayLayout from "../../components/simulations/RenderShipBayLayout";
+import SwapConfigModal from "../../components/SwapConfigModal";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import { AiFillDelete, AiFillEye, AiFillFolderOpen } from "react-icons/ai";
 import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
@@ -51,6 +52,38 @@ const AdminHome = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
+
+  const [showSwapConfig, setShowSwapConfig] = useState(false);
+  const [deckOrigins, setDeckOrigins] = useState([]);
+
+  useEffect(() => {
+    if (selectedDeck?.id) {
+      console.log("Fetching deck origins for deck:", selectedDeck);
+      api
+        .get(`/decks/${selectedDeck.id}/origins`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          // Transform object into array of values, removing the numeric keys
+          const originsArray = Object.values(response.data).filter((value) => typeof value === "string");
+          console.log("Transformed deck origins:", originsArray);
+          setDeckOrigins(originsArray);
+        })
+        .catch((error) => {
+          console.error("Error fetching deck origins:", error);
+          toast.error("Failed to fetch deck origins");
+          setDeckOrigins([]);
+        });
+    }
+  }, [selectedDeck, token]);
+
+  const handleSwapConfigSave = (swapConfig) => {
+    setFormData((prev) => ({
+      ...prev,
+      swap_config: swapConfig,
+    }));
+    setShowSwapConfig(false);
+  };
 
   // Update form reset logic
   const resetForm = () => {
@@ -150,6 +183,7 @@ const AdminHome = () => {
       total_rounds: formData.total_rounds,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
+      swap_config: formData.swap_config,
     };
 
     console.log("Submitting form data:", payload);
@@ -304,32 +338,66 @@ const AdminHome = () => {
               <div className="flex flex-col">
                 <label className="text-gray-700 font-semibold mb-2">Deck</label>
                 <Combobox
-                  value={decks.find((d) => d.id === editingRoom.deck) || null}
+                  value={selectedDeck}
                   onChange={(deck) => {
-                    setEditingRoom({
-                      ...editingRoom,
-                      deck: deck.id,
-                      max_users: deck.max_users,
-                    });
+                    setSelectedDeck(deck);
+                    if (deck) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        deck: deck.id,
+                      }));
+                      handleDeckChange({ target: { value: deck.id } });
+                    }
                   }}
                 >
                   <div className="relative">
-                    <ComboboxInput
-                      className="w-full rounded-lg border border-gray-300 bg-white py-3.5 pl-4 pr-10 text-sm leading-5"
-                      displayValue={(deck) => deck?.name || ""}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Select a deck..."
-                    />
-                    <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-3">
-                      <HiChevronUpDown className="h-5 w-5 text-gray-400" />
-                    </ComboboxButton>
-                    <ComboboxOptions className="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white py-2 shadow-xl">
-                      {decks.map((deck) => (
-                        <ComboboxOption key={deck.id} value={deck} className={({ active }) => `cursor-pointer select-none px-4 py-2 ${active ? "bg-blue-50 text-blue-900" : "text-gray-900"}`}>
-                          {deck.name}
-                        </ComboboxOption>
-                      ))}
-                    </ComboboxOptions>
+                    {decks.length === 0 ? (
+                      <div className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center transition-all hover:border-blue-300 hover:bg-gray-100">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                          <HiDocumentCheck className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <h3 className="mt-4 text-sm font-medium text-gray-900">No Decks Available</h3>
+                        <p className="mt-2 text-sm text-gray-500">Get started by creating a new deck</p>
+                        <Link to="/admin-decks" className="mt-4 inline-flex items-center gap-x-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 hover:scale-105 transition-all duration-200">
+                          <HiPlus className="h-5 w-5" />
+                          Create New Deck
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="group relative w-full cursor-pointer">
+                          <ComboboxInput
+                            className="w-full rounded-lg border border-gray-300 bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                            displayValue={(deck) => deck?.name || ""}
+                            onChange={(event) => setQuery(event.target.value)}
+                            placeholder="Select a deck..."
+                          />
+                          <ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <HiChevronUpDown className="h-5 w-5 text-gray-400 group-hover:text-blue-500" aria-hidden="true" />
+                          </ComboboxButton>
+                        </div>
+                        <ComboboxOptions className="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white py-2 text-base shadow-xl ring-1 ring-black/5 focus:outline-none sm:text-sm">
+                          {filteredDecks.length === 0 && query !== "" ? (
+                            <div className="px-4 py-3 text-sm text-gray-500">No decks found matching {query}</div>
+                          ) : (
+                            filteredDecks.map((deck) => (
+                              <ComboboxOption key={deck.id} value={deck} className={({ active }) => `relative cursor-pointer select-none px-4 py-3 text-sm transition-colors ${active ? "bg-blue-50 text-blue-700" : "text-gray-900"}`}>
+                                {({ selected, active }) => (
+                                  <div className="flex items-center">
+                                    <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>{deck.name}</span>
+                                    {selected && (
+                                      <span className={`ml-auto flex items-center ${active ? "text-blue-700" : "text-blue-600"}`}>
+                                        <HiCheck className="h-5 w-5" aria-hidden="true" />
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </ComboboxOption>
+                            ))
+                          )}
+                        </ComboboxOptions>
+                      </>
+                    )}
                   </div>
                 </Combobox>
               </div>
@@ -834,6 +902,65 @@ const AdminHome = () => {
               {errors.deck && <p className="text-red-500 mt-1">{errors.deck[0]}</p>}
             </div>
 
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center">
+                <label className="block text-gray-700 font-semibold">Configure Port Swapping</label>
+                <Tooltip>Configure port swapping for the selected deck</Tooltip>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSwapConfig(true)}
+                disabled={!formData.deck}
+                className={`relative group w-full rounded-lg transition-all duration-200 py-2.5 px-4 
+      ${formData.deck ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  {/* Icon for the button */}
+                  {/* <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`h-5 w-5 ${formData.deck ? "text-white" : "text-gray-400"} transition-transform group-hover:rotate-180 duration-500`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg> */}
+
+                  {/* <span className="font-medium">Configure Port Swapping</span> */}
+
+                  {/* Badge showing status */}
+                  <span
+                    className={`absolute right-2 top-2 flex h-2.5 w-2.5 rounded-full 
+        ${formData.swap_config ? "bg-green-400" : "bg-yellow-400"}`}
+                  >
+                    <span
+                      className={`animate-ping absolute h-full w-full rounded-full 
+          ${formData.swap_config ? "bg-green-400" : "bg-yellow-400"} opacity-75`}
+                    ></span>
+                  </span>
+                </div>
+
+                {/* Conditional status text */}
+                {formData.swap_config ? (
+                  <div className="text-xs mt-1 text-blue-100">Configuration complete</div>
+                ) : formData.deck ? (
+                  <div className="text-xs mt-1 text-blue-100">Needs configuration</div>
+                ) : (
+                  <div className="text-xs mt-1 text-gray-400">Select a deck first</div>
+                )}
+              </button>
+
+              {/* Additional info text about configuration status */}
+              {formData.swap_config && (
+                <div className="text-xs text-green-600 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Port swapping configured ({Object.keys(formData.swap_config).length} ports)
+                </div>
+              )}
+            </div>
+
             {/* Total Ports Field */}
             <div className="flex flex-col">
               <div className="flex items-center">
@@ -1027,7 +1154,7 @@ const AdminHome = () => {
                       </button>
                     )}
 
-                    {room.status !== "active" && (
+                    {room.status !== "active" && room.status != "finished" && (
                       <button onClick={() => handleEditRoom(room)} className="inline-flex items-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100">
                         <HiPencilAlt className="mr-2 h-4 w-4" /> Edit
                       </button>
@@ -1044,6 +1171,8 @@ const AdminHome = () => {
           </>
         )}
       </div>
+
+      <SwapConfigModal isOpen={showSwapConfig} onClose={() => setShowSwapConfig(false)} deckOrigins={deckOrigins} onSave={handleSwapConfigSave} />
     </div>
   );
 };

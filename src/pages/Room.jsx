@@ -27,6 +27,9 @@ const Room = () => {
   const [rankings, setRankings] = useState([]);
   const [currentRound, setCurrentRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(1);
+  const [showStartConfirmation, setShowStartConfirmation] = useState(false);
+  const [missingUsersCount, setMissingUsersCount] = useState(0);
+  const [room, setRoom] = useState({});
 
   useEffect(() => {
     fetchRoomDetails();
@@ -98,6 +101,7 @@ const Room = () => {
       setRoomStatus(roomResponse.data.status);
       setTotalRounds(roomResponse.data.total_rounds);
       setDeckId(deckId);
+      setRoom(roomResponse.data);
 
       // Fetch admin details
       const adminResponse = await api.get(`/users/${adminId}`, {
@@ -271,14 +275,31 @@ const Room = () => {
           );
         }
       }
+
+      socket.emit("start_simulation", { roomId });
     } catch (error) {
       console.error("There was an error starting the simulation!", error);
     }
   }
 
-  const handleStartSimulation = () => {
-    socket.emit("start_simulation", { roomId });
-    startSimulation();
+  const handleStartClick = () => {
+    if (users.length < 1) {
+      toast.error("You need at least one user to start the simulation");
+      return;
+    }
+
+    if (!portsSet) {
+      toast.error("Please assign ports to users first");
+      return;
+    }
+
+    const assignedUsers = typeof room.assigned_users === "string" ? JSON.parse(room.assigned_users || "[]") : room.assigned_users || [];
+
+    const currentUsers = users.map((user) => user.id);
+    const missing = Array.isArray(assignedUsers) ? assignedUsers.filter((id) => !currentUsers.includes(id)).length : 0;
+
+    setMissingUsersCount(missing);
+    setShowStartConfirmation(true);
   };
 
   async function endSimulation() {
@@ -309,33 +330,23 @@ const Room = () => {
   }
 
   const [showSwapModal, setShowSwapModal] = useState(false);
-  const [swapMap, setSwapMap] = useState({});
+  const [swapConfig, setSwapConfig] = useState({});
+  const [showSwapConfirmation, setShowSwapConfirmation] = useState(false);
 
-  const handleSwapChange = (originPort, targetPort) => {
-    console.log(`Swapping from ${originPort} to ${targetPort}`);
-
-    setSwapMap((prev) => ({
-      ...prev,
-      [originPort]: targetPort || "",
-    }));
+  const handleSwapBays = async () => {
+    // Show confirmation dialog first
+    setShowSwapConfirmation(true);
   };
 
-  // Modal close handler
-  const handleCloseSwapModal = () => {
-    setShowSwapModal(false);
-    setSwapMap({}); // Reset map when closing
-  };
-
-  const handleCustomSwap = async () => {
+  const executeSwap = async () => {
     try {
-      console.log("Sending swap map:", swapMap);
+      // Close confirmation dialog
+      setShowSwapConfirmation(false);
 
-      // Save the current swapMap before request
-      const currentSwapMap = { ...swapMap };
-
+      // No need to send a swap map - the backend will use the room's swap_config
       const response = await api.put(
-        `/rooms/${roomId}/swap-bays-custom`,
-        { swapMap: currentSwapMap },
+        `/rooms/${roomId}/swap-bays`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -371,8 +382,6 @@ const Room = () => {
       );
 
       toast.success("Bays swapped successfully");
-      setShowSwapModal(false);
-      setSwapMap({});
       socket.emit("swap_bays", { roomId });
       await fetchRoomDetails();
     } catch (error) {
@@ -630,7 +639,7 @@ const Room = () => {
                 </button>
 
                 <button
-                  onClick={handleStartSimulation}
+                  onClick={handleStartClick}
                   className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
     ${!portsSet || users.length < 1 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors`}
@@ -648,11 +657,11 @@ const Room = () => {
             {user && user.is_admin === true && roomStatus === "active" && (
               <>
                 <button
-                  onClick={() => setShowSwapModal(true)}
+                  onClick={handleSwapBays}
                   disabled={currentRound >= totalRounds}
                   className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
-        ${currentRound >= totalRounds ? "bg-gray-400 cursor-not-allowed" : "bg-yellow-500 hover:bg-yellow-600"} 
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors`}
+  ${currentRound >= totalRounds ? "bg-gray-400 cursor-not-allowed" : "bg-yellow-500 hover:bg-yellow-600"} 
+  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors`}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -703,71 +712,67 @@ const Room = () => {
       {showPortPopup && <AssignPortModal users={users} origins={origins} ports={ports} setPorts={setPorts} onClose={() => setShowPortPopup(false)} onConfirm={handleSetPorts} />}
 
       {/* Enhanced Modal */}
-      {showSwapModal && (
+      {showSwapConfirmation && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-xl transform transition-all">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800">Custom Bay Swap</h2>
-              <p className="mt-1 text-sm text-gray-500">Select origin ports for each destination port. Each destination can only be selected once.</p>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all p-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Confirm Bay Swap</h2>
+              <p className="mt-2 text-sm text-gray-600">This will swap the bays according to the predefined configuration. Are you sure you want to proceed?</p>
             </div>
 
-            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-              {/* Map through users to show port selections */}
-              {users.map((user) => {
-                const originPort = assignedPorts[user.id];
-                const usedDestinations = Object.values(swapMap);
-
-                // Available destinations are ports that:
-                // 1. Are not the current origin port
-                // 2. Haven't been selected as destinations already
-                // 3. Exist in assignedPorts
-                const availableDestinations = Object.values(assignedPorts).filter((port) => port !== originPort && !usedDestinations.includes(port));
-
-                // If this origin already has a destination mapped, add it to available options
-                if (swapMap[originPort]) {
-                  availableDestinations.push(swapMap[originPort]);
-                }
-
-                return (
-                  <div key={user.id} className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      DESTINATION: {originPort} (Player: {user.name})
-                    </label>
-                    <select
-                      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                      value={swapMap[originPort] || ""}
-                      onChange={(e) => handleSwapChange(originPort, e.target.value)}
-                    >
-                      <option value="">Select origin port</option>
-                      {availableDestinations.map((port) => (
-                        <option key={port} value={port}>
-                          {port}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              })}
+            <div className="flex justify-end space-x-3">
+              <button onClick={() => setShowSwapConfirmation(false)} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+              <button onClick={executeSwap} className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                Confirm Swap
+              </button>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3 rounded-b-lg">
-              <button onClick={handleCloseSwapModal} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+      {showStartConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-8 shadow-2xl max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Start Simulation</h3>
+
+            {missingUsersCount > 0 ? (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-yellow-400 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="text-sm text-yellow-700">
+                    <span className="font-medium">Warning:</span> {missingUsersCount} assigned user{missingUsersCount > 1 ? "s" : ""} have not joined this room yet.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <p className="text-sm text-green-700">All assigned users have joined this room.</p>
+                </div>
+              </div>
+            )}
+
+            <p className="text-gray-600 mb-6">Are you sure you want to start the simulation?</p>
+
+            <div className="flex justify-end space-x-3">
+              <button onClick={() => setShowStartConfirmation(false)} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 Cancel
               </button>
               <button
                 onClick={() => {
-                  const originPorts = Object.values(assignedPorts);
-                  const allPortsMapped = originPorts.every((port) => swapMap[port]);
-
-                  if (allPortsMapped) {
-                    handleCustomSwap();
-                  } else {
-                    toast.error("Please assign destinations for all ports");
-                  }
+                  setShowStartConfirmation(false);
+                  startSimulation();
                 }}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
               >
-                Confirm Swap
+                Start Simulation
               </button>
             </div>
           </div>
