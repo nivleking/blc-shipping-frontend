@@ -393,6 +393,7 @@ const Simulation = () => {
       await api.post(
         "/card-temporary/accept",
         {
+          room_id: roomId,
           card_temporary_id: cardId,
         },
         {
@@ -563,6 +564,7 @@ const Simulation = () => {
       await api.post(
         "/card-temporary/reject",
         {
+          room_id: roomId,
           card_temporary_id: cardId,
         },
         {
@@ -701,7 +703,6 @@ const Simulation = () => {
     const [fromType, fromBayIndex, fromCellIndex] = fromArea.split("-");
     const [toType, toBayIndex, toCellIndex] = toArea.split("-");
 
-    // Pastikan kedua area adalah bay dan dari bay yang sama
     if (fromType !== "bay" || toType !== "bay" || fromBayIndex !== toBayIndex) {
       return false;
     }
@@ -711,8 +712,6 @@ const Simulation = () => {
     const toRow = Math.floor(parseInt(toCellIndex, 10) / baySize.columns);
     const toCol = parseInt(toCellIndex, 10) % baySize.columns;
 
-    // Jika target berada tepat di atas (baris berkurang 1 dan kolom sama),
-    // pindahan dianggap tidak valid karena akan menyebabkan container tanpa penopang.
     return toRow === fromRow - 1 && toCol === fromCol;
   }
 
