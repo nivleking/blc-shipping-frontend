@@ -424,6 +424,15 @@ const Room = () => {
   const executeSwap = async () => {
     setShowSwapConfirmation(false);
 
+    // Check if it's the final phase
+    const finalPhaseResponse = await api.get(`/rooms/${roomId}/check-final-phase`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    console.log("Final phase response:", finalPhaseResponse.data);
+
+    const { isFinalPhase } = finalPhaseResponse.data;
+
     try {
       await api.put(
         `/rooms/${roomId}/swap-bays`,
@@ -433,13 +442,39 @@ const Room = () => {
         }
       );
 
+      if (isFinalPhase) {
+        // Get current room data first
+        const roomResponse = await api.get(`/rooms/${roomId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Update room with all required fields
+        await api.put(
+          `/rooms/${roomId}`,
+          {
+            name: roomResponse.data.name,
+            description: roomResponse.data.description,
+            total_rounds: roomResponse.data.total_rounds,
+            cards_limit_per_round: roomResponse.data.cards_limit_per_round,
+            is_final_unloading: true,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        toast.info("Final unloading phase: Please unload remaining containers", {
+          autoClose: 5000,
+        });
+      }
+
       socket.emit("swap_bays", { roomId });
 
       setCurrentRound((prev) => prev + 1);
 
-      toast.success("Bays swapped successfully!");
+      await fetchRankings();
 
-      fetchRankings();
+      toast.success("Bays swapped successfully!");
     } catch (error) {
       console.error("Error swapping bays:", error);
       toast.error("Failed to swap bays");

@@ -93,6 +93,24 @@ const Simulation = () => {
   });
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
 
+  useEffect(() => {
+    const checkFinalUnloading = async () => {
+      try {
+        const response = await api.get(`/rooms/${roomId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data.is_final_unloading) {
+          setSection(1); // Force section1 for final unloading
+        }
+      } catch (error) {
+        console.error("Error checking final unloading:", error);
+      }
+    };
+
+    checkFinalUnloading();
+  }, [roomId, token]);
+
   const fetchContainerData = async (nextPort, laterPorts) => {
     try {
       // Get current ship bay data which contains the container arena
@@ -1433,17 +1451,29 @@ const Simulation = () => {
 
   // Update handleNextSection to save section to database
   const handleNextSection = async () => {
-    const canProceed = await canProceedToSectionTwo();
-    if (!canProceed) {
-      toast.error("Please unload all containers destined for your port first!", {
-        position: "top-center",
-        autoClose: 3000,
-      });
-      return;
-    }
-
     try {
+      // Check if it's the final unloading phase
+      const response = await api.get(`/rooms/${roomId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("Final Unloading:", response.data.is_final_unloading);
+
+      if (response.data.is_final_unloading) {
+        toast.info("This is the final unloading phase. You cannot proceed to section 2.");
+        return;
+      }
+
+      const canProceed = await canProceedToSectionTwo();
+      if (!canProceed) {
+        toast.error("Please unload all containers destined for your port first!", {
+          position: "top-center",
+          autoClose: 3000,
+        });
+        return;
+      }
       // Update section in database
+      setSection(2);
       await api.put(
         `/ship-bays/${roomId}/${user.id}/section`,
         {
@@ -1455,9 +1485,6 @@ const Simulation = () => {
           },
         }
       );
-
-      // Update local state
-      setSection(2);
     } catch (error) {
       console.error("Error updating section:", error);
       toast.error("Failed to update section", {
