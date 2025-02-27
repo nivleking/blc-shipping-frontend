@@ -73,6 +73,8 @@ const Simulation = () => {
   const handlePageChange = (direction) => {
     setCurrentPage((prevPage) => prevPage + direction);
   };
+  const [currentRound, setCurrentRound] = useState(1);
+  const [totalRounds, setTotalRounds] = useState(1);
 
   // Capacity Uptake states
   const [capacityData, setCapacityData] = useState({
@@ -92,24 +94,6 @@ const Simulation = () => {
     laterPorts: [],
   });
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
-
-  useEffect(() => {
-    const checkFinalUnloading = async () => {
-      try {
-        const response = await api.get(`/rooms/${roomId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.data.is_final_unloading) {
-          setSection(1); // Force section1 for final unloading
-        }
-      } catch (error) {
-        console.error("Error checking final unloading:", error);
-      }
-    };
-
-    checkFinalUnloading();
-  }, [roomId, token]);
 
   const fetchContainerData = async (nextPort, laterPorts) => {
     try {
@@ -303,6 +287,8 @@ const Simulation = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      console.log("Total Rounds:", roomResponse.data.total_rounds);
 
       // Get the swap configuration
       let swapConfig = {};
@@ -535,11 +521,23 @@ const Simulation = () => {
     }
 
     try {
+
+      const roomResponse = await api.get(`/rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setTotalRounds(roomResponse.data.total_rounds);
+      console.log("Total Rounds:", roomResponse.data.total_rounds);
+
       const response = await api.get(`ship-bays/${roomId}/${user.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      setCurrentRound(response.data.current_round);
+      console.log("Current Round:", response.data.current_round);
 
       // Initialize empty arena if none exists
       const savedArena = response.data.arena
@@ -1451,29 +1449,17 @@ const Simulation = () => {
 
   // Update handleNextSection to save section to database
   const handleNextSection = async () => {
-    try {
-      // Check if it's the final unloading phase
-      const response = await api.get(`/rooms/${roomId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+    const canProceed = await canProceedToSectionTwo();
+    if (!canProceed) {
+      toast.error("Please unload all containers destined for your port first!", {
+        position: "top-center",
+        autoClose: 3000,
       });
+      return;
+    }
 
-      console.log("Final Unloading:", response.data.is_final_unloading);
-
-      if (response.data.is_final_unloading) {
-        toast.info("This is the final unloading phase. You cannot proceed to section 2.");
-        return;
-      }
-
-      const canProceed = await canProceedToSectionTwo();
-      if (!canProceed) {
-        toast.error("Please unload all containers destined for your port first!", {
-          position: "top-center",
-          autoClose: 3000,
-        });
-        return;
-      }
+    try {
       // Update section in database
-      setSection(2);
       await api.put(
         `/ship-bays/${roomId}/${user.id}/section`,
         {
@@ -1485,6 +1471,9 @@ const Simulation = () => {
           },
         }
       );
+
+      // Update local state
+      setSection(2);
     } catch (error) {
       console.error("Error updating section:", error);
       toast.error("Failed to update section", {
@@ -1661,6 +1650,8 @@ const Simulation = () => {
                   targetContainers={targetContainers}
                   isProcessingCard={isProcessingCard}
                   isCardVisible={isCardVisible}
+                  currentRound={currentRound}
+                  totalRounds={totalRounds}
                 />
               </TabPanel>
 

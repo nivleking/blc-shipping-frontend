@@ -27,21 +27,28 @@ const Stowage = ({
   isProcessingCard,
   isLimitExceeded,
   isCardVisible,
+  currentRound,
+  totalRounds,
 }) => {
   return (
     <>
       <PortLegend />
 
       {/* Section Header */}
-      <div className="flex justify-between items-center mb-4 mt-4  bg-white rounded-xl shadow-sm p-4">
+      <div className="flex justify-between items-center mb-4 mt-4 bg-white rounded-xl shadow-sm p-4">
         <h2 className="text-xl font-semibold text-gray-800">
           Section {section}: {section === 1 ? "Unload Port Containers" : "Handle Sales Calls"}
+          {currentRound > totalRounds && section === 1 && <span className="ml-2 text-sm text-red-600 font-medium">(Final Unloading Phase)</span>}
         </h2>
         {section === 1 && (
           <div className="flex items-center gap-4">
             <div className="text-sm text-gray-600">Remaining containers to unload: {targetContainers.length}</div>
-            <button onClick={onNextSection} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              Proceed to Section 2
+            <button
+              onClick={onNextSection}
+              disabled={currentRound > totalRounds}
+              className={`px-4 py-2 rounded-lg transition-colors ${currentRound > totalRounds ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+            >
+              {currentRound > totalRounds ? "Final Unloading Phase" : "Proceed to Section 2"}
             </button>
           </div>
         )}

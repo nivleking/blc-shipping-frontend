@@ -315,8 +315,8 @@ const Room = () => {
   };
 
   async function endSimulation() {
-    if (currentRound < totalRounds) {
-      toast.error(`Simulation can only be ended on the final week (Week ${totalRounds})`);
+    if (currentRound <= totalRounds) {
+      toast.error(`Simulation can only be ended after the final unloading phase (Week ${totalRounds + 1})`);
       return;
     }
 
@@ -387,6 +387,11 @@ const Room = () => {
   };
 
   const handleSwapConfigSave = async (newSwapConfig) => {
+    if (currentRound > totalRounds) {
+      toast.error("Cannot modify swap configuration during final unloading phase");
+      return;
+    }
+    
     setSwapConfig(newSwapConfig);
     setShowSwapConfigModal(false);
 
@@ -413,6 +418,11 @@ const Room = () => {
   };
 
   const handleSwapBays = async () => {
+    if (currentRound > totalRounds) {
+      toast.error("Bay swapping is disabled during final unloading phase");
+      return;
+    }
+
     if (!currentSwapConfig || Object.keys(currentSwapConfig).length === 0) {
       setShowSwapConfigModal(true);
       return;
@@ -424,15 +434,6 @@ const Room = () => {
   const executeSwap = async () => {
     setShowSwapConfirmation(false);
 
-    // Check if it's the final phase
-    const finalPhaseResponse = await api.get(`/rooms/${roomId}/check-final-phase`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    console.log("Final phase response:", finalPhaseResponse.data);
-
-    const { isFinalPhase } = finalPhaseResponse.data;
-
     try {
       await api.put(
         `/rooms/${roomId}/swap-bays`,
@@ -442,39 +443,13 @@ const Room = () => {
         }
       );
 
-      if (isFinalPhase) {
-        // Get current room data first
-        const roomResponse = await api.get(`/rooms/${roomId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        // Update room with all required fields
-        await api.put(
-          `/rooms/${roomId}`,
-          {
-            name: roomResponse.data.name,
-            description: roomResponse.data.description,
-            total_rounds: roomResponse.data.total_rounds,
-            cards_limit_per_round: roomResponse.data.cards_limit_per_round,
-            is_final_unloading: true,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        toast.info("Final unloading phase: Please unload remaining containers", {
-          autoClose: 5000,
-        });
-      }
-
       socket.emit("swap_bays", { roomId });
 
       setCurrentRound((prev) => prev + 1);
 
-      await fetchRankings();
-
       toast.success("Bays swapped successfully!");
+
+      fetchRankings();
     } catch (error) {
       console.error("Error swapping bays:", error);
       toast.error("Failed to swap bays");
@@ -752,7 +727,11 @@ const Room = () => {
                 {/* Configure Port Swap Button */}
                 <button
                   onClick={() => setShowSwapConfigModal(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-yellow-400 border-2 border-yellow-500 text-white rounded-lg hover:bg-yellow-500 transition-all duration-200 shadow-sm"
+                  disabled={currentRound > totalRounds}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
+    ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-400" : "bg-yellow-400 border-2 border-yellow-500 text-white hover:bg-yellow-500"} 
+    shadow-sm`}
+                  title={currentRound > totalRounds ? "Swap configuration disabled in final unloading phase" : "Edit swap configuration"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path
@@ -765,29 +744,37 @@ const Room = () => {
                 </button>
 
                 {/* Swap Bays Button */}
-                <button onClick={handleSwapBays} className="flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md">
+                <button
+                  onClick={handleSwapBays}
+                  disabled={currentRound > totalRounds}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
+    ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"} 
+    shadow-md`}
+                  title={currentRound > totalRounds ? "Bay swapping disabled in final unloading phase" : "Swap bays"}
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
                   </svg>
                   SWAP
+                  {currentRound > totalRounds && <span className="text-xs ml-1">(Final Phase)</span>}
                 </button>
 
                 {/* End Simulation Button */}
                 <button
                   onClick={endSimulation}
-                  disabled={currentRound < totalRounds}
+                  disabled={currentRound <= totalRounds}
                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-md transition-all duration-200 ${
-                    currentRound >= totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    currentRound > totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   }`}
-                  title={currentRound < totalRounds ? `Can only end simulation on the final week (${totalRounds})` : "End simulation"}
+                  title={currentRound <= totalRounds ? `Can only end simulation after the final unloading phase (Week ${totalRounds + 1})` : "End simulation"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
                   </svg>
                   END
-                  {currentRound < totalRounds && (
+                  {currentRound <= totalRounds && (
                     <span className="text-xs ml-1">
-                      (Week {currentRound}/{totalRounds})
+                      (Week {currentRound}/{totalRounds + 1})
                     </span>
                   )}
                 </button>
