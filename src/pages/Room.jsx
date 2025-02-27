@@ -673,7 +673,7 @@ const Room = () => {
                   ) : (
                     <tr>
                       <td colSpan="4" className="px-6 py-4 text-center text-gray-500 italic">
-                        No group Users in the room.
+                        No group users in the room.
                       </td>
                     </tr>
                   )}

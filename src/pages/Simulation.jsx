@@ -1062,6 +1062,103 @@ const Simulation = () => {
     const container = containers.find((c) => c.id === active.id);
     if (!container) return;
 
+    const activeItem = droppedItems.find((item) => item.id === active.id);
+    if (activeItem && activeItem.area === over.id) return;
+
+    // Special handling for Section 1: Remove containers destined for current port
+    if (section === 1) {
+      // Check if this is a move from bay to dock
+      const isFromBay = activeItem?.area?.startsWith("bay-");
+      const isToDock = over.id.startsWith("docks-");
+
+      if (isFromBay && isToDock) {
+        // Check if container destination matches current port
+        try {
+          const containerResponse = await api.get(`/containers/${active.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (containerResponse.data.card && containerResponse.data.card.destination === port) {
+            // This container should be unloaded at current port
+
+            // Remove from dropped items (visual effect of container being removed)
+            const updatedDroppedItems = droppedItems.filter((item) => item.id !== active.id);
+            setDroppedItems(updatedDroppedItems);
+
+            // Update bay data to reflect removal
+            const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
+              return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
+                return Array.from({ length: baySize.columns }).map((_, colIndex) => {
+                  const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
+                  const item = updatedDroppedItems.find((item) => item.area === cellId);
+                  return item ? item.id : null;
+                });
+              });
+            });
+            setBayData(newBayData);
+
+            toast.success("Container unloaded successfully!", {
+              position: "top-right",
+              autoClose: 2000,
+            });
+
+            // Track discharge move
+            try {
+              await api.post(
+                `/ship-bays/${roomId}/${user.id}/moves`,
+                {
+                  move_type: "discharge",
+                  count: 1,
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              // Save updated bay state
+              await api.post("/ship-bays", {
+                arena: newBayData,
+                user_id: user.id,
+                room_id: roomId,
+                revenue: revenue,
+                section: "section1",
+              });
+
+              // Update section state to match the API
+              await api.put(
+                `/ship-bays/${roomId}/${user.id}/section`,
+                {
+                  section: "section1",
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              // Request updated stats
+              socket.emit("stats_requested", {
+                roomId,
+                userId: user.id,
+              });
+
+              fetchRankings();
+
+              return; // Exit early since we've handled this special case
+            } catch (error) {
+              console.error("API call failed", error);
+              toast.error("Failed to update container status");
+            }
+          }
+        } catch (error) {
+          console.error("Error checking container destination:", error);
+        }
+      }
+    }
+
     const [type, bayIndex] = over.id.split("-");
 
     if (type === "bay") {
@@ -1074,9 +1171,6 @@ const Simulation = () => {
         return;
       }
     }
-
-    const activeItem = droppedItems.find((item) => item.id === active.id);
-    if (activeItem && activeItem.area === over.id) return;
 
     if (activeItem && isDirectUpperMove(activeItem.area, over.id, baySize)) {
       toast.error("Invalid placement - container cannot float", {

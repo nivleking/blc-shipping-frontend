@@ -42,7 +42,7 @@ const Stowage = ({
         </h2>
         {section === 1 && (
           <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-600">Remaining containers to unload: {targetContainers.length}</div>
+            <div className="text-sm text-gray-600">Remaining containers to unload: {targetContainers && targetContainers.length}</div>
             <button
               onClick={onNextSection}
               disabled={currentRound > totalRounds}
