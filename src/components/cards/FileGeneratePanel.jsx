@@ -11,40 +11,14 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
 
   const templateData = [
     {
+      id: "734",
       origin: "SBY",
-      destination: "MDN",
-      priority: "Committed",
-      container_type: "Dry",
-      quantity: 5,
-      revenue_per_container: 15000000,
-      total_revenue: "=E2*F2",
-    },
-    {
-      origin: "MDN",
       destination: "JYP",
       priority: "Non-Committed",
-      container_type: "Reefer",
-      quantity: 3,
-      revenue_per_container: 20000000,
-      total_revenue: "=E3*F3",
-    },
-    {
-      origin: "MKS",
-      destination: "SBY",
-      priority: "Committed",
-      container_type: "Dry",
-      quantity: 4,
-      revenue_per_container: 12000000,
-      total_revenue: "=E4*F4",
-    },
-    {
-      origin: "JYP",
-      destination: "MKS",
-      priority: "Non-Committed",
-      container_type: "Dry",
-      quantity: 6,
-      revenue_per_container: 13000000,
-      total_revenue: "=E5*F5",
+      container_type: "dry",
+      quantity: 2,
+      revenue_per_container: 21000000,
+      total_revenue: "=F12*G12",
     },
   ];
 
@@ -64,8 +38,8 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
       ["5. Revenue/Container must be in IDR (numbers only)"],
       ["6. Total Revenue will be calculated automatically"],
       [],
-      ["Origin", "Destination", "Priority", "Container Type", "Quantity", "Revenue/Container", "Total Revenue"],
-      ["(Required)", "(Required)", "(Required)", "(Required)", "(Required)", "(Required)", "(Formula)"],
+      ["ID", "Origin", "Destination", "Priority", "Container Type", "Quantity", "Revenue/Container", "Total Revenue"],
+      ["(Required)", "(Required)", "(Required)", "(Required)", "(Required)", "(Required)", "(Required)", "(Formula)"],
     ];
 
     XLSX.utils.sheet_add_aoa(ws, headers);
@@ -73,19 +47,20 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
     // Add example data with formulas
     templateData.forEach((row, index) => {
       const rowNum = index + 12; // Start after headers
-      const cellRef = `G${rowNum}`; // Reference untuk total revenue cell
+      const cellRef = `H${rowNum}`; // Reference untuk total revenue cell
 
       XLSX.utils.sheet_add_aoa(
         ws,
         [
           [
+            row.id,
             row.origin,
             row.destination,
             row.priority,
             row.container_type,
             row.quantity,
             row.revenue_per_container,
-            { f: `E${rowNum}*F${rowNum}`, t: "n" }, // Set formula dengan tipe numeric
+            { f: `F${rowNum}*G${rowNum}`, t: "n" }, // Set formula dengan tipe numeric
           ],
         ],
         { origin: `A${rowNum}` }
@@ -102,6 +77,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
 
     // Set column widths
     ws["!cols"] = [
+      { wch: 10 }, // ID
       { wch: 12 }, // Origin
       { wch: 12 }, // Destination
       { wch: 15 }, // Priority
@@ -139,7 +115,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
       D12: {
         // Container Type column
         type: "list",
-        formula1: '"Dry,Reefer"',
+        formula1: '"dry,reefer,Dry,Reefer,DRY,REEFER"',
         showErrorMessage: true,
         errorTitle: "Invalid Container Type",
         error: "Please select either Dry or Reefer",
@@ -151,7 +127,6 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
     saveAs(data, "sales_call_cards_template.xlsx");
   };
 
-  // Update handleFileUpload untuk memperbaiki pembacaan data Excel
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     setIsUploading(true);
@@ -166,7 +141,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
 
         const jsonData = XLSX.utils.sheet_to_json(worksheet, {
           range: 11,
-          header: ["origin", "destination", "priority", "container_type", "quantity", "revenue_per_container", "total_revenue"],
+          header: ["id", "origin", "destination", "priority", "container_type", "quantity", "revenue_per_container", "total_revenue"],
         });
 
         const validationErrors = [];
@@ -180,6 +155,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
 
           // Clean and validate data
           const card = {
+            id: String(row.id).trim(),
             origin: String(row.origin).trim().toUpperCase(),
             destination: String(row.destination).trim().toUpperCase(),
             priority: String(row.priority).trim(),
@@ -189,6 +165,12 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
             // Kalkulasi revenue dari quantity dan revenue_per_container
             revenue: parseInt(row.quantity) * parseInt(row.revenue_per_container),
           };
+
+          // Add ID validation
+          if (!card.id || !/^\d+$/.test(card.id) || parseInt(card.id) < 1 || parseInt(card.id) > 99999) {
+            validationErrors.push(`Row ${i + 12}: Invalid ID "${card.id}". Must be a number between 1-99999`);
+            continue;
+          }
 
           // Validation checks
           if (!validPorts.includes(card.origin)) {
@@ -212,7 +194,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
             continue;
           }
 
-          if (!["Dry", "Reefer"].includes(card.type)) {
+          if (!["dry", "reefer", "Dry", "Reefer", "DRY", "REEFER"].includes(card.type)) {
             validationErrors.push(`Row ${i + 12}: Invalid container type "${card.type}"`);
             continue;
           }
@@ -238,15 +220,21 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
 
         // Create cards and attach to deck
         try {
-          const createdCards = await Promise.all(cards.map((card) => api.post("/cards", card)));
+          // Create cards and attach to deck
+          for (const card of cards) {
+            try {
+              // Create card
+              const cardResponse = await api.post("/cards", card);
 
-          await Promise.all(
-            createdCards.map((response) =>
-              api.post(`/decks/${deckId}/add-card`, {
-                card_id: response.data.id,
-              })
-            )
-          );
+              // Attach card to deck
+              await api.post(`/decks/${deckId}/add-card`, {
+                card_id: cardResponse.data.id,
+              });
+            } catch (error) {
+              console.error("Error creating/attaching card:", error);
+              throw error; // Propagate error to be caught by outer try-catch
+            }
+          }
 
           await refreshCards();
           await refreshContainers();
@@ -254,8 +242,8 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
           toast.success(`Successfully imported ${cards.length} cards to deck!`);
           event.target.value = null; // Reset file input
         } catch (error) {
-          console.error("Error creating cards:", error);
-          toast.error("Failed to create cards");
+          console.error("Error processing cards:", error);
+          toast.error("Failed to create or attach cards to deck");
         }
       };
 

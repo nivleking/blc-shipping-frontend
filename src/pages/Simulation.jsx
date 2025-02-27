@@ -521,7 +521,6 @@ const Simulation = () => {
     }
 
     try {
-
       const roomResponse = await api.get(`/rooms/${roomId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -702,7 +701,7 @@ const Simulation = () => {
     }
 
     if (isProcessingCard) {
-      return; // Prevent duplicate submissions
+      return;
     }
 
     try {
@@ -1027,10 +1026,11 @@ const Simulation = () => {
     if (!container || bayIndex === undefined) return false;
 
     const bayType = bayTypes[bayIndex];
+    const containerType = container.type?.toLowerCase();
 
-    if (container.type === "Dry") return true;
+    if (containerType === "dry") return true;
 
-    if (container.type === "Reefer") {
+    if (containerType === "reefer") {
       return bayType === "reefer";
     }
 
@@ -1065,8 +1065,9 @@ const Simulation = () => {
     const [type, bayIndex] = over.id.split("-");
 
     if (type === "bay") {
+      console.log("Container:", container);
       if (!isValidContainerForBay(container, parseInt(bayIndex))) {
-        toast.error(container.type === "Reefer" ? "Reefer containers can only be placed in reefer bays" : "Invalid container placement", {
+        toast.error(container.type?.toLowerCase() === "reefer" ? "Reefer containers can only be placed in reefer bays" : "Invalid container placement", {
           position: "top-right",
           autoClose: 3000,
         });

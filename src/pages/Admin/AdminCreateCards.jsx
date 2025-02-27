@@ -9,6 +9,7 @@ import MarketIntelligencePanel from "../../components/cards/MarketIntelligencePa
 import ConfigurationPanel from "../../components/cards/ConfigurationPanel";
 import InfoModal from "../../components/cards/InfoModal";
 import CardsPreviewPanel from "../../components/cards/CardsPreviewPanel";
+import ConfirmationModal from "../../components/rooms/ConfirmationModal";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", {
@@ -21,6 +22,7 @@ const AdminCreateCards = () => {
   const { deckId } = useParams();
   const navigate = useNavigate();
   const [generateFormData, setGenerateFormData] = useState({
+    // startId: 1, // Add starting ID field
     totalRevenueEachPort: 250_000_000,
     totalContainerQuantityEachPort: 15,
     salesCallCountEachPort: 8,
@@ -224,14 +226,34 @@ const AdminCreateCards = () => {
 
   const [showInfoModal, setShowInfoModal] = useState(false);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const navBarTitle = `${deck.name}`;
+
+  const handleDeleteAllCards = async () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/decks/${deckId}/cards`);
+      await fetchDeck();
+      await fetchContainers();
+      toast.success("All cards have been deleted successfully");
+    } catch (error) {
+      console.error("Error deleting cards:", error);
+      toast.error("Failed to delete cards");
+    } finally {
+      setShowDeleteConfirm(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
       <ToastContainer />
 
       <div className="container mx-auto px-4 py-6">
-        <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateSubmit} onInfoClick={() => setShowInfoModal(true)} />
+        <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateSubmit} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
         <TabGroup>
           <TabList className="flex space-x-1 rounded-xl bg-white shadow-sm p-1 mb-6 mt-4">
             <Tab
@@ -305,6 +327,15 @@ const AdminCreateCards = () => {
 
         {/* Information Modal */}
         {showInfoModal && <InfoModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />}
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleConfirmDelete}
+          title="Delete All Cards"
+          message="Are you sure you want to delete all cards in this deck? This action cannot be undone."
+        />
       </div>
     </div>
   );

@@ -119,8 +119,8 @@ const AdminDecks = () => {
 
     const totalPorts = new Set(cards.map((card) => card.origin)).size;
     const totalCards = cards.length;
-    const dryContainers = cards.filter((card) => card.type === "Dry").length;
-    const reeferContainers = cards.filter((card) => card.type === "Reefer").length;
+    const dryContainers = cards.filter((card) => card.type.toLowerCase() === "dry").length;
+    const reeferContainers = cards.filter((card) => card.type.toLowerCase() === "reefer").length;
     const commitedCards = cards.filter((card) => card.priority === "Committed").length;
     const nonCommitedCards = cards.filter((card) => card.priority === "Non-Committed").length;
 
@@ -229,11 +229,11 @@ const AdminDecks = () => {
                             <span className="font-semibold">{stats.totalCards}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Dry Containers:</span>
+                            <span className="text-gray-600">Dry Sales Calls:</span>
                             <span className="font-semibold text-amber-600">{stats.dryContainers}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Reefer Containers:</span>
+                            <span className="text-gray-600">Reefer Sales Calls:</span>
                             <span className="font-semibold text-blue-600">{stats.reeferContainers}</span>
                           </div>
                         </div>

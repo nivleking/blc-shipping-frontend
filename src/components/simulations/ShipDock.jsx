@@ -19,7 +19,7 @@ const ShipDock = ({ dockSize, paginatedItems, draggingItem, containers }) => {
                   text={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
                   isDragging={draggingItem === paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
                   color={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).color}
-                  type={containers.find((c) => c.id === paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id)?.type || "Dry"}
+                  type={containers.find((c) => c.id === paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id)?.type?.toLowerCase() || "dry"}
                 />
               )}
             </DroppableCell>

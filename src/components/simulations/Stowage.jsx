@@ -3,7 +3,7 @@ import ShipBay from "./ShipBay";
 import ShipDock from "./ShipDock";
 import SalesCallCard from "./SalesCallCard";
 import DraggableContainer from "./DraggableContainer";
-import PortLegend from "../cards/PortLegend";
+import PortLegendSimulation from "../cards/PortLegendSimulation";
 
 const Stowage = ({
   bayCount,
@@ -32,7 +32,7 @@ const Stowage = ({
 }) => {
   return (
     <>
-      <PortLegend />
+      <PortLegendSimulation />
 
       {/* Section Header */}
       <div className="flex justify-between items-center mb-4 mt-4 bg-white rounded-xl shadow-sm p-4">
@@ -128,7 +128,7 @@ const Stowage = ({
                   transform: "scale(1.05)",
                   opacity: 0.9,
                 }}
-                type={containers.find((c) => c.id === draggingItem)?.type || "Dry"}
+                type={containers.find((c) => c.id === draggingItem)?.type?.toLowerCase() || "dry"}
               />
             </div>
           )}

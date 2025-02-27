@@ -66,10 +66,16 @@ const PRESET_CONFIGS = [
   },
 ];
 
+const validateId = (id) => {
+  const num = parseInt(id);
+  return !isNaN(num) && num >= 1 && num <= 99999;
+};
+
 const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePresetSelect, handlePortSelect, handleRevenueSelect, handleQuantitySelect, handleGenerateChange, deckId, refreshCards, refreshContainers }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [manualCardForm, setManualCardForm] = useState({
+    id: "",
     origin: "",
     destination: "",
     priority: "Committed",
@@ -94,8 +100,13 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
     setIsSubmitting(true);
 
     try {
-      // First create the card
+      if (!validateId(manualCardForm.id)) {
+        toast.error("Invalid ID. Must be a number between 1-99999");
+        return;
+      }
+
       const cardResponse = await api.post("/cards", {
+        id: manualCardForm.id,
         priority: manualCardForm.priority,
         origin: manualCardForm.origin,
         destination: manualCardForm.destination,
@@ -125,7 +136,8 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
         revenuePerContainer: 0,
       });
     } catch (error) {
-      toast.error("Failed to create sales call card");
+      console.error("Error creating card:", error);
+      toast.error(error.response?.data?.message || "Failed to create card");
       console.error(error);
     } finally {
       setIsSubmitting(false);
@@ -166,14 +178,6 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
               <Tab
                 className={({ selected }) =>
                   `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
-                ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
-                }
-              >
-                Auto Generate
-              </Tab>
-              <Tab
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
       ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
                 }
               >
@@ -185,8 +189,17 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                 ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
                 }
               >
-                Quick Presets
+                Auto Generate
               </Tab>
+
+              {/* <Tab
+                className={({ selected }) =>
+                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+                ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
+                }
+              >
+                Quick Presets
+              </Tab> */}
             </TabList>
 
             <TabPanels className="mt-2">
@@ -234,22 +247,81 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                       </div>
                     </div>
                   </div>
-
                   {/* Sales Call Card Form */}
                   <form onSubmit={handleManualCardSubmit}>
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-                      <div className="p-6 border-b border-gray-200">
-                        <div className="flex items-center mb-4">
+                      {/* Header */}
+                      <div className="p-6 border-b border-gray-200 bg-gray-50">
+                        <div className="flex items-center">
                           <FaShip className="text-blue-500 text-xl mr-2" />
-                          <h3 className="text-1xl font-bold text-gray-800">Create Sales Call Card</h3>
+                          <h3 className="text-xl font-bold text-gray-800">Create Sales Call Card</h3>
                         </div>
+                      </div>
 
-                        <div className="grid grid-cols-2 gap-6">
-                          {/* Origin & Destination */}
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Origin Port</label>
-                              <select name="origin" value={manualCardForm.origin} onChange={handleManualCardChange} required className="w-full p-3 bg-gray-50 border-2 rounded-lg focus:outline-none focus:border-blue-500 transition-colors">
+                      {/* Main Form Content */}
+                      <div className="p-6">
+                        {/* Card Details Section */}
+                        <div className="space-y-6">
+                          {/* Container Type Info */}
+                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                            <div className="flex items-center text-sm text-blue-700">
+                              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                              Container type will be automatically set based on the Card ID
+                              <span className="ml-1 font-medium">(Reefer = ID multiple of 5)</span>
+                            </div>
+                          </div>
+                          {/* ID and Priority Group */}
+                          <div className="grid grid-cols-2 gap-6">
+                            {/* Card ID */}
+                            <div className="space-y-2">
+                              <label className="block text-sm font-medium text-gray-700">Card ID</label>
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  name="id"
+                                  value={manualCardForm.id}
+                                  onChange={handleManualCardChange}
+                                  pattern="^[1-9]\d{0,4}$"
+                                  required
+                                  placeholder="1-99999"
+                                  className="w-full p-3 bg-gray-50 border-2 rounded-lg 
+    focus:outline-none focus:border-blue-500 transition-colors"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">Enter a number between 1-99999</p>
+                              </div>
+                            </div>
+
+                            {/* Priority Level */}
+                            <div className="space-y-2">
+                              <label className="block text-sm font-medium text-gray-700">Priority Level</label>
+                              <select
+                                name="priority"
+                                value={manualCardForm.priority}
+                                onChange={handleManualCardChange}
+                                className="w-full p-3 bg-gray-50 border-2 rounded-lg 
+                        focus:outline-none focus:border-blue-500 transition-colors"
+                              >
+                                <option value="Committed">Committed</option>
+                                <option value="Non-Committed">Non-Committed</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Ports Section */}
+                          <div className="grid grid-cols-2 gap-6">
+                            {/* Origin Port */}
+                            <div className="space-y-2">
+                              <label className="block text-sm font-medium text-gray-700">Origin Port</label>
+                              <select
+                                name="origin"
+                                value={manualCardForm.origin}
+                                onChange={handleManualCardChange}
+                                required
+                                className="w-full p-3 bg-gray-50 border-2 rounded-lg 
+                        focus:outline-none focus:border-blue-500 transition-colors"
+                              >
                                 <option value="">Select Origin Port</option>
                                 {availablePorts[selectedPorts].map((port) => (
                                   <option key={port} value={port}>
@@ -259,16 +331,18 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                               </select>
                             </div>
 
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Destination Port</label>
+                            {/* Destination Port */}
+                            <div className="space-y-2">
+                              <label className="block text-sm font-medium text-gray-700">Destination Port</label>
                               <select
                                 name="destination"
                                 value={manualCardForm.destination}
                                 onChange={handleManualCardChange}
                                 required
                                 disabled={!manualCardForm.origin}
-                                className={`w-full p-3 bg-gray-50 border-2 rounded-lg focus:outline-none focus:border-blue-500 transition-colors
-                    ${!manualCardForm.origin ? "opacity-50 cursor-not-allowed" : ""}`}
+                                className={`w-full p-3 bg-gray-50 border-2 rounded-lg 
+                        focus:outline-none focus:border-blue-500 transition-colors
+                        ${!manualCardForm.origin ? "opacity-50 cursor-not-allowed" : ""}`}
                               >
                                 <option value="">Select Destination Port</option>
                                 {manualCardForm.origin &&
@@ -281,76 +355,86 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                             </div>
                           </div>
 
-                          {/* Priority & Type */}
+                          {/* Container Details Section */}
                           <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Priority Level</label>
-                              <select name="priority" value={manualCardForm.priority} onChange={handleManualCardChange} className="w-full p-3 bg-gray-50 border-2 rounded-lg focus:outline-none focus:border-blue-500 transition-colors">
-                                <option value="Committed">Committed</option>
-                                <option value="Non-Committed">Non-Committed</option>
-                              </select>
-                            </div>
+                            <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Container Details</h4>
+                            <div className="grid grid-cols-3 gap-6">
+                              {/* Quantity */}
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                                <input
+                                  type="number"
+                                  name="quantity"
+                                  value={manualCardForm.quantity}
+                                  onChange={handleManualCardChange}
+                                  min="1"
+                                  required
+                                  className="w-full p-3 bg-white border-2 rounded-lg 
+                          focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
 
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Container Type</label>
-                              <div className="p-3 bg-gray-100 rounded-lg text-gray-500 text-sm">Auto-generated (Dry/Reefer)</div>
+                              {/* Revenue per Container */}
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Revenue/Container</label>
+                                <input
+                                  type="number"
+                                  name="revenuePerContainer"
+                                  value={manualCardForm.revenuePerContainer}
+                                  onChange={handleManualCardChange}
+                                  min="0"
+                                  required
+                                  className="w-full p-3 bg-white border-2 rounded-lg 
+                          focus:outline-none focus:border-blue-500"
+                                />
+                              </div>
+
+                              {/* Total Revenue (Read-only) */}
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Total Revenue</label>
+                                <div
+                                  className="p-3 bg-gray-50 border-2 border-gray-200 rounded-lg 
+                            font-medium text-gray-800"
+                                >
+                                  {formatIDR(calculateTotalRevenue())}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Quantity & Revenue Section */}
-                      <div className="p-6 bg-gray-50">
-                        <div className="grid grid-cols-3 gap-6">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                            <input
-                              type="number"
-                              name="quantity"
-                              value={manualCardForm.quantity}
-                              onChange={handleManualCardChange}
-                              min="1"
-                              required
-                              className="w-full p-3 bg-white border-2 rounded-lg focus:outline-none focus:border-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Revenue/Container</label>
-                            <input
-                              type="number"
-                              name="revenuePerContainer"
-                              value={manualCardForm.revenuePerContainer}
-                              onChange={handleManualCardChange}
-                              min="0"
-                              required
-                              className="w-full p-3 bg-white border-2 rounded-lg focus:outline-none focus:border-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Total Revenue</label>
-                            <div className="p-3 bg-white border-2 border-gray-200 rounded-lg font-medium text-gray-800">{formatIDR(calculateTotalRevenue())}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Submit Button */}
+                      {/* Submit Button Section */}
                       <div className="p-6 bg-gray-50 border-t border-gray-200">
                         <button
                           type="submit"
                           disabled={isSubmitting}
-                          className={`w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium 
-        hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 
-        focus:ring-offset-2 transition-all duration-200
-        ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                          className={`w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 
+                   text-white rounded-lg font-medium 
+                   hover:from-blue-600 hover:to-blue-700 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 
+                   focus:ring-offset-2 transition-all duration-200
+                   ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
-                          {isSubmitting ? "Creating..." : "Create Sales Call Card"}
+                          {isSubmitting ? (
+                            <div className="flex items-center justify-center">
+                              <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                              </svg>
+                              Creating...
+                            </div>
+                          ) : (
+                            "Create Sales Call Card"
+                          )}
                         </button>
                       </div>
                     </div>
                   </form>
                 </div>
+              </TabPanel>
+              <TabPanel>
+                <FileGeneratePanel deckId={deckId} refreshCards={refreshCards} refreshContainers={refreshContainers} />
               </TabPanel>
               <TabPanel>
                 <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
@@ -491,13 +575,7 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                   </div>
                 </div>
               </TabPanel>
-              <TabPanel>
-                <FileGeneratePanel deckId={deckId} refreshCards={refreshCards} refreshContainers={refreshContainers} />
-              </TabPanel>{" "}
-              <TabPanel>
-                <FileGeneratePanel deckId={deckId} refreshCards={refreshCards} refreshContainers={refreshContainers} />
-              </TabPanel>
-              <TabPanel>
+              {/* <TabPanel>
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Presets</h3>
                   <div className="grid grid-cols-2 gap-4">
@@ -521,7 +599,7 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                     ))}
                   </div>
                 </div>
-              </TabPanel>
+              </TabPanel> */}
             </TabPanels>
           </TabGroup>
         </div>

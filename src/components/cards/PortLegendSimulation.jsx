@@ -14,7 +14,7 @@ const PORT_COLORS = {
   BTH: "#92400E", // brown
 };
 
-const PortLegend = () => {
+const PortLegendSimulation = () => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
   const [portInfo, setPortInfo] = useState({
@@ -163,4 +163,4 @@ const PortLegend = () => {
   );
 };
 
-export default PortLegend;
+export default PortLegendSimulation;

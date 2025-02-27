@@ -44,7 +44,7 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
       ${bayTypes?.[bayIndex] === "reefer" ? "bg-blue-100 text-blue-700 ring-2 ring-blue-200" : "bg-gray-100 text-gray-600"}
     `}
               >
-                {bayTypes?.[bayIndex]?.toUpperCase() || "DRY"}
+                {bayTypes?.[bayIndex]?.toLowerCase() || "dry"}
               </span>
             </div>
             <ContainerBay id={`bay-${bayIndex}`} rows={baySize.rows} columns={baySize.columns}>
@@ -62,7 +62,7 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
                         text={droppedItems.find((item) => item.area === cellId).id}
                         isDragging={draggingItem === droppedItems.find((item) => item.area === cellId).id}
                         color={droppedItems.find((item) => item.area === cellId).color}
-                        type={containers.find((c) => c.id === droppedItems.find((item) => item.area === cellId).id)?.type || "Dry"}
+                        type={containers.find((c) => c.id === droppedItems.find((item) => item.area === cellId).id)?.type?.toLowerCase() || "dry"}
                       />
                     )}
                   </DroppableCell>

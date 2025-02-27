@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import PortLegend from "./PortLegend";
+import PortLegendCards from "./PortLegendCards";
 
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.8 },
@@ -9,7 +9,7 @@ const cardVariants = {
 const CardsPreviewPanel = ({ currentCards, containers, formatIDR, filterType, setFilterType, filterOrigin, setFilterOrigin, getAllOrigins, indexOfFirstCard, indexOfLastCard, filteredCards, totalPages, currentPage, paginate }) => {
   return (
     <div className="col-span-4 bg-white shadow-md rounded-lg overflow-hidden text-sm">
-      <PortLegend />
+      <PortLegendCards />
       {/* Update CardsPreview component filter section */}
       <div className="p-4 border-b sticky top-0 bg-white z-10 space-y-3">
         <div className="flex items-center justify-between">

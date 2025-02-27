@@ -1,7 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 
-const DraggableContainer = ({ id, text, style, isDragging, color, type = "Dry" }) => {
+const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry" }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
 
   const defaultStyle = {
@@ -36,7 +36,7 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "Dry" }
       className={`
         flex flex-col items-center justify-center
         rounded-lg border-2 
-        ${type === "Reefer" ? "border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)]" : "border-gray-400"}
+        ${type === "reefer" ? "border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)]" : "border-gray-400"}
         cursor-move relative transition-all
         ${isDragging ? "scale-105 shadow-xl" : "shadow-md hover:shadow-lg"}
       `}
@@ -49,7 +49,7 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "Dry" }
         <div
           className={`
           absolute -top-3 -right-3 px-2 py-1 rounded-full text-[10px] font-bold
-          ${type === "Reefer" ? "bg-blue-500 text-white ring-2 ring-blue-200" : "bg-gray-600 text-white"}
+          ${type === "reefer" ? "bg-blue-500 text-white ring-2 ring-blue-200" : "bg-gray-600 text-white"}
         `}
         >
           {type}
@@ -57,7 +57,7 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "Dry" }
 
         {/* Pattern Overlay */}
         <div className="absolute inset-0 opacity-20">
-          {type === "Reefer" && (
+          {type === "reefer" && (
             <div
               className="w-full h-full"
               style={{
