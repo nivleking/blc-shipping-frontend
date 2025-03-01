@@ -32,7 +32,7 @@ const Stowage = ({
 }) => {
   return (
     <>
-      <PortLegendSimulation />
+      <PortLegendSimulation currentRound={currentRound} totalRounds={totalRounds} />
 
       {/* Section Header */}
       <div className="flex justify-between items-center mb-4 mt-4 bg-white rounded-xl shadow-sm p-4">

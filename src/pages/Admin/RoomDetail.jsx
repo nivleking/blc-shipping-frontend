@@ -1,11 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { api } from "../../axios/axios";
 import { AiOutlineArrowLeft } from "react-icons/ai";
-import ShipBayVisualization from "../../components/details/ShipBayVisualization";
-import PlayerStats from "../../components/details/PlayerStats";
-import CardsUsed from "../../components/details/CardsUsed";
+import CapacityUptakeHistory from "../../components/details/CapacityUptakeHistory";
+import { AppContext } from "../../context/AppContext";
+import ShipBay from "../../components/simulations/ShipBay";
+
+const PORT_COLORS = {
+  SBY: "#EF4444", // red
+  MKS: "#3B82F6", // blue
+  MDN: "#10B981", // green
+  JYP: "#EAB308", // yellow
+  BPN: "#8B5CF6", // purple
+  BKS: "#F97316", // orange
+  BGR: "#EC4899", // pink
+  BTH: "#92400E", // brown
+  AMQ: "#06B6D4", // cyan
+  SMR: "#059669", // teal
+};
 
 const RoomDetail = () => {
   const { roomId } = useParams();
@@ -14,6 +27,53 @@ const RoomDetail = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { token } = useContext(AppContext);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [userPorts, setUserPorts] = useState({});
+  const [bayConfig, setBayConfig] = useState({
+    bayCount: 3,
+    baySize: { rows: 3, columns: 3 },
+    bayTypes: ["dry", "reefer", "dry"],
+  });
+
+  // Add this new function to fetch user's port
+  const fetchUserPort = async (userId) => {
+    try {
+      const response = await api.get(`/ship-bays/${roomId}/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserPorts((prev) => ({
+        ...prev,
+        [userId]: response.data.port,
+      }));
+    } catch (error) {
+      console.error("Error fetching user port:", error);
+    }
+  };
+
+  // Update fetchUserLogs to use the correct endpoint
+  async function fetchUserLogs(userId) {
+    try {
+      const response = await api.get(`/simulation-logs/${roomId}/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const logs = Array.isArray(response.data) ? response.data : [];
+
+      // Process the logs to include container data
+      const processedLogs = logs.map((log) => ({
+        ...log,
+        arena: Array.isArray(log.arena) ? log.arena : JSON.parse(log.arena),
+      }));
+
+      console.log("User logs:", processedLogs);
+      setSimulationLogs(processedLogs);
+    } catch (error) {
+      console.error("Error fetching user logs:", error);
+      setSimulationLogs([]);
+    }
+  }
 
   const formatIDR = (value) => {
     return new Intl.NumberFormat("id-ID", {
@@ -28,13 +88,36 @@ const RoomDetail = () => {
 
   async function fetchRoomData() {
     try {
-      const [roomResponse, logsResponse, leaderboardResponse] = await Promise.all([api.get(`/rooms/${roomId}`), api.get(`/simulation-logs/${roomId}`), api.get(`/rooms/${roomId}/rankings`)]);
+      const [roomResponse, leaderboardResponse, usersResponse] = await Promise.all([
+        api.get(`/rooms/${roomId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        api.get(`/rooms/${roomId}/rankings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        api.get(`/rooms/${roomId}/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-      setRoom(roomResponse.data);
-      setSimulationLogs(logsResponse.data);
+      const roomData = roomResponse.data;
+      setRoom(roomData);
+
+      // Set bay configuration from room data
+      setBayConfig({
+        bayCount: roomData.bay_count,
+        baySize: JSON.parse(roomData.bay_size),
+        bayTypes: JSON.parse(roomData.bay_types),
+      });
+
+      // Don't fetch simulation logs here - they'll be fetched when user selects a player
       setLeaderboard(leaderboardResponse.data);
+      setUsers(usersResponse.data);
+
+      await Promise.all(usersResponse.data.map((user) => fetchUserPort(user.id)));
     } catch (error) {
       console.error("Error fetching room data:", error);
+      setSimulationLogs([]);
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +131,6 @@ const RoomDetail = () => {
           <button onClick={() => navigate("/admin-home")} className="p-2 rounded-full hover:bg-gray-100">
             <AiOutlineArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-800">Room Details - {roomId}</h1>
           {room && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 p-4 rounded-lg">
@@ -73,10 +155,20 @@ const RoomDetail = () => {
             <Tab
               className={({ selected }) =>
                 `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
-              ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+    ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
-              Overview
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                Capacity Uptake
+              </div>
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -86,7 +178,7 @@ const RoomDetail = () => {
             >
               Simulation Logs
             </Tab>
-            <Tab
+            {/* <Tab
               className={({ selected }) =>
                 `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
               ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
@@ -101,144 +193,12 @@ const RoomDetail = () => {
               }
             >
               Cards Used
-            </Tab>
+            </Tab> */}
           </TabList>
 
           <TabPanels>
-            {/* Overview Panel */}
             <TabPanel>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Leaderboard */}
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h2 className="text-xl font-semibold mb-4">Leaderboard</h2>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Player</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Port</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {/* {leaderboard.map((player, index) => (
-                          <tr key={player.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{index + 1}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIDR(player.revenue)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{player.port}</td>
-                          </tr>
-                        ))} */}
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#1</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John Doe</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIDR(150000000)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">MDN</td>
-                        </tr>
-
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#2</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Jane Smith</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIDR(120000000)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">MKS</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* General Stats */}
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h2 className="text-xl font-semibold mb-4">General Statistics</h2>
-                  {/* General Stats */}
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4">General Statistics</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Player Stats */}
-                      <div className="bg-blue-50 rounded-lg p-4">
-                        <h3 className="text-sm font-medium text-blue-700 mb-2">Players</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-2xl font-bold text-blue-800">{leaderboard.length}</p>
-                            <p className="text-xs text-blue-600">Total Players</p>
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold text-blue-800">{formatIDR(leaderboard.reduce((acc, player) => acc + player.revenue, 0) / leaderboard.length)}</p>
-                            <p className="text-xs text-blue-600">Avg Revenue/Player</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Sales Cards Stats */}
-                      <div className="bg-green-50 rounded-lg p-4">
-                        <h3 className="text-sm font-medium text-green-700 mb-2">Sales Call Cards</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-2xl font-bold text-green-800">{room?.total_cards || 0}</p>
-                            <p className="text-xs text-green-600">Total Cards</p>
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold text-green-800">
-                              {room?.cards_accepted || 0}/{room?.cards_rejected || 0}
-                            </p>
-                            <p className="text-xs text-green-600">Accepted/Rejected</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Revenue Stats */}
-                      <div className="bg-yellow-50 rounded-lg p-4">
-                        <h3 className="text-sm font-medium text-yellow-700 mb-2">Revenue</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-2xl font-bold text-yellow-800">{formatIDR(leaderboard.reduce((acc, player) => acc + player.revenue, 0))}</p>
-                            <p className="text-xs text-yellow-600">Total Revenue</p>
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold text-yellow-800">{formatIDR(room?.total_penalties || 0)}</p>
-                            <p className="text-xs text-yellow-600">Total Penalties</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Port Activity */}
-                      <div className="bg-purple-50 rounded-lg p-4">
-                        <h3 className="text-sm font-medium text-purple-700 mb-2">Port Activity</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-2xl font-bold text-purple-800">{room?.most_active_port || "N/A"}</p>
-                            <p className="text-xs text-purple-600">Most Active Port</p>
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold text-purple-800">{room?.total_containers || 0}</p>
-                            <p className="text-xs text-purple-600">Total Containers</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Time Stats */}
-                      <div className="bg-red-50 rounded-lg p-4 col-span-2">
-                        <h3 className="text-sm font-medium text-red-700 mb-2">Time Statistics</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <p className="text-2xl font-bold text-red-800">{room?.current_week || 1}</p>
-                            <p className="text-xs text-red-600">Current Week</p>
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold text-red-800">{room?.total_weeks || 4}</p>
-                            <p className="text-xs text-red-600">Total Weeks</p>
-                          </div>
-                          <div>
-                            <p className="text-2xl font-bold text-red-800">{new Date(room?.created_at).toLocaleDateString()}</p>
-                            <p className="text-xs text-red-600">Start Date</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <CapacityUptakeHistory roomId={roomId} token={token} />
             </TabPanel>
 
             {/* Simulation History Panel */}
@@ -248,80 +208,71 @@ const RoomDetail = () => {
 
                 {/* Filter Controls */}
                 <div className="flex gap-4 mb-6">
-                  <select className="form-select rounded-lg border-gray-300">
-                    <option>John Doe</option>
-                    <option>Jane</option>
-                    {/* Add user options */}
-                  </select>
-                  <select className="form-select rounded-lg border-gray-300">
-                    <option>All Weeks</option>
-                    <option>Week 1</option>
-                    <option>Week 2</option>
+                  <select
+                    className="form-select rounded-lg border-gray-300"
+                    value={selectedUserId || ""}
+                    onChange={(e) => {
+                      setSelectedUserId(e.target.value);
+                      fetchUserLogs(e.target.value);
+                    }}
+                  >
+                    <option value="">Select Player</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} ({userPorts[user.id] || "Loading..."})
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 {/* Timeline View */}
                 <div className="space-y-8">
-                  {/* Example history entries */}
-                  <div className="border-l-4 border-blue-500 pl-4">
-                    <h3 className="text-lg font-medium text-gray-800 mb-4">Week 1</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <ShipBayVisualization
-                        bayData={[
-                          [null, "JYP", null],
-                          ["SBY", "JYP", null],
-                          ["MKS", "MDN", "SBY"],
-                        ]}
-                        userName="John Doe"
-                        timestamp="2024-03-20T10:00:00"
-                        revenue="Rp 150,000,000"
-                      />
+                  {Array.isArray(simulationLogs) &&
+                    simulationLogs.map((log, index) => (
+                      <div key={log.id} className="border-l-4 border-blue-500 pl-4">
+                        <h3 className="text-lg font-medium text-gray-800 mb-4">Snapshot {index + 1}</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <ShipBay
+                            bayCount={bayConfig.bayCount}
+                            baySize={bayConfig.baySize}
+                            bayTypes={bayConfig.bayTypes}
+                            droppedItems={log.arena.flatMap((bay, bayIndex) =>
+                              bay.flatMap((row, rowIndex) =>
+                                row
+                                  .map((cell, colIndex) => {
+                                    if (cell) {
+                                      // cell berisi container ID jika ada container
+                                      return {
+                                        id: `container-${bayIndex}-${rowIndex}-${colIndex}`,
+                                        area: `bay-${bayIndex}-${rowIndex * bayConfig.baySize.columns + colIndex}`,
+                                        color: PORT_COLORS[cell.destination?.substring(0, 3)] || "#6B7280",
+                                        type: cell.type || "dry",
+                                      };
+                                    }
+                                    return null;
+                                  })
+                                  .filter(Boolean)
+                              )
+                            )}
+                            isHistoryView={true}
+                          />
+                          <div className="flex justify-between items-center mt-2">
+                            <div className="text-sm text-gray-600">{new Date(log.created_at).toLocaleString()}</div>
+                            <div className="text-sm font-medium text-green-600">Revenue: {formatIDR(log.revenue)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
 
-                      <ShipBayVisualization
-                        bayData={[
-                          [null, null, null],
-                          ["MKS", "JYP", null],
-                          ["MKS", "MDN", "SBY"],
-                        ]}
-                        userName="Jane Smith"
-                        timestamp="2024-03-20T10:05:00"
-                        revenue="Rp 120,000,000"
-                      />
-                    </div>
-                  </div>
+                  {(!Array.isArray(simulationLogs) || simulationLogs.length === 0) && selectedUserId && <div className="text-center text-gray-500 py-8">No simulation logs found for this player</div>}
 
-                  <div className="border-l-4 border-green-500 pl-4">
-                    <h3 className="text-lg font-medium text-gray-800 mb-4">Week 2</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <ShipBayVisualization
-                        bayData={[
-                          ["JYP", "JYP", null],
-                          ["SBY", "JYP", "MDN"],
-                          ["MKS", "MDN", "SBY"],
-                        ]}
-                        userName="John Doe"
-                        timestamp="2024-03-27T10:00:00"
-                        revenue="Rp 180,000,000"
-                      />
-
-                      <ShipBayVisualization
-                        bayData={[
-                          ["MKS", null, null],
-                          ["MKS", "JYP", "SBY"],
-                          ["MKS", "MDN", "SBY"],
-                        ]}
-                        userName="Jane Smith"
-                        timestamp="2024-03-27T10:15:00"
-                        revenue="Rp 165,000,000"
-                      />
-                    </div>
-                  </div>
+                  {!selectedUserId && <div className="text-center text-gray-500 py-8">Select a player to view their simulation logs</div>}
                 </div>
               </div>
             </TabPanel>
 
             {/* Player Stats Panel */}
-            <TabPanel>
+            {/* <TabPanel>
               <PlayerStats
                 players={[
                   {
@@ -344,10 +295,10 @@ const RoomDetail = () => {
                 ]}
                 formatIDR={formatIDR}
               />
-            </TabPanel>
+            </TabPanel> */}
 
             {/* Cards Used Panel */}
-            <TabPanel>
+            {/* <TabPanel>
               <CardsUsed
                 // cards={[]} // Add your cards data here
                 cards={[
@@ -374,7 +325,7 @@ const RoomDetail = () => {
                 ]}
                 formatIDR={formatIDR}
               />
-            </TabPanel>
+            </TabPanel> */}
           </TabPanels>
         </TabGroup>
       </div>

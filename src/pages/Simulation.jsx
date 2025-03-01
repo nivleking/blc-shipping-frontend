@@ -21,6 +21,8 @@ const PORT_COLORS = {
   BKS: "#F97316", // orange
   BGR: "#EC4899", // pink
   BTH: "#92400E", // brown
+  AMQ: "#06B6D4", // cyan
+  SMR: "#059669", // teal
 };
 
 const formatIDR = (value) => {
@@ -94,6 +96,8 @@ const Simulation = () => {
     laterPorts: [],
   });
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
+  const [weekSalesCalls, setWeekSalesCalls] = useState([]);
+  const [weekRevenueTotal, setWeekRevenueTotal] = useState(0);
 
   const fetchContainerData = async (nextPort, laterPorts) => {
     try {
@@ -501,6 +505,8 @@ const Simulation = () => {
       setIsLimitExceeded(false);
       setSalesCallCards([]);
       setCurrentCardIndex(0);
+      setWeekSalesCalls([]);
+      setWeekRevenueTotal(0);
 
       // Refetch sales cards after a short delay
       setTimeout(() => {
@@ -721,6 +727,22 @@ const Simulation = () => {
         }
       );
 
+      // Add the card to weekSalesCalls with status "accepted"
+      const card = salesCallCards[currentCardIndex];
+      setWeekSalesCalls((prev) => [
+        ...prev,
+        {
+          ...card,
+          status: "accepted",
+          totalContainers: card.quantity,
+          dryContainers: card.type.toLowerCase() === "dry" ? card.quantity : 0,
+          reeferContainers: card.type.toLowerCase() === "reefer" ? card.quantity : 0,
+        },
+      ]);
+
+      // Update total revenue
+      setWeekRevenueTotal((prev) => prev + card.revenue);
+
       const currentCard = salesCallCards.find((card) => card.id === cardId);
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
 
@@ -835,6 +857,9 @@ const Simulation = () => {
       setIsCardVisible(true);
     } finally {
       setIsProcessingCard(false);
+      setTimeout(() => {
+        setIsCardVisible(true);
+      }, 300);
     }
   }
 
@@ -925,6 +950,18 @@ const Simulation = () => {
 
       await checkLimitCard();
 
+      const card = salesCallCards[currentCardIndex];
+      setWeekSalesCalls((prev) => [
+        ...prev,
+        {
+          ...card,
+          status: "rejected",
+          totalContainers: card.quantity,
+          dryContainers: card.type.toLowerCase() === "dry" ? card.quantity : 0,
+          reeferContainers: card.type.toLowerCase() === "reefer" ? card.quantity : 0,
+        },
+      ]);
+
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
       setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
 
@@ -938,8 +975,12 @@ const Simulation = () => {
         userId: user.id,
       });
     } catch (error) {
-      console.error("Error rejecting sales call card:", error);
-      setIsCardVisible(true);
+      console.error("Error rejecting card:", error);
+    } finally {
+      setIsProcessingCard(false);
+      setTimeout(() => {
+        setIsCardVisible(true);
+      }, 300);
     }
   }
 
@@ -1597,7 +1638,7 @@ const Simulation = () => {
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: PORT_COLORS[swapInfo.sendsTo?.substring(0, 3)?.toUpperCase()] || "#64748B" }}>
                       {swapInfo.sendsTo?.substring(0, 1)?.toUpperCase() || "-"}
                     </div>
-                    <span className="text-xs font-medium mt-1 block">{swapInfo.sendsTo || "Unknown"}</span>
+                    <span className="text-xs font-medium mt-1 block">{(swapInfo && swapInfo.sendsTo) || "Unknown"}</span>
                   </div>
 
                   {/* First arrow */}
@@ -1650,7 +1691,7 @@ const Simulation = () => {
         <LoadingSpinner />
       ) : (
         <div className="container mx-auto px-6 space-y-6">
-          <HeaderCards port={port} revenue={revenue} penalties={penalties} rank={rank} section={section} formatIDR={formatIDR} moves={moveStats} />
+          <HeaderCards port={port} revenue={revenue} penalties={penalties} rank={rank} section={section} formatIDR={formatIDR} moves={moveStats} currentRound={currentRound} totalRounds={totalRounds} />
 
           <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
             <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
@@ -1686,7 +1727,7 @@ const Simulation = () => {
                   Stowage
                 </div>
               </Tab>
-
+              {/* 
               <Tab
                 className={({ selected }) =>
                   `w-full rounded-lg py-2.5 text-sm font-medium leading-5
@@ -1699,9 +1740,9 @@ const Simulation = () => {
                   </svg>
                   Weekly Performance
                 </div>
-              </Tab>
+              </Tab> */}
 
-              <Tab
+              {/* <Tab
                 className={({ selected }) =>
                   `w-full rounded-lg py-2.5 text-sm font-medium leading-5
                   ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
@@ -1713,13 +1754,27 @@ const Simulation = () => {
                   </svg>
                   Market Intelligence
                 </div>
-              </Tab>
+              </Tab> */}
             </TabList>
 
             <TabPanels className="mt-4">
               {/* Capacity & Uptake Tab */}
               <TabPanel>
-                <CapacityUptake port={port} capacityData={capacityData} isLoading={isCapacityLoading} refreshData={fetchCapacityData} />
+                <CapacityUptake
+                  port={port}
+                  capacityData={{
+                    ...capacityData,
+                    week: currentRound,
+                    totalRounds: totalRounds,
+                    roomId: roomId, // Add this line
+                  }}
+                  isLoading={isCapacityLoading}
+                  refreshData={fetchCapacityData}
+                  salesCallsData={{
+                    weekSalesCalls,
+                    weekRevenueTotal,
+                  }}
+                />
               </TabPanel>
 
               <TabPanel>
@@ -1751,20 +1806,20 @@ const Simulation = () => {
               </TabPanel>
 
               {/* Weekly Performance Tab */}
-              <TabPanel>
+              {/* <TabPanel>
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <h3 className="text-xl font-bold mb-4">Weekly Performance Report</h3>
                   <WeeklyPerformance port={port} />
                 </div>
-              </TabPanel>
+              </TabPanel> */}
 
               {/* Market Intelligence Tab */}
-              <TabPanel>
+              {/* <TabPanel>
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <h3 className="text-xl font-bold mb-4">Market Intelligence</h3>
                   <MarketIntelligence port={port} />
                 </div>
-              </TabPanel>
+              </TabPanel> */}
             </TabPanels>
           </TabGroup>
         </div>

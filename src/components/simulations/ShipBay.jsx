@@ -18,7 +18,7 @@ const isValidPlacement = (droppedItems, baySize, cellId) => {
   return true;
 };
 
-const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, containers }) => {
+const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, containers, isHistoryView = false }) => {
   return (
     <div className="p-5" style={{ height: "100%", backgroundColor: "#f0f0f0", overflowX: "auto" }}>
       <div className="flex" style={{ width: "max-content" }}>
@@ -26,43 +26,44 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
           <div
             key={`bay-${bayIndex}`}
             className={`
-            mb-4 mx-2 rounded-lg overflow-hidden
-            ${bayTypes?.[bayIndex] === "reefer" ? "bg-gradient-to-b from-blue-50 to-white border-2 border-blue-300" : "bg-gradient-to-b from-gray-50 to-white border-2 border-gray-200"}
-          `}
+              mb-4 mx-2 rounded-lg overflow-hidden
+              ${bayTypes?.[bayIndex] === "reefer" ? "bg-gradient-to-b from-blue-50 to-white border-2 border-blue-300" : "bg-gradient-to-b from-gray-50 to-white border-2 border-gray-200"}
+            `}
           >
             {/* Bay Header */}
-            <div
-              className={`
-    text-center p-3 border-b-2
-    ${bayTypes?.[bayIndex] === "reefer" ? "border-blue-200 bg-blue-50" : "border-gray-200 bg-gray-50"}
-  `}
-            >
+            <div className={`text-center p-3 border-b-2 ${bayTypes?.[bayIndex] === "reefer" ? "border-blue-200 bg-blue-50" : "border-gray-200 bg-gray-50"}`}>
               <h5 className="text-lg font-bold mb-1">Bay {bayIndex + 1}</h5>
-              <span
-                className={`
-      inline-block px-3 py-1 rounded-full text-xs font-semibold
-      ${bayTypes?.[bayIndex] === "reefer" ? "bg-blue-100 text-blue-700 ring-2 ring-blue-200" : "bg-gray-100 text-gray-600"}
-    `}
-              >
+              <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${bayTypes?.[bayIndex] === "reefer" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
                 {bayTypes?.[bayIndex]?.toLowerCase() || "dry"}
               </span>
             </div>
             <ContainerBay id={`bay-${bayIndex}`} rows={baySize.rows} columns={baySize.columns}>
               {Array.from({ length: baySize.rows * baySize.columns }).map((_, cellIndex) => {
                 const cellId = `bay-${bayIndex}-${cellIndex}`;
-                const isValid = isValidPlacement(droppedItems, baySize, cellId);
+                // Jika mode history, tidak perlu validasi penempatan
+                const isValid = isHistoryView ? true : isValidPlacement(droppedItems, baySize, cellId);
                 const rowIndex = Math.floor(cellIndex / baySize.columns);
                 const colIndex = cellIndex % baySize.columns;
                 const coordinates = `${bayIndex + 1}${rowIndex}${colIndex}`;
+
                 return (
-                  <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={isValid}>
+                  <DroppableCell
+                    key={cellId}
+                    id={cellId}
+                    coordinates={coordinates}
+                    isValid={isValid}
+                    // Disable drag & drop in history view
+                    isHistoryView={isHistoryView}
+                  >
                     {droppedItems.find((item) => item.area === cellId) && (
                       <DraggableContainer
                         id={droppedItems.find((item) => item.area === cellId).id}
                         text={droppedItems.find((item) => item.area === cellId).id}
-                        isDragging={draggingItem === droppedItems.find((item) => item.area === cellId).id}
+                        isDragging={!isHistoryView && draggingItem === droppedItems.find((item) => item.area === cellId).id}
                         color={droppedItems.find((item) => item.area === cellId).color}
-                        type={containers.find((c) => c.id === droppedItems.find((item) => item.area === cellId).id)?.type?.toLowerCase() || "dry"}
+                        type={containers !== undefined ? containers.find((c) => c.id === droppedItems.find((item) => item.area === cellId).id)?.type?.toLowerCase() || "dry" : droppedItems.find((item) => item.area === cellId).type}
+                        // Disable dragging in history view
+                        isHistoryView={isHistoryView}
                       />
                     )}
                   </DroppableCell>

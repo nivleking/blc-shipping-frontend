@@ -1,8 +1,11 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 
-const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry" }) => {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
+const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView }) => {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id,
+    disabled: isHistoryView, // Disable dragging when in history view
+  });
 
   const defaultStyle = {
     transform: CSS.Transform.toString(transform),
@@ -21,6 +24,14 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry" }
         ? "#8B5CF6" // purple-500
         : color === "pink"
         ? "#EC4899" // pink-500
+        : color === "orange"
+        ? "#F97316" // orange-500
+        : color === "brown"
+        ? "#92400E" // brown-500
+        : color === "cyan"
+        ? "#06B6D4" // cyan-500
+        : color === "teal"
+        ? "#059669" // teal-500
         : "#6B7280", // gray-500 default
     color: color === "yellow" ? "black" : "white",
     width: "80px",
@@ -30,15 +41,15 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry" }
   return (
     <div
       ref={setNodeRef}
+      {...(isHistoryView ? {} : { ...listeners, ...attributes })}
       style={{ ...defaultStyle, ...style }}
-      {...listeners}
-      {...attributes}
       className={`
         flex flex-col items-center justify-center
         rounded-lg border-2 
-        ${type === "reefer" ? "border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)]" : "border-gray-400"}
-        cursor-move relative transition-all
-        ${isDragging ? "scale-105 shadow-xl" : "shadow-md hover:shadow-lg"}
+        ${type.toLowerCase() === "reefer" ? "border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.3)]" : "border-gray-400"}
+        ${!isHistoryView ? "cursor-move" : "cursor-default"}
+        relative transition-all
+        ${isDragging && !isHistoryView ? "scale-105 shadow-xl" : "shadow-md"}
       `}
     >
       <div className="relative w-full h-full p-2">
@@ -49,7 +60,7 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry" }
         <div
           className={`
           absolute -top-3 -right-3 px-2 py-1 rounded-full text-[10px] font-bold
-          ${type === "reefer" ? "bg-blue-500 text-white ring-2 ring-blue-200" : "bg-gray-600 text-white"}
+          ${type.toLowerCase() === "reefer" ? "bg-blue-500 text-white ring-2 ring-blue-200" : "bg-gray-600 text-white"}
         `}
         >
           {type}

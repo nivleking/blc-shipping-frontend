@@ -13,7 +13,7 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
           <tr className="font-bold">
             <td>{currentCard.origin}</td>
             <td>
-              Booking {currentCard.id} 
+              Booking {currentCard.id}
               {isCommitted && <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full border border-yellow-300">COMMITED!</span>}
             </td>
           </tr>
@@ -63,8 +63,9 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
                   .map((container) => (
                     <div
                       key={container.id}
-                      className={`p-2 border border-dashed border-gray-300 rounded text-center bg-${container.color}-500`}
+                      className={`p-2 border border-dashed border-gray-300 rounded text-center `}
                       style={{
+                        backgroundColor: container.color,
                         backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 0.5px, black 1px, black 1px)",
                         backgroundSize: "10px 10px",
                         color: container.color === "yellow" ? "black" : "white",

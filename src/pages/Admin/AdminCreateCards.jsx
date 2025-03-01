@@ -88,11 +88,13 @@ const AdminCreateCards = () => {
 
   const handlePortSelect = (portCount) => {
     try {
-      setGenerateFormData((prevData) => ({
-        ...prevData,
-        ports: portCount,
-      }));
-      toast.info(`Port count set to ${portCount}`);
+      if (portCount >= 2 && portCount <= 10) {
+        setGenerateFormData((prevData) => ({
+          ...prevData,
+          ports: portCount,
+        }));
+        toast.info(`Port count set to ${portCount}`);
+      }
     } catch (error) {
       toast.error("Failed to set port count");
     }
@@ -127,7 +129,7 @@ const AdminCreateCards = () => {
     try {
       const response = await api.post(`/generate-cards/${deckId}`, generateFormData);
       setSalesCallCards(response.data.cards);
-      fetchContainers();
+      await fetchContainers();
       calculateDeckStats(response.data.cards);
 
       toast.success("Cards generated successfully!");
@@ -203,11 +205,15 @@ const AdminCreateCards = () => {
   };
 
   const ALL_PORTS = {
+    2: ["SBY", "MKS"],
+    3: ["SBY", "MKS", "MDN"],
     4: ["SBY", "MKS", "MDN", "JYP"],
     5: ["SBY", "MKS", "MDN", "JYP", "BPN"],
     6: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS"],
     7: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR"],
     8: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH"],
+    9: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
+    10: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
   };
 
   const getAllOrigins = () => {
@@ -250,7 +256,7 @@ const AdminCreateCards = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <ToastContainer />
+      <ToastContainer position="top-center" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
 
       <div className="container mx-auto px-4 py-6">
         <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateSubmit} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />

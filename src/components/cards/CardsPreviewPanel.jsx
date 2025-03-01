@@ -114,9 +114,9 @@ const CardsPreviewPanel = ({ currentCards, containers, formatIDR, filterType, se
                 <h4 className="text-sm text-gray-500 mb-2">Containers</h4>
                 <div className="grid grid-cols-5 gap-2">
                   {containers
-                    .filter((c) => c.card_id === card.id)
+                    ?.filter((c) => c.card_id === card.id)
                     .map((container) => (
-                      <div key={container.id} className={`h-6 rounded bg-${container.color}-500`} title={`Container ${container.id}`}>
+                      <div key={container.id} style={{ backgroundColor: container.color }} className="h-6 rounded" title={`Container ${container.id}`}>
                         <p className="text-center text-sm text-white leading-6">{container.id}</p>
                       </div>
                     ))}

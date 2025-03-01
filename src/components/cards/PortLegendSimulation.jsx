@@ -12,15 +12,18 @@ const PORT_COLORS = {
   BKS: "#F97316", // orange
   BGR: "#EC4899", // pink
   BTH: "#92400E", // brown
+  AMQ: "#06B6D4", // cyan
+  SMR: "#059669", // teal
 };
 
-const PortLegendSimulation = () => {
+const PortLegendSimulation = ({ currentRound, totalRounds }) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
   const [portInfo, setPortInfo] = useState({
     userPort: "",
     receivesFrom: "",
     sendsTo: "",
+    allPorts: [],
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,13 +56,47 @@ const PortLegendSimulation = () => {
       }
 
       const receivesFrom = Object.entries(swapConfig).find(([from, to]) => to === userPort)?.[0] || "Unknown";
-
       const sendsTo = swapConfig[userPort] || "Unknown";
+
+      // Build the complete port route
+      const allPorts = [];
+      let startPort = null;
+
+      // Find a starting point (a port that doesn't receive from anyone)
+      for (const port in swapConfig) {
+        const isReceiver = Object.values(swapConfig).includes(port);
+        if (!isReceiver) {
+          startPort = port;
+          break;
+        }
+      }
+
+      // If we can't find a port that doesn't receive, just use any port
+      if (!startPort && Object.keys(swapConfig).length > 0) {
+        startPort = Object.keys(swapConfig)[0];
+      }
+
+      // Now build the complete route
+      if (startPort) {
+        let currentPort = startPort;
+        // Limit to avoid infinite loops in case of circular references
+        const maxPorts = Object.keys(swapConfig).length + 1;
+        let count = 0;
+
+        while (currentPort && count < maxPorts) {
+          allPorts.push(currentPort);
+          currentPort = swapConfig[currentPort];
+          count++;
+        }
+      }
+
+      allPorts.reverse();
 
       setPortInfo({
         userPort,
         receivesFrom,
         sendsTo,
+        allPorts,
       });
     } catch (error) {
       console.error("Error fetching port configuration:", error);
@@ -101,6 +138,15 @@ const PortLegendSimulation = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+      {/* Week indicator */}
+      {currentRound && totalRounds && (
+        <div className="mb-3 text-center">
+          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            Week {currentRound} of {totalRounds}
+          </span>
+        </div>
+      )}
+
       {/* Classic port legend at the top */}
       <div className="text-sm font-medium mb-2 text-gray-700 text-end">Destination Port Legend</div>
       <div className="flex flex-wrap justify-end gap-3 mb-4">
@@ -114,6 +160,39 @@ const PortLegendSimulation = () => {
 
       <div className="mt-3 border-t pt-3">
         <h3 className="font-semibold text-gray-800 mb-2">Your Route Configuration</h3>
+
+        {/* Complete route visualization */}
+        {portInfo.allPorts.length > 0 && (
+          <div className="mb-4 overflow-x-auto py-2">
+            <div className="flex items-center justify-center gap-1 min-w-max">
+              {portInfo.allPorts.map((port, index) => (
+                <React.Fragment key={`port-${index}`}>
+                  {index > 0 && (
+                    <svg className="w-6 h-5 text-gray-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  )}
+
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs
+                      ${port === portInfo.userPort ? "w-10 h-10 border-3 border-yellow-400 shadow-md scale-110 z-10" : ""}`}
+                      style={{ backgroundColor: getPortColor(port) }}
+                    >
+                      {port.substring(0, 1).toUpperCase()}
+                    </div>
+                    <span className={`text-xs mt-1 ${port === portInfo.userPort ? "font-bold" : ""}`}>
+                      {port}
+                      {port === portInfo.userPort && <span className="block text-[10px] text-blue-700">(You)</span>}
+                    </span>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Detail about user's direct connections */}
         <div className="flex items-center justify-center gap-2 mb-4">
           <div className="flex items-center gap-1">
             <div className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: getPortColor(portInfo.sendsTo) }}>
@@ -127,7 +206,7 @@ const PortLegendSimulation = () => {
           </svg>
 
           <div className="flex items-center gap-1">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: getPortColor(portInfo.userPort) }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-yellow-400" style={{ backgroundColor: getPortColor(portInfo.userPort) }}>
               {portInfo.userPort.substring(0, 1).toUpperCase()}
             </div>
             <span className="text-xs font-medium">{portInfo.userPort}</span>

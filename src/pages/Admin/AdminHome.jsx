@@ -418,7 +418,7 @@ const AdminHome = () => {
                       <ComboboxInput
                         className="w-full rounded-lg border border-gray-300 bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Search and select group users..."
+                        placeholder="Select group users..."
                         displayValue={(selectedIds) =>
                           selectedIds
                             .map((id) => availableUsers.find((user) => user.id === id)?.name)
@@ -656,7 +656,7 @@ const AdminHome = () => {
                 <ComboboxInput
                   className="w-full rounded-lg border border-gray-300 bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search and select group users..."
+                  placeholder="Select group users..."
                   displayValue={(selectedIds) =>
                     selectedIds
                       .map((id) => availableUsers.find((user) => user.id === id)?.name)

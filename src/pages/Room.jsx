@@ -15,6 +15,8 @@ const PORT_COLORS = {
   BKS: "#F97316", // orange
   BGR: "#EC4899", // pink
   BTH: "#92400E", // brown
+  AMQ: "#06B6D4", // cyan
+  SMR: "#059669", // teal
 };
 
 const formatIDR = (value) => {
@@ -391,7 +393,7 @@ const Room = () => {
       toast.error("Cannot modify swap configuration during final unloading phase");
       return;
     }
-    
+
     setSwapConfig(newSwapConfig);
     setShowSwapConfigModal(false);
 

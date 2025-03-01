@@ -1,4 +1,4 @@
-const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves = {} }) => {
+const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves = {}, currentRound = 1, totalRounds = 1 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
       {/* Revenue Card */}
@@ -77,7 +77,10 @@ const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves
         <div className="flex items-center justify-between">
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Section</p>
-            <h3 className="text-2xl font-bold">Section {section} - Week 1</h3>
+            <h3 className="text-2xl font-bold">Section {section}</h3>
+            <p className="text-sm font-medium">
+              Week {currentRound} of {totalRounds}
+            </p>
           </div>
           <div className="p-2 bg-white/20 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

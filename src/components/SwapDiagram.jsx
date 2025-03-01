@@ -82,6 +82,7 @@ const SwapDiagram = ({ origins, swapConfig }) => {
               <thead>
                 <tr className="bg-gray-100">
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Port</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Swapped To</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 </tr>
@@ -91,17 +92,15 @@ const SwapDiagram = ({ origins, swapConfig }) => {
                   <tr key={port} className={`border-t ${!swapConfig[port] ? "bg-yellow-50" : ""}`}>
                     <td className="px-4 py-2 text-sm font-medium">
                       {port}
-                      {!swapConfig[port] && <HiExclamation className="h-4 w-4 text-yellow-500 inline ml-1" />}
+                      {/* {!swapConfig[port] && <HiExclamation className="h-4 w-4 text-yellow-500 inline ml-1" />} */}
                     </td>
                     <td className="px-4 py-2">
-                      <span className={`inline-flex items-center ${swapConfig[port] ? "text-green-600" : "text-yellow-600 font-medium"}`}>
-                        {swapConfig[port] || "Not assigned"}
-                        {swapConfig[port] && (
-                          <svg className="ml-1 w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                          </svg>
-                        )}
-                      </span>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className={`inline-flex items-center ${swapConfig[port] ? "text-green-600" : "text-yellow-600 font-medium"}`}>{swapConfig[port] || "Not assigned"}</span>
                     </td>
                     <td className="px-4 py-2">
                       {swapConfig[port] ? (

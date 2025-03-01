@@ -7,6 +7,8 @@ const PORT_COLORS = {
   BKS: "#F97316", // orange
   BGR: "#EC4899", // pink
   BTH: "#92400E", // brown
+  AMQ: "#06B6D4", // cyan
+  SMR: "#059669", // teal
 };
 
 const PortLegendCards = () => {
