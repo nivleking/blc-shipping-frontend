@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import { AppContext } from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
-import { FaBars, FaBell, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
-import { api } from "../axios/axios";
+import { FaBars, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
+import { api } from "../../axios/axios";
 
 const UserNavbar = ({ toggleSidebar, isSidebarOpen }) => {
   const { user, token, setToken, setUser } = useContext(AppContext);
@@ -28,7 +28,7 @@ const UserNavbar = ({ toggleSidebar, isSidebarOpen }) => {
       console.error("Logout error:", error);
     }
   }
-  
+
   const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
@@ -88,12 +88,6 @@ const UserNavbar = ({ toggleSidebar, isSidebarOpen }) => {
 
       {/* Right side */}
       <div className="flex items-center gap-2 md:gap-4">
-        {/* Notifications */}
-        <button className="p-2 rounded-full hover:bg-gray-800 transition-colors duration-200 relative">
-          <FaBell className="w-5 h-5 text-gray-300" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
-
         {/* User Menu */}
         <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
           <div className="relative">

@@ -4,7 +4,7 @@ import { api, socket } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
 import { toast, ToastContainer } from "react-toastify";
 import AssignPortModal from "../components/rooms/AssignPortModal";
-import SwapConfigModal from "../components/SwapConfigModal";
+import SwapConfigModal from "../components/rooms/SwapConfigModal";
 
 const PORT_COLORS = {
   SBY: "#EF4444", // red

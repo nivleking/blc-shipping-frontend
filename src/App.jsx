@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 import AdminDecks from "./pages/Admin/AdminDecks";
 import RoomDetail from "./pages/Admin/RoomDetail";
 import AdminCreateLayouts from "./pages/Admin/AdminCreateLayouts";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -24,6 +25,7 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         {/* Other Routes */}
+        <Route path="*" element={<NotFound />} />
         <Route path="/login" element={<Login />} />
         <Route path="/rooms/:roomId" element={<Room />} />
         <Route path="/simulation/:roomId" element={<Simulation />} />

@@ -4,7 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { api } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
-import LoadingOverlay from "../components/rooms/LoadingOverlay";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 const Login = () => {
   const [formData, setFormData] = useState({

@@ -4,9 +4,11 @@ import { Link } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { AiFillDelete, AiFillFolderOpen } from "react-icons/ai";
 import "./AdminHome.css";
-import LoadingOverlay from "../../components/rooms/LoadingOverlay";
-import ConfirmationModal from "../../components/rooms/ConfirmationModal";
+import LoadingOverlay from "../../components/LoadingOverlay";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import { IoCardOutline, IoFileTrayStackedOutline, IoLocationOutline, IoTimeOutline } from "react-icons/io5";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AdminDecks = () => {
   const [decks, setDecks] = useState([]);
@@ -15,14 +17,27 @@ const AdminDecks = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeletingLoading, setIsDeletingLoading] = useState(false); // New state for delete loading
   const loadingMessages = ["Creating your deck..."];
+  const deleteLoadingMessages = ["Deleting the deck...", "Removing associated cards..."]; // New messages for delete
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [deleteLoadingMessageIndex, setDeleteLoadingMessageIndex] = useState(0); // New index for delete messages
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     deckId: null,
   });
 
-  // Replace handleDeleteDeck with these two functions
+  // Add effect for delete loading messages rotation
+  useEffect(() => {
+    let interval;
+    if (isDeletingLoading) {
+      interval = setInterval(() => {
+        setDeleteLoadingMessageIndex((prev) => (prev === deleteLoadingMessages.length - 1 ? 0 : prev + 1));
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [isDeletingLoading]);
+
   const handleDeleteClick = (deckId) => {
     setConfirmModal({
       isOpen: true,
@@ -31,13 +46,26 @@ const AdminDecks = () => {
   };
 
   const handleConfirmDelete = async () => {
+    // Close modal first
+    setConfirmModal({ isOpen: false, deckId: null });
+
+    // Show loading overlay
+    setIsDeletingLoading(true);
+    setDeleteLoadingMessageIndex(0);
+
+    // Add delay to show loading state
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     try {
       await api.delete(`/decks/${confirmModal.deckId}`);
       setDecks(decks.filter((deck) => deck.id !== confirmModal.deckId));
-      setConfirmModal({ isOpen: false, deckId: null });
+      toast.success("Deck deleted successfully!");
     } catch (error) {
       setErrors(error.response.data.errors);
       console.error("Error deleting deck:", error);
+      toast.error(error.response?.data?.message || "Failed to delete deck");
+    } finally {
+      setIsDeletingLoading(false);
     }
   };
 
@@ -70,6 +98,7 @@ const AdminDecks = () => {
       setDecks(decksWithCards);
     } catch (error) {
       console.error("Error fetching decks:", error);
+      toast.error("Failed to fetch decks");
     }
   }
 
@@ -80,28 +109,26 @@ const AdminDecks = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (!formData.name.trim()) {
+      toast.error("Deck name is required");
+      return;
+    }
+
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
     try {
       const response = await api.post("/decks", formData);
       setDecks([...decks, response.data]);
       setFormData({ name: "" });
+      toast.success("Deck created successfully!");
     } catch (error) {
       setErrors(error.response.data.errors);
       console.error("Error creating deck:", error);
+      toast.error(error.response?.data?.message || "Failed to create deck");
     } finally {
       setIsLoading(false);
       setLoadingMessageIndex(0);
-    }
-  }
-
-  async function handleDeleteDeck(deckId) {
-    try {
-      await api.delete(`/decks/${deckId}`);
-      setDecks(decks.filter((deck) => deck.id !== deckId));
-    } catch (error) {
-      setErrors(error.response.data.errors);
-      console.error("Error deleting deck:", error);
     }
   }
 
@@ -144,7 +171,9 @@ const AdminDecks = () => {
 
   return (
     <div className="container mx-auto p-4">
+      <ToastContainer />
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Creating New Deck" />}
+      {isDeletingLoading && <LoadingOverlay messages={deleteLoadingMessages} currentMessageIndex={deleteLoadingMessageIndex} title="Deleting Deck" />}
 
       <div className="mb-4">
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-lg space-y-6">
@@ -290,7 +319,6 @@ const AdminDecks = () => {
           </div>
         )}
       </div>
-      {/* Add ConfirmationModal component */}
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false, deckId: null })}

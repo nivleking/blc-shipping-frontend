@@ -9,7 +9,7 @@ import MarketIntelligencePanel from "../../components/cards/MarketIntelligencePa
 import ConfigurationPanel from "../../components/cards/ConfigurationPanel";
 import InfoModal from "../../components/cards/InfoModal";
 import CardsPreviewPanel from "../../components/cards/CardsPreviewPanel";
-import ConfirmationModal from "../../components/rooms/ConfirmationModal";
+import ConfirmationModal from "../../components/ConfirmationModal";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", {

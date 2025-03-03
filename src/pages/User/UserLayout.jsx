@@ -1,6 +1,6 @@
 import { useState } from "react";
-import UserSidebar from "../../components/UserSidebar";
-import UserNavbar from "../../components/UserNavbar";
+import UserSidebar from "../../components/users/UserSidebar";
+import UserNavbar from "../../components/users/UserNavbar";
 
 const UserLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Changed to true by default

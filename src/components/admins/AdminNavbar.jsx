@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import { AppContext } from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import { FaBars, FaBell, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
-import { api } from "../axios/axios";
+import { api } from "../../axios/axios";
 
 const AdminNavbar = ({ toggleSidebar, isSidebarOpen }) => {
   const { user, token, setToken, setUser } = useContext(AppContext);

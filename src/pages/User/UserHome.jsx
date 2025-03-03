@@ -6,7 +6,7 @@ import { io } from "socket.io-client";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./UserHome.css";
-import LoadingOverlay from "../../components/rooms/LoadingOverlay";
+import LoadingOverlay from "../../components/LoadingOverlay";
 
 const UserHome = () => {
   const { user, token } = useContext(AppContext);

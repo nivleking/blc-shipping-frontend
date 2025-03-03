@@ -10,12 +10,11 @@ const UserSidebar = ({ isSidebarOpen }) => {
 
   const sidebarItems = [
     { path: "/user-home", icon: FaHome, label: "Home" },
-    { path: "/room", icon: FaDoorOpen, label: "Rooms" },
+    // { path: "/room", icon: FaDoorOpen, label: "Rooms" },
   ];
 
   return (
     <div className={`bg-gray-900 text-white ${isSidebarOpen ? "w-64" : "w-20"} flex flex-col fixed h-full transition-all duration-300`}>
-      {/* Title section with enhanced styling */}
       <div className="relative p-6 border-b border-gray-800/50">
         <div className={`flex items-center space-x-3 ${!isSidebarOpen && "justify-center"}`}>
           <div className="relative">
