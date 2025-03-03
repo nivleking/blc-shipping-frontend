@@ -21,7 +21,11 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: env.VITE_SERVER_PORT,
       strictPort: true,
-      allowedHosts: ["blc.petra.ac.id", "kelvinsidhartasie.my.id"],
+      allowedHosts: [
+        "kelvinsidhartasie.my.id",
+        "*.kelvinsidhartasie.my.id",
+        "frontend.kelvinsidhartasie.my.id",
+      ],
     },
   };
 });
