@@ -61,11 +61,11 @@ const AdminNavbar = ({ toggleSidebar, isSidebarOpen }) => {
       className={`
         fixed top-0 right-0 h-16
         transition-all duration-300 ease-in-out
-        backdrop-blur-md bg-gray-900 border-b border-gray-900
+        backdrop-blur-md bg-gray-900/95 border-b border-gray-800
         flex items-center justify-between
         px-4 md:px-6
         z-50 print:hidden
-        ${isSidebarOpen ? "lg:left-64" : "lg:left-20"}
+        ${isSidebarOpen ? "left-64" : "left-20"}
       `}
     >
       {/* Left side */}
@@ -87,17 +87,10 @@ const AdminNavbar = ({ toggleSidebar, isSidebarOpen }) => {
 
       {/* Right side */}
       <div className="flex items-center gap-2 md:gap-4">
-        {/* Notifications */}
-        {/* <button className="p-2 rounded-full hover:bg-gray-800 relative">
-          <FaBell className="w-5 h-5 text-white" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </button> */}
-
         {/* Admin Menu */}
         <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
           <div className="relative">
             <FaUserCircle className="w-8 h-8 text-white" />
-            {/* <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full" /> */}
           </div>
 
           <div className="hidden md:block">

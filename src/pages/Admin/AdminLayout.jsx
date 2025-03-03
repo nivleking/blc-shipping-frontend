@@ -3,7 +3,7 @@ import AdminSidebar from "../../components/AdminSidebar";
 import AdminNavbar from "../../components/AdminNavbar";
 
 const AdminLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -13,10 +13,8 @@ const AdminLayout = ({ children }) => {
     <div className="flex">
       <AdminSidebar isSidebarOpen={isSidebarOpen} />
       <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-20"}`}>
-        <div className="mb-12">
-          <AdminNavbar toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-        </div>
-        <div className="p-6 bg-gray-100 min-h-screen">{children}</div>
+        <AdminNavbar toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <div className="pt-16 p-6 bg-gray-100 min-h-screen">{children}</div>
       </div>
     </div>
   );
