@@ -129,128 +129,39 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
+    if (!file) return;
+
     setIsUploading(true);
     setErrors([]);
 
+    // Create form data to send the file
+    const formData = new FormData();
+    formData.append("file", file);
+
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      // Send file to backend for processing
+      const response = await api.post(`/decks/${deckId}/import-cards`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-          range: 11,
-          header: ["id", "origin", "destination", "priority", "container_type", "quantity", "revenue_per_container", "total_revenue"],
-        });
+      toast.success(`${response.data.message}`);
 
-        const validationErrors = [];
-        const cards = [];
+      // Refresh data
+      await refreshCards();
+      await refreshContainers();
 
-        const validPorts = ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH"];
-
-        for (let i = 0; i < jsonData.length; i++) {
-          const row = jsonData[i];
-          if (!row.origin) continue; // Skip empty rows
-
-          // Clean and validate data
-          const card = {
-            id: String(row.id).trim(),
-            origin: String(row.origin).trim().toUpperCase(),
-            destination: String(row.destination).trim().toUpperCase(),
-            priority: String(row.priority).trim(),
-            type: String(row.container_type).trim(),
-            quantity: parseInt(row.quantity),
-            revenue_per_container: parseInt(row.revenue_per_container),
-            // Kalkulasi revenue dari quantity dan revenue_per_container
-            revenue: parseInt(row.quantity) * parseInt(row.revenue_per_container),
-          };
-
-          // Add ID validation
-          if (!card.id || !/^\d+$/.test(card.id) || parseInt(card.id) < 1 || parseInt(card.id) > 99999) {
-            validationErrors.push(`Row ${i + 12}: Invalid ID "${card.id}". Must be a number between 1-99999`);
-            continue;
-          }
-
-          // Validation checks
-          if (!validPorts.includes(card.origin)) {
-            validationErrors.push(`Row ${i + 12}: Invalid origin port "${card.origin}"`);
-            continue;
-          }
-
-          if (!validPorts.includes(card.destination)) {
-            validationErrors.push(`Row ${i + 12}: Invalid destination port "${card.destination}"`);
-            continue;
-          }
-
-          // ... validasi lainnya dengan row number yang diupdate
-          if (card.origin === card.destination) {
-            validationErrors.push(`Row ${i + 12}: Origin and destination cannot be the same`);
-            continue;
-          }
-
-          if (!["Committed", "Non-Committed"].includes(card.priority)) {
-            validationErrors.push(`Row ${i + 12}: Invalid priority "${card.priority}"`);
-            continue;
-          }
-
-          if (!["dry", "reefer", "Dry", "Reefer", "DRY", "REEFER"].includes(card.type)) {
-            validationErrors.push(`Row ${i + 12}: Invalid container type "${card.type}"`);
-            continue;
-          }
-
-          if (isNaN(card.quantity) || card.quantity <= 0) {
-            validationErrors.push(`Row ${i + 12}: Invalid quantity`);
-            continue;
-          }
-
-          if (isNaN(card.revenue_per_container) || card.revenue_per_container <= 0) {
-            validationErrors.push(`Row ${i + 12}: Invalid revenue per container`);
-            continue;
-          }
-
-          cards.push(card);
-        }
-
-        if (validationErrors.length > 0) {
-          setErrors(validationErrors);
-          toast.error("Please fix the validation errors");
-          return;
-        }
-
-        // Create cards and attach to deck
-        try {
-          // Create cards and attach to deck
-          for (const card of cards) {
-            try {
-              // Create card
-              const cardResponse = await api.post("/cards", card);
-
-              // Attach card to deck
-              await api.post(`/decks/${deckId}/add-card`, {
-                card_id: cardResponse.data.id,
-              });
-            } catch (error) {
-              console.error("Error creating/attaching card:", error);
-              throw error; // Propagate error to be caught by outer try-catch
-            }
-          }
-
-          await refreshCards();
-          await refreshContainers();
-
-          toast.success(`Successfully imported ${cards.length} cards to deck!`);
-          event.target.value = null; // Reset file input
-        } catch (error) {
-          console.error("Error processing cards:", error);
-          toast.error("Failed to create or attach cards to deck");
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
+      // Reset file input
+      event.target.value = null;
     } catch (error) {
-      console.error("Error reading file:", error);
-      toast.error("Failed to read Excel file");
+      console.error("Error uploading file:", error);
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+        toast.error("Please fix the validation errors");
+      } else {
+        toast.error(error.response?.data?.message || "Failed to upload file");
+      }
     } finally {
       setIsUploading(false);
     }
