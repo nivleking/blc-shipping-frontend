@@ -13,14 +13,14 @@ const GenerateCardsNavbar = ({ title, onBack, onGenerate, onInfoClick, onDeleteA
           <h1 className="ml-4 text-xl font-semibold text-gray-800">{title}</h1>
         </div>
         <div className="flex items-center space-x-2">
-          <button onClick={onDeleteAllCards} className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center gap-2 hover:bg-red-600 transition-colors">
-            <BsTrash />
-            Delete Cards
-          </button>
           <button onClick={onInfoClick} className="guide-button px-4 py-2 text-blue-600 rounded-lg flex items-center gap-2 relative overflow-hidden">
             <BsInfoCircle />
             Guide
             <span className="absolute inset-0 border-2 border-blue-400 rounded-lg animate-pulse"></span>
+          </button>
+          <button onClick={onDeleteAllCards} className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center gap-2 hover:bg-red-600 transition-colors">
+            <BsTrash />
+            Delete Cards
           </button>
           <button onClick={onGenerate} className="px-6 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700">
             <BsLightning />

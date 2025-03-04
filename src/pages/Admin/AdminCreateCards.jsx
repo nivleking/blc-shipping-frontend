@@ -22,7 +22,6 @@ const AdminCreateCards = () => {
   const { deckId } = useParams();
   const navigate = useNavigate();
   const [generateFormData, setGenerateFormData] = useState({
-    // startId: 1, // Add starting ID field
     totalRevenueEachPort: 250_000_000,
     totalContainerQuantityEachPort: 15,
     salesCallCountEachPort: 8,
@@ -124,32 +123,6 @@ const AdminCreateCards = () => {
     }
   };
 
-  async function handleGenerateSubmit(e) {
-    e.preventDefault();
-    try {
-      const response = await api.post(`/generate-cards/${deckId}`, generateFormData);
-      setSalesCallCards(response.data.cards);
-      await fetchContainers();
-      calculateDeckStats(response.data.cards);
-
-      toast.success("Cards generated successfully!");
-
-      // Reset form to default values
-      setGenerateFormData({
-        totalRevenueEachPort: 250_000_000,
-        totalContainerQuantityEachPort: 15,
-        salesCallCountEachPort: 8,
-        ports: 4,
-        quantityStandardDeviation: 1,
-        revenueStandardDeviation: 500_000,
-      });
-    } catch (error) {
-      setGenerateErrors(error.response?.data?.errors || {});
-      setSalesCallCards([]);
-      toast.error(error.response?.data?.message || "Failed to generate cards");
-    }
-  }
-
   const calculateDeckStats = (cards) => {
     const stats = cards.reduce((acc, card) => {
       if (!acc[card.origin]) {
@@ -166,6 +139,10 @@ const AdminCreateCards = () => {
     }, {});
 
     setPortStats(stats);
+  };
+
+  const getUniqueOrigins = (cards) => {
+    return [...new Set(cards.map((card) => card.origin))].sort();
   };
 
   // const handleMarketIntelligenceUpload = (data) => {
@@ -216,10 +193,6 @@ const AdminCreateCards = () => {
     10: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
   };
 
-  const getAllOrigins = () => {
-    return ALL_PORTS[generateFormData.ports] || ALL_PORTS[4];
-  };
-
   const filteredCards = getFilteredCards(salesCallCards);
   const indexOfLastCard = currentPage * cardsPerPage;
   const indexOfFirstCard = indexOfLastCard - cardsPerPage;
@@ -233,6 +206,7 @@ const AdminCreateCards = () => {
   const [showInfoModal, setShowInfoModal] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
   const navBarTitle = `${deck.name}`;
 
@@ -254,12 +228,43 @@ const AdminCreateCards = () => {
     }
   };
 
+  const handleGenerateButtonClick = (e) => {
+    e.preventDefault();
+    setShowGenerateConfirm(true);
+  };
+
+  const handleConfirmGenerate = async () => {
+    try {
+      const response = await api.post(`/generate-cards/${deckId}`, generateFormData);
+      setSalesCallCards(response.data.cards);
+      await fetchContainers();
+      calculateDeckStats(response.data.cards);
+
+      toast.success("Cards generated successfully!");
+
+      setGenerateFormData({
+        totalRevenueEachPort: 250_000_000,
+        totalContainerQuantityEachPort: 15,
+        salesCallCountEachPort: 8,
+        ports: 4,
+        quantityStandardDeviation: 1,
+        revenueStandardDeviation: 500_000,
+      });
+    } catch (error) {
+      setGenerateErrors(error.response?.data?.errors || {});
+      setSalesCallCards([]);
+      toast.error(error.response?.data?.message || "Failed to generate cards");
+    } finally {
+      setShowGenerateConfirm(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <ToastContainer position="top-center" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
 
       <div className="container mx-auto px-4 py-6">
-        <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateSubmit} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
+        <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateButtonClick} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
         <TabGroup>
           <TabList className="flex space-x-1 rounded-xl bg-white shadow-sm p-1 mb-6 mt-4">
             <Tab
@@ -310,7 +315,7 @@ const AdminCreateCards = () => {
             <TabPanel>
               <div className="bg-white rounded-lg shadow">
                 <CardsPreviewPanel
-                  cards={currentCards}
+                  cards={salesCallCards}
                   containers={containers}
                   currentPage={currentPage}
                   currentCards={currentCards}
@@ -321,10 +326,14 @@ const AdminCreateCards = () => {
                   setFilterType={setFilterType}
                   filterOrigin={filterOrigin}
                   setFilterOrigin={setFilterOrigin}
-                  getAllOrigins={getAllOrigins}
+                  uniqueOrigins={getUniqueOrigins(salesCallCards)}
                   formatIDR={formatIDR}
                   indexOfFirstCard={indexOfFirstCard}
                   indexOfLastCard={indexOfLastCard}
+                  onCardUpdated={async () => {
+                    await fetchDeck();
+                    await fetchContainers();
+                  }}
                 />
               </div>
             </TabPanel>
@@ -341,6 +350,15 @@ const AdminCreateCards = () => {
           onConfirm={handleConfirmDelete}
           title="Delete All Cards"
           message="Are you sure you want to delete all cards in this deck? This action cannot be undone."
+        />
+
+        {/* Generate Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={showGenerateConfirm}
+          onClose={() => setShowGenerateConfirm(false)}
+          onConfirm={handleConfirmGenerate}
+          title="Generate Cards"
+          message={`Are you sure you want to generate new sales call cards? This will create cards based on your current configuration.${salesCallCards.length > 0 ? " Existing cards will be removed!" : ""}`}
         />
       </div>
     </div>
