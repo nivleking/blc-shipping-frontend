@@ -25,6 +25,8 @@ export default defineConfig(({ mode }) => {
         "kelvinsidhartasie.my.id",
         "*.kelvinsidhartasie.my.id",
         "frontend.kelvinsidhartasie.my.id",
+        "*.slg.petra.ac.id",
+        "slg.petra.ac.id",
       ],
     },
   };
