@@ -7,16 +7,9 @@ import { motion } from "framer-motion";
 const NotFound = () => {
   const { user } = useContext(AppContext);
 
-  // Determine homepage based on user role
   const getHomePage = () => {
     if (!user) return "/";
-    return user.role === "admin" ? "/admin-home" : "/user-home";
-  };
-
-  // Get appropriate label for home button
-  const getHomeLabel = () => {
-    if (!user) return "Go to Landing Page";
-    return user.role === "admin" ? "Go to Home" : "Go to Home";
+    return user.is_admin === true ? "/admin-home" : "/user-home";
   };
 
   return (
@@ -46,7 +39,7 @@ const NotFound = () => {
               to={getHomePage()}
               className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg flex items-center justify-center gap-2 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
-              <FaHome className="text-lg" /> {getHomeLabel()}
+              <FaHome className="text-lg" /> Home
             </Link>
             <button
               onClick={() => window.history.back()}
