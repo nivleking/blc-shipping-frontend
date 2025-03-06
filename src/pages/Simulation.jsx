@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { api, socket } from "../axios/axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
@@ -444,54 +444,39 @@ const Simulation = () => {
     socket.on("swap_bays", async ({ roomId: receivedRoomId }) => {
       if (receivedRoomId === roomId) {
         try {
-          // Get room swap config
-          const roomResponse = await api.get(`/rooms/${roomId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          // This is where we need to ensure comprehensive config is fetched
+          await fetchSwapConfig();
 
-          let swapConfig = {};
-          if (roomResponse.data.swap_config) {
-            try {
-              swapConfig = typeof roomResponse.data.swap_config === "string" ? JSON.parse(roomResponse.data.swap_config) : roomResponse.data.swap_config;
-
-              // Find where user's port receives from
-              const receivesFrom = Object.entries(swapConfig).find(([from, to]) => to === port)?.[0] || "Unknown";
-              // Find where user's port sends to
-              const sendsTo = swapConfig[port] || "Unknown";
-
-              setSwapInfo({
-                receivesFrom,
-                sendsTo,
-              });
-            } catch (e) {
-              console.error("Error parsing swap config");
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching swap configuration:", error);
-        }
-
-        setShowSwapAlert(true);
-        let timer = 10;
-        setCountdown(timer);
-
-        const countdownInterval = setInterval(() => {
-          timer -= 1;
+          setShowSwapAlert(true);
+          let timer = 10;
           setCountdown(timer);
 
-          if (timer === 0) {
-            clearInterval(countdownInterval);
-            setShowSwapAlert(false);
-            handleSwapProcess();
-          }
-        }, 1000);
+          const countdownInterval = setInterval(() => {
+            timer -= 1;
+            setCountdown(timer);
+
+            if (timer === 0) {
+              clearInterval(countdownInterval);
+              setShowSwapAlert(false);
+              handleSwapProcess();
+            }
+          }, 1000);
+        } catch (error) {
+          console.error("Error handling swap_bays event:", error);
+        }
+      }
+    });
+
+    socket.on("port_config_updated", ({ roomId: updatedRoomId }) => {
+      if (updatedRoomId === roomId) {
+        // Refetch swap configuration when config is updated
+        fetchSwapConfig();
       }
     });
 
     return () => {
       socket.off("swap_bays");
+      socket.off("port_config_updated");
     };
   }, [roomId, user, token]);
 
@@ -1426,13 +1411,40 @@ const Simulation = () => {
         }
       }
 
-      // Find where user's port receives from and sends to
       const receivesFrom = Object.entries(swapConfig).find(([from, to]) => to === port)?.[0] || "Unknown";
       const sendsTo = swapConfig[port] || "Unknown";
+
+      const allPorts = [];
+      let startPort = null;
+
+      for (const portKey in swapConfig) {
+        const isReceiver = Object.values(swapConfig).includes(portKey);
+        if (!isReceiver) {
+          startPort = portKey;
+          break;
+        }
+      }
+
+      if (!startPort && Object.keys(swapConfig).length > 0) {
+        startPort = Object.keys(swapConfig)[0];
+      }
+
+      if (startPort) {
+        let currentPort = startPort;
+        const maxPorts = Object.keys(swapConfig).length + 1;
+        let count = 0;
+
+        while (currentPort && count < maxPorts) {
+          allPorts.push(currentPort);
+          currentPort = swapConfig[currentPort];
+          count++;
+        }
+      }
 
       setSwapInfo({
         receivesFrom,
         sendsTo,
+        allPorts: allPorts.reverse(), // Reverse to show in proper order
       });
     } catch (error) {
       console.error("Error fetching swap configuration:", error);
@@ -1628,12 +1640,44 @@ const Simulation = () => {
               <div className="text-2xl font-bold text-red-600 animate-pulse mb-1">SWAP ALERT!</div>
               <div className="text-5xl font-bold text-blue-600">{countdown}</div>
 
-              {/* Port linked list visualization - similar to PortLegend */}
+              {/* Port linked list visualization - now enhanced with full route */}
               <div className="w-full bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h3 className="font-medium text-lg text-center mb-3 text-blue-800">Container Flow Update</h3>
 
+                {/* Complete port route visualization */}
+                {swapInfo.allPorts && swapInfo.allPorts.length > 0 && (
+                  <div className="mb-4 overflow-x-auto py-2">
+                    <div className="flex items-center justify-center gap-1 min-w-max">
+                      {swapInfo.allPorts.map((portName, index) => (
+                        <React.Fragment key={`port-${index}`}>
+                          {index > 0 && (
+                            <svg className="w-6 h-5 text-gray-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                          )}
+
+                          <div className="flex flex-col items-center">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs
+                        ${portName === port ? "w-10 h-10 border-3 border-yellow-400 shadow-md scale-110 z-10" : ""}`}
+                              style={{ backgroundColor: PORT_COLORS[portName?.substring(0, 3)?.toUpperCase()] || "#64748B" }}
+                            >
+                              {portName.substring(0, 1).toUpperCase()}
+                            </div>
+                            <span className={`text-xs mt-1 ${portName === port ? "font-bold" : ""}`}>
+                              {portName}
+                              {portName === port && <span className="block text-[10px] text-blue-700">(You)</span>}
+                            </span>
+                          </div>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Direct connections visualization (keep this part too for clarity) */}
                 <div className="flex items-center justify-center gap-2 mt-2">
-                  {/* Port that receives from user */}
+                  {/* Port that sends TO user */}
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: PORT_COLORS[swapInfo.sendsTo?.substring(0, 3)?.toUpperCase()] || "#64748B" }}>
                       {swapInfo.sendsTo?.substring(0, 1)?.toUpperCase() || "-"}
@@ -1650,7 +1694,7 @@ const Simulation = () => {
                   <div className="flex flex-col items-center">
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold
-    border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
+border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                       style={{ backgroundColor: PORT_COLORS[port?.substring(0, 3)?.toUpperCase()] || "#64748B" }}
                     >
                       {port?.substring(0, 1)?.toUpperCase()}
@@ -1664,7 +1708,7 @@ const Simulation = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
 
-                  {/* Port that sends to user */}
+                  {/* Port that user sends TO (receivesFrom in variable naming) */}
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: PORT_COLORS[swapInfo.receivesFrom?.substring(0, 3)?.toUpperCase()] || "#64748B" }}>
                       {swapInfo.receivesFrom?.substring(0, 1)?.toUpperCase() || "-"}
@@ -1685,6 +1729,7 @@ const Simulation = () => {
           </div>
         </div>
       )}
+
       <ToastContainer position="top-right" theme="light" autoClose={3000} />
 
       {isLoading ? (
