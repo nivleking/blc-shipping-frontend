@@ -61,11 +61,11 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
               </label>
               <div className="flex items-center gap-4">
                 <div>
-                  <label className="text-xs text-gray-500">Rows (1-7)</label>
+                  <label className="text-xs text-gray-500">Rows (2-10)</label>
                   <input
                     type="number"
-                    min="1"
-                    max="7"
+                    min="2"
+                    max="10"
                     value={formData.bay_size.rows}
                     onChange={(e) =>
                       setFormData({
@@ -78,11 +78,11 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
                 </div>
                 <span className="text-gray-500 text-xl">x</span>
                 <div>
-                  <label className="text-xs text-gray-500">Columns (1-8)</label>
+                  <label className="text-xs text-gray-500">Columns (2-10)</label>
                   <input
                     type="number"
-                    min="1"
-                    max="8"
+                    min="2"
+                    max="10"
                     value={formData.bay_size.columns}
                     onChange={(e) =>
                       setFormData({
@@ -104,7 +104,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
                 <input
                   type="number"
                   min="1"
-                  max="8"
+                  max="10"
                   value={formData.bay_count}
                   onChange={(e) => {
                     const count = parseInt(e.target.value) || 1;
@@ -116,7 +116,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
                   }}
                   className="w-32 p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 />
-                <p className="text-xs text-gray-500 mt-1">Maximum 8 bays allowed</p>
+                <p className="text-xs text-gray-500 mt-1">Maximum 10 bays allowed</p>
               </div>
             </div>
           </div>

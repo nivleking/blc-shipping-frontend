@@ -20,8 +20,8 @@ const loadingMessages = {
 const initialFormState = {
   name: "",
   description: "",
-  bay_size: { rows: 1, columns: 1 },
-  bay_count: 1,
+  bay_size: { rows: 2, columns: 2 },
+  bay_count: 1  ,
   bay_types: ["dry"],
 };
 
@@ -85,17 +85,17 @@ const AdminCreateLayouts = () => {
       return;
     }
 
-    if (formData.bay_count < 1 || formData.bay_count > 8) {
-      toast.error("Bay count must be between 1 and 8");
+    if (formData.bay_count < 2 || formData.bay_count > 10) {
+      toast.error("Bay count must be between 2 and 10");
       return;
     }
 
-    if (formData.bay_size.rows < 1 || formData.bay_size.rows > 7) {
-      toast.error("Bay rows must be between 1 and 7");
+    if (formData.bay_size.rows < 2 || formData.bay_size.rows > 10) {
+      toast.error("Bay rows must be between 2 and 10");
       return;
     }
 
-    if (formData.bay_size.columns < 1 || formData.bay_size.columns > 8) {
+    if (formData.bay_size.columns < 2 || formData.bay_size.columns > 10) {
       toast.error("Bay columns must be between 1 and 8");
       return;
     }
@@ -136,17 +136,17 @@ const AdminCreateLayouts = () => {
       return;
     }
 
-    if (formData.bay_count < 1 || formData.bay_count > 8) {
-      toast.error("Bay count must be between 1 and 8");
+    if (formData.bay_count < 2 || formData.bay_count > 10) {
+      toast.error("Bay count must be between 2 and 10");
       return;
     }
 
-    if (formData.bay_size.rows < 1 || formData.bay_size.rows > 7) {
-      toast.error("Bay rows must be between 1 and 7");
+    if (formData.bay_size.rows < 2 || formData.bay_size.rows > 10) {
+      toast.error("Bay rows must be between 2 and 10");
       return;
     }
 
-    if (formData.bay_size.columns < 1 || formData.bay_size.columns > 8) {
+    if (formData.bay_size.columns < 2 || formData.bay_size.columns > 10) {
       toast.error("Bay columns must be between 1 and 8");
       return;
     }
