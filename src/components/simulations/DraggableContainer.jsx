@@ -1,38 +1,38 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import "./DraggableContainer.css";
 
-const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView }) => {
+const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView, isTarget }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
-    disabled: isHistoryView, // Disable dragging when in history view
+    disabled: isHistoryView,
   });
 
   const defaultStyle = {
     transform: CSS.Transform.toString(transform),
     zIndex: isDragging ? 9999 : "auto",
-    // position: isDragging ? "fixed" : "relative",
     backgroundColor:
       color === "yellow"
-        ? "#F59E0B" // yellow-500
+        ? "#F59E0B"
         : color === "blue"
-        ? "#3B82F6" // blue-500
+        ? "#3B82F6"
         : color === "green"
-        ? "#22C55E" // green-500
+        ? "#22C55E"
         : color === "red"
-        ? "#EF4444" // red-500
+        ? "#EF4444"
         : color === "purple"
-        ? "#8B5CF6" // purple-500
+        ? "#8B5CF6"
         : color === "pink"
-        ? "#EC4899" // pink-500
+        ? "#EC4899"
         : color === "orange"
-        ? "#F97316" // orange-500
+        ? "#F97316"
         : color === "brown"
-        ? "#92400E" // brown-500
+        ? "#92400E"
         : color === "cyan"
-        ? "#06B6D4" // cyan-500
+        ? "#06B6D4"
         : color === "teal"
-        ? "#059669" // teal-500
-        : "#6B7280", // gray-500 default
+        ? "#059669"
+        : "#6B7280",
     color: color === "yellow" ? "black" : "white",
     width: "80px",
     height: "60px",
@@ -50,13 +50,12 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
         ${!isHistoryView ? "cursor-move" : "cursor-default"}
         relative transition-all
         ${isDragging && !isHistoryView ? "scale-105 shadow-xl" : "shadow-md"}
+        ${isTarget ? "ring-4 ring-yellow-400 pulse" : ""}
       `}
     >
       <div className="relative w-full h-full p-2">
-        {/* Container ID */}
         <span className="absolute top-1 left-1 text-xs font-medium text-white drop-shadow-md">#{text}</span>
 
-        {/* Type Badge */}
         <div
           className={`
           absolute -top-3 -right-3 px-2 py-1 rounded-full text-[10px] font-bold
@@ -65,6 +64,9 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
         >
           {type}
         </div>
+
+        {/* Add unload indicator for target containers */}
+        {isTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-2 py-1 text-[9px] rounded-full font-bold whitespace-nowrap">UNLOAD</div>}
 
         {/* Pattern Overlay */}
         <div className="absolute inset-0 opacity-20">

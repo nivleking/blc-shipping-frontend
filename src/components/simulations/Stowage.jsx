@@ -30,6 +30,8 @@ const Stowage = ({
   currentRound,
   totalRounds,
 }) => {
+  const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
+
   return (
     <>
       <PortLegendSimulation currentRound={currentRound} totalRounds={totalRounds} />
@@ -63,9 +65,10 @@ const Stowage = ({
                 <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
               </svg>
               Ship Bay
+              {section === 1 && targetContainers.length > 0 && <span className="ml-4 text-sm text-yellow-600 font-semibold animate-pulse">{targetContainers.length} containers need unloading</span>}
             </h3>
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <ShipBay bayCount={bayCount} baySize={baySize} bayTypes={bayTypes} droppedItems={droppedItems} draggingItem={draggingItem} containers={containers} />
+              <ShipBay bayCount={bayCount} baySize={baySize} bayTypes={bayTypes} droppedItems={droppedItems} draggingItem={draggingItem} containers={containers} targetContainers={targetContainers} />
             </div>
           </div>
 
@@ -78,9 +81,10 @@ const Stowage = ({
                   <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
                 </svg>
                 Ship Dock
+                {section === 1 && targetContainers.length > 0 && draggingTargetContainer && <span className="ml-4 text-sm text-yellow-600 font-semibold">Drop container here</span>}
               </h3>
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} containers={containers} />
+                <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} containers={containers} section={section} draggingTargetContainer={draggingTargetContainer} />
               </div>
             </div>
 

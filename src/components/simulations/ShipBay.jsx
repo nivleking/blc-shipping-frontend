@@ -18,7 +18,7 @@ const isValidPlacement = (droppedItems, baySize, cellId) => {
   return true;
 };
 
-const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, containers, isHistoryView = false }) => {
+const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, containers, isHistoryView = false, targetContainers = [] }) => {
   return (
     <div className="p-5" style={{ height: "100%", backgroundColor: "#f0f0f0", overflowX: "auto" }}>
       <div className="flex" style={{ width: "max-content" }}>
@@ -40,30 +40,24 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
             <ContainerBay id={`bay-${bayIndex}`} rows={baySize.rows} columns={baySize.columns}>
               {Array.from({ length: baySize.rows * baySize.columns }).map((_, cellIndex) => {
                 const cellId = `bay-${bayIndex}-${cellIndex}`;
-                // Jika mode history, tidak perlu validasi penempatan
                 const isValid = isHistoryView ? true : isValidPlacement(droppedItems, baySize, cellId);
                 const rowIndex = Math.floor(cellIndex / baySize.columns);
                 const colIndex = cellIndex % baySize.columns;
                 const coordinates = `${bayIndex + 1}${rowIndex}${colIndex}`;
+                const item = droppedItems.find((item) => item.area === cellId);
+                const isTarget = targetContainers.some((target) => target.id === item?.id);
 
                 return (
-                  <DroppableCell
-                    key={cellId}
-                    id={cellId}
-                    coordinates={coordinates}
-                    isValid={isValid}
-                    // Disable drag & drop in history view
-                    isHistoryView={isHistoryView}
-                  >
-                    {droppedItems.find((item) => item.area === cellId) && (
+                  <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={isValid} isHistoryView={isHistoryView}>
+                    {item && (
                       <DraggableContainer
-                        id={droppedItems.find((item) => item.area === cellId).id}
-                        text={droppedItems.find((item) => item.area === cellId).id}
-                        isDragging={!isHistoryView && draggingItem === droppedItems.find((item) => item.area === cellId).id}
-                        color={droppedItems.find((item) => item.area === cellId).color}
-                        type={containers !== undefined ? containers.find((c) => c.id === droppedItems.find((item) => item.area === cellId).id)?.type?.toLowerCase() || "dry" : droppedItems.find((item) => item.area === cellId).type}
-                        // Disable dragging in history view
+                        id={item.id}
+                        text={item.id}
+                        isDragging={!isHistoryView && draggingItem === item.id}
+                        color={item.color}
+                        type={containers !== undefined ? containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry" : item.type}
                         isHistoryView={isHistoryView}
+                        isTarget={isTarget}
                       />
                     )}
                   </DroppableCell>

@@ -493,6 +493,12 @@ const Simulation = () => {
       setWeekSalesCalls([]);
       setWeekRevenueTotal(0);
 
+      if (selectedTab === 2) {
+        // Assuming tab index 2 is for Weekly Performance
+        // This will trigger a refetch if the component is already mounted
+        // The WeeklyPerformance component itself will handle fetching data on mount
+      }
+
       // Refetch sales cards after a short delay
       setTimeout(() => {
         fetchSalesCallCards();
@@ -978,6 +984,19 @@ const Simulation = () => {
       if (isBlocked) {
         event.preventDefault();
         return;
+      }
+
+      // If in section 1, check if this is a target container that needs unloading
+      if (section === 1) {
+        const isTargetContainer = targetContainers.some((target) => target.id === sourceItem.id);
+
+        // If it's a target container, show a toast hint
+        if (isTargetContainer) {
+          toast.info("Drag this container to the ship dock to unload it", {
+            position: "top-center",
+            autoClose: 2000,
+          });
+        }
       }
     }
 
@@ -1772,11 +1791,10 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   Stowage
                 </div>
               </Tab>
-              {/* 
               <Tab
                 className={({ selected }) =>
                   `w-full rounded-lg py-2.5 text-sm font-medium leading-5
-                  ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+    ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
                 }
               >
                 <div className="flex items-center justify-center gap-2">
@@ -1785,7 +1803,7 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   </svg>
                   Weekly Performance
                 </div>
-              </Tab> */}
+              </Tab>
 
               {/* <Tab
                 className={({ selected }) =>
@@ -1851,12 +1869,11 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
               </TabPanel>
 
               {/* Weekly Performance Tab */}
-              {/* <TabPanel>
+              <TabPanel>
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h3 className="text-xl font-bold mb-4">Weekly Performance Report</h3>
-                  <WeeklyPerformance port={port} />
+                  {/* <WeeklyPerformance port={port} currentRound={currentRound} totalRounds={totalRounds} /> */}
                 </div>
-              </TabPanel> */}
+              </TabPanel>
 
               {/* Market Intelligence Tab */}
               {/* <TabPanel>

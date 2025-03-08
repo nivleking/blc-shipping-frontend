@@ -2,7 +2,7 @@ import ContainerDock from "./ContainerDock";
 import DroppableCell from "./DroppableCell";
 import DraggableContainer from "./DraggableContainer";
 
-const ShipDock = ({ dockSize, paginatedItems, draggingItem, containers }) => {
+const ShipDock = ({ dockSize, paginatedItems, draggingItem, containers, section, draggingTargetContainer }) => {
   return (
     <div className="flex flex-col items-center justify-center">
       <ContainerDock id="docks" rows={dockSize.rows} columns={dockSize.columns}>
@@ -11,17 +11,15 @@ const ShipDock = ({ dockSize, paginatedItems, draggingItem, containers }) => {
           const colIndex = cellIndex % dockSize.columns;
           const coordinates = `docks-${rowIndex}${colIndex}`;
           const isValid = true;
+          const cellId = `docks-${cellIndex}`;
+          const item = paginatedItems.find((item) => item.area === cellId);
+
+          // Highlight empty dock cells as drop targets when dragging a target container in section 1
+          const isDropTarget = section === 1 && draggingTargetContainer && !item; // only empty cells
+
           return (
-            <DroppableCell key={`docks-${cellIndex}`} id={`docks-${cellIndex}`} coordinates={coordinates} isValid={isValid}>
-              {paginatedItems.find((item) => item.area === `docks-${cellIndex}`) && (
-                <DraggableContainer
-                  id={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
-                  text={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
-                  isDragging={draggingItem === paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id}
-                  color={paginatedItems.find((item) => item.area === `docks-${cellIndex}`).color}
-                  type={containers.find((c) => c.id === paginatedItems.find((item) => item.area === `docks-${cellIndex}`).id)?.type?.toLowerCase() || "dry"}
-                />
-              )}
+            <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={isValid} isDropTarget={isDropTarget}>
+              {item && <DraggableContainer id={item.id} text={item.id} isDragging={draggingItem === item.id} color={item.color} type={containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry"} />}
             </DroppableCell>
           );
         })}
