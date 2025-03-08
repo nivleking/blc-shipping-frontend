@@ -10,6 +10,7 @@ import ConfigurationPanel from "../../components/cards/ConfigurationPanel";
 import InfoModal from "../../components/cards/InfoModal";
 import CardsPreviewPanel from "../../components/cards/CardsPreviewPanel";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import LoadingOverlay from "../../components/LoadingOverlay";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", {
@@ -36,6 +37,20 @@ const AdminCreateCards = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const cardsPerPage = 6;
   const [portStats, setPortStats] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+
+  const loadingMessages = ["Generating sales call cards..."];
+
+  useEffect(() => {
+    let interval;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   useEffect(() => {
     fetchDeck();
@@ -234,6 +249,9 @@ const AdminCreateCards = () => {
   };
 
   const handleConfirmGenerate = async () => {
+    setIsLoading(true);
+    setLoadingMessageIndex(0);
+
     try {
       const response = await api.post(`/generate-cards/${deckId}`, generateFormData);
       setSalesCallCards(response.data.cards);
@@ -255,6 +273,7 @@ const AdminCreateCards = () => {
       setSalesCallCards([]);
       toast.error(error.response?.data?.message || "Failed to generate cards");
     } finally {
+      setIsLoading(false);
       setShowGenerateConfirm(false);
     }
   };
@@ -262,6 +281,8 @@ const AdminCreateCards = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <ToastContainer position="top-center" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+
+      {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Generating Cards" />}
 
       <div className="container mx-auto px-4 py-6">
         <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateButtonClick} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />

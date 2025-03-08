@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
 import { FaShip } from "react-icons/fa";
+import LoadingOverlay from "../LoadingOverlay";
 
 const validateId = (id) => {
   const num = parseInt(id);
@@ -32,6 +33,11 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
     10: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
   };
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+
+  const loadingMessages = ["Creating your sales call card..."];
+
   const calculateTotalRevenue = () => {
     return manualCardForm.quantity * manualCardForm.revenuePerContainer;
   };
@@ -51,6 +57,12 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
   const handleManualCardSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setIsLoading(true);
+    setLoadingMessageIndex(0);
+
+    const messageInterval = setInterval(() => {
+      setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+    }, 3000);
 
     try {
       if (!validateId(manualCardForm.id)) {
@@ -93,12 +105,15 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
       console.error("Error creating card:", error);
       toast.error(error.response?.data?.message || "Failed to create card");
     } finally {
+      clearInterval(messageInterval);
       setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
+      {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Creating Card" />}
       <form onSubmit={handleManualCardSubmit}>
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">
           {/* Header */}
@@ -123,7 +138,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
                   <span className="ml-1 font-medium">(Reefer = ID multiple of 5)</span>
                 </div>
               </div>
-              
+
               {/* Port Configuration Section */}
               <div className="space-y-4">
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">

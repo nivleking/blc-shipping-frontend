@@ -4,10 +4,17 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
+import ConfirmationModal from "../ConfirmationModal";
+import LoadingOverlay from "../LoadingOverlay";
 
 const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState([]);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const loadingMessages = ["Processing your Excel file..."];
 
   const templateData = [
     {
@@ -127,19 +134,32 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
     saveAs(data, "sales_call_cards_template.xlsx");
   };
 
-  const handleFileUpload = async (event) => {
+  const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    setIsUploading(true);
-    setErrors([]);
+    setSelectedFile(file);
 
-    // Create form data to send the file
+    setShowConfirmModal(true);
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    setIsLoading(true);
+    setLoadingMessageIndex(0);
+    setErrors([]);
+    setShowConfirmModal(false);
+
+    const messageInterval = setInterval(() => {
+      setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+    }, 3000);
+
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", selectedFile);
 
     try {
-      // Send file to backend for processing
       const response = await api.post(`/decks/${deckId}/import-cards`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -152,8 +172,9 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
       await refreshCards();
       await refreshContainers();
 
-      // Reset file input
-      event.target.value = null;
+      setSelectedFile(null);
+      const fileInput = document.getElementById("file-upload-input");
+      if (fileInput) fileInput.value = null;
     } catch (error) {
       console.error("Error uploading file:", error);
       if (error.response?.data?.errors) {
@@ -163,12 +184,23 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
         toast.error(error.response?.data?.message || "Failed to upload file");
       }
     } finally {
+      clearInterval(messageInterval);
       setIsUploading(false);
+      setIsLoading(false);
     }
+  };
+
+  const cancelFileUpload = () => {
+    setShowConfirmModal(false);
+    setSelectedFile(null);
+    const fileInput = document.getElementById("file-upload-input");
+    if (fileInput) fileInput.value = null;
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
+      {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Importing Cards" />}
+
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">File Generate</h3>
@@ -182,7 +214,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
             <BsCloudUpload className="text-4xl text-gray-400" />
             <label className="cursor-pointer">
               <span className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">{isUploading ? "Uploading..." : "Upload Excel File"}</span>
-              <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleFileUpload} disabled={isUploading} />
+              <input id="file-upload-input" type="file" className="hidden" accept=".xlsx,.xls" onChange={handleFileSelect} disabled={isUploading} />
             </label>
             <p className="text-sm text-gray-500">Upload your Excel file with sales call cards data</p>
           </div>
@@ -199,6 +231,15 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={cancelFileUpload}
+        onConfirm={handleFileUpload}
+        title="WARNING"
+        message="Importing cards from an Excel file will replace all existing cards in this deck. This action cannot be undone. Do you want to continue?"
+      />
     </div>
   );
 };
