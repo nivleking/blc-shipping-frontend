@@ -57,19 +57,15 @@ const AdminHome = () => {
         },
       });
       setRooms(response.data);
+      if (response.data.length > 0) {
+        const newPageCount = Math.ceil(response.data.length / itemsPerPage);
+        if (currentPage >= newPageCount) {
+          setCurrentPage(0);
+        }
+      } else {
+        setCurrentPage(0);
+      }
       console.log("Rooms fetched:", response.data);
-
-      response.data.forEach(async (room) => {
-        const adminResponse = await api.get(`users/${room.admin_id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setAdmins((prevAdmins) => ({
-          ...prevAdmins,
-          [room.admin_id]: adminResponse.data,
-        }));
-      });
     } catch (error) {
       console.error("Error fetching rooms:", error);
     }

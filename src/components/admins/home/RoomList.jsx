@@ -14,27 +14,30 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
     <div className="w-full bg-white p-6 rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-1xl font-bold text-gray-800 mb-4">All Rooms</h3>
-        <ReactPaginate
-          previousLabel={"Previous"}
-          nextLabel={"Next"}
-          breakLabel={"..."}
-          breakClassName={"break-me"}
-          pageCount={pageCount}
-          marginPagesDisplayed={2}
-          pageRangeDisplayed={5}
-          onPageChange={handlePageClick}
-          containerClassName={"pagination"}
-          subContainerClassName={"pages pagination"}
-          activeClassName={"active"}
-          previousClassName={"page-item"}
-          nextClassName={"page-item"}
-          pageClassName={"page-item"}
-          pageLinkClassName={"page-link"}
-          previousLinkClassName={"page-link"}
-          nextLinkClassName={"page-link"}
-          breakLinkClassName={"page-link"}
-          forcePage={currentPage}
-        />
+
+        {rooms.length > 0 && (
+          <ReactPaginate
+            previousLabel={"Previous"}
+            nextLabel={"Next"}
+            breakLabel={"..."}
+            breakClassName={"break-me"}
+            pageCount={pageCount}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+            onPageChange={handlePageClick}
+            containerClassName={"pagination"}
+            subContainerClassName={"pages pagination"}
+            activeClassName={"active"}
+            previousClassName={"page-item"}
+            nextClassName={"page-item"}
+            pageClassName={"page-item"}
+            pageLinkClassName={"page-link"}
+            previousLinkClassName={"page-link"}
+            nextLinkClassName={"page-link"}
+            breakLinkClassName={"page-link"}
+            forcePage={Math.min(currentPage, Math.max(0, pageCount - 1))}
+          />
+        )}
       </div>
 
       {rooms.length === 0 ? (
