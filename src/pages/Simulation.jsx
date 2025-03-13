@@ -1871,7 +1871,7 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
               {/* Weekly Performance Tab */}
               <TabPanel>
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                  {/* <WeeklyPerformance port={port} currentRound={currentRound} totalRounds={totalRounds} /> */}
+                  <WeeklyPerformance port={port} currentRound={currentRound} totalRounds={totalRounds} />
                 </div>
               </TabPanel>
 
