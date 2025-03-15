@@ -29,6 +29,7 @@ const AdminCreateCards = () => {
     ports: 4,
     quantityStandardDeviation: 1,
     revenueStandardDeviation: 500_000,
+    useMarketIntelligence: false,
   });
   const [generateErrors, setGenerateErrors] = useState({});
   const [deck, setDeck] = useState({});
@@ -285,7 +286,7 @@ const AdminCreateCards = () => {
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Generating Cards" />}
 
       <div className="container mx-auto px-4 py-6">
-        <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateButtonClick} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
+        <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
         <TabGroup>
           <TabList className="flex space-x-1 rounded-xl bg-white shadow-sm p-1 mb-6 mt-4">
             <Tab
@@ -323,13 +324,13 @@ const AdminCreateCards = () => {
                 deckId={deckId}
                 refreshCards={fetchDeck}
                 refreshContainers={fetchContainers}
+                handleGenerateButtonClick={handleGenerateButtonClick}
               />
             </TabPanel>
 
             {/* Market Intelligence Tab */}
             <TabPanel>
-              <MarketIntelligencePanel />
-              <div className="bg-white rounded-lg shadow"></div>
+              <MarketIntelligencePanel deckId={deckId} />
             </TabPanel>
 
             {/* Generated Cards Tab */}

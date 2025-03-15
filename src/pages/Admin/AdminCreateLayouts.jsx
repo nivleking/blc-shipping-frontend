@@ -85,8 +85,8 @@ const AdminCreateLayouts = () => {
       return;
     }
 
-    if (formData.bay_count < 2 || formData.bay_count > 10) {
-      toast.error("Bay count must be between 2 and 10");
+    if (formData.bay_count < 1 || formData.bay_count > 10) {
+      toast.error("Bay count must be between 1 and 10");
       return;
     }
 
@@ -136,8 +136,8 @@ const AdminCreateLayouts = () => {
       return;
     }
 
-    if (formData.bay_count < 2 || formData.bay_count > 10) {
-      toast.error("Bay count must be between 2 and 10");
+    if (formData.bay_count < 1 || formData.bay_count > 10) {
+      toast.error("Bay count must be between 1 and 10");
       return;
     }
 

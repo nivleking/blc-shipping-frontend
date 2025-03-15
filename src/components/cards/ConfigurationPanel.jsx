@@ -1,6 +1,5 @@
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 
-import { AiOutlineCopy } from "react-icons/ai";
 import StatsPanel from "./StatsPanel";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -71,7 +70,20 @@ const validateId = (id) => {
   return !isNaN(num) && num >= 1 && num <= 99999;
 };
 
-const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePresetSelect, handlePortSelect, handleRevenueSelect, handleQuantitySelect, handleGenerateChange, deckId, refreshCards, refreshContainers }) => {
+const ConfigurationPanel = ({
+  portStats,
+  formatIDR,
+  generateFormData,
+  handlePresetSelect,
+  handlePortSelect,
+  handleRevenueSelect,
+  handleQuantitySelect,
+  handleGenerateChange,
+  deckId,
+  refreshCards,
+  refreshContainers,
+  handleGenerateButtonClick,
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [manualCardForm, setManualCardForm] = useState({
@@ -221,6 +233,8 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
                   handlePortSelect={handlePortSelect}
                   handleRevenueSelect={handleRevenueSelect}
                   handleQuantitySelect={handleQuantitySelect}
+                  deckId={deckId}
+                  onGenerate={handleGenerateButtonClick}
                 />
               </TabPanel>
               {/* <TabPanel>
