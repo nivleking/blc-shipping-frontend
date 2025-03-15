@@ -22,7 +22,7 @@ const initialFormState = {
   cards_limit_per_round: 1,
 };
 
-const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms }) => {
+const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refreshRooms }) => {
   // Form state
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
@@ -114,7 +114,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms }) => 
       });
 
       if (response.status === 200) {
-        setRooms((prevRooms) => [...prevRooms, response.data]);
+        await refreshRooms();
         toast.success("Room created successfully!");
         resetForm();
       }

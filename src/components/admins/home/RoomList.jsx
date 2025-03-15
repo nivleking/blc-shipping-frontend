@@ -10,6 +10,39 @@ import ReactPaginate from "react-paginate";
 const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, currentPage, handlePageClick, handleOpenRoom, handleEditRoom, handleDeleteRoom }) => {
   const navigate = useNavigate();
 
+  const getStatusInfo = (status) => {
+    switch (status) {
+      case "active":
+        return {
+          text: "Active",
+          bgColor: "bg-green-100",
+          textColor: "text-green-800",
+          iconBg: "bg-green-500",
+        };
+      case "finished":
+        return {
+          text: "Finished",
+          bgColor: "bg-red-100",
+          textColor: "text-red-800",
+          iconBg: "bg-red-500",
+        };
+      case "created":
+        return {
+          text: "Ready",
+          bgColor: "bg-blue-100",
+          textColor: "text-blue-800",
+          iconBg: "bg-blue-500",
+        };
+      default:
+        return {
+          text: status,
+          bgColor: "bg-gray-100",
+          textColor: "text-gray-800",
+          iconBg: "bg-gray-500",
+        };
+    }
+  };
+
   return (
     <div className="w-full bg-white p-6 rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-4">
@@ -51,13 +84,13 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
                 <div className="flex items-start space-x-6 w-full">
                   {/* Room Icon and Status */}
                   <div className="flex flex-col items-center space-y-3 pt-2">
-                    <div className={`w-16 h-16 rounded-lg ${room.status === "active" ? "bg-green-500" : room.status === "finished" ? "bg-red-500" : "bg-blue-500"} flex items-center justify-center text-white`}>
-                      <span className="text-xl font-medium">{offset + index + 1}</span>
-                    </div>
-                    <div className="flex flex-col items-center space-y-2">
-                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${room.status === "active" ? "bg-green-100 text-green-800" : room.status === "finished" ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"}`}>
-                        {room.status}
-                      </span>
+                    <div className="flex flex-col items-center space-y-3 pt-2">
+                      <div className={`w-16 h-16 rounded-lg ${getStatusInfo(room.status).iconBg} flex items-center justify-center text-white`}>
+                        <span className="text-xl font-medium">{offset + index + 1}</span>
+                      </div>
+                      <div className="flex flex-col items-center space-y-2">
+                        <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusInfo(room.status).bgColor} ${getStatusInfo(room.status).textColor}`}>{getStatusInfo(room.status).text}</span>
+                      </div>
                     </div>
                   </div>
 
