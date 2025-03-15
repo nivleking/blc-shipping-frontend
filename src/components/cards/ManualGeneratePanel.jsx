@@ -112,15 +112,15 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="">
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Creating Card" />}
       <form onSubmit={handleManualCardSubmit}>
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        <div className="">
           {/* Header */}
           <div className="p-6 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center">
               <FaShip className="text-blue-500 text-xl mr-2" />
-              <h3 className="text-xl font-bold text-gray-800">Create Sales Call Card</h3>
+              <h3 className="text-xl font-bold text-gray-800">Create Card</h3>
             </div>
           </div>
 

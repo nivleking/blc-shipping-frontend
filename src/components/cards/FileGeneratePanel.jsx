@@ -4,7 +4,6 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
-import ConfirmationModal from "../ConfirmationModal";
 import LoadingOverlay from "../LoadingOverlay";
 import ExcelPreviewModal from "./ExcelPreviewModal";
 

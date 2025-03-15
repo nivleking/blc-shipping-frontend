@@ -1,0 +1,4 @@
+/* Add to your global CSS or create a new file and import it */
+.dropdown:hover .dropdown-content {
+  display: block;
+}

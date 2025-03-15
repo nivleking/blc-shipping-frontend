@@ -1,8 +1,8 @@
 import { AiOutlineArrowLeft } from "react-icons/ai";
-import { BsLightning, BsInfoCircle, BsTrash } from "react-icons/bs";
+import { BsInfoCircle, BsTrash } from "react-icons/bs";
 import "./GuideButton.css";
 
-const GenerateCardsNavbar = ({ title, onBack, onGenerate, onInfoClick, onDeleteAllCards }) => (
+const GenerateCardsNavbar = ({ title, onBack, onInfoClick, onDeleteAllCards }) => (
   <nav className="bg-white shadow-md rounded-md">
     <div className="mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between h-16">
@@ -21,10 +21,6 @@ const GenerateCardsNavbar = ({ title, onBack, onGenerate, onInfoClick, onDeleteA
           <button onClick={onDeleteAllCards} className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center gap-2 hover:bg-red-600 transition-colors">
             <BsTrash />
             Delete Cards
-          </button>
-          <button onClick={onGenerate} className="px-6 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700">
-            <BsLightning />
-            Generate Cards
           </button>
         </div>
       </div>
