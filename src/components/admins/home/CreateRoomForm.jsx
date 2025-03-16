@@ -7,6 +7,7 @@ import Tooltip from "../../../components/Tooltip";
 import RenderShipBayLayout from "../../../components/simulations/RenderShipBayLayout";
 import { api } from "../../../axios/axios";
 import { toast } from "react-toastify";
+import SwapConfigModal from "../../rooms/SwapConfigModal";
 
 const initialFormState = {
   id: "",
@@ -20,6 +21,7 @@ const initialFormState = {
   bay_types: [],
   total_rounds: 1,
   cards_limit_per_round: 1,
+  swap_config: {},
 };
 
 const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refreshRooms }) => {
@@ -39,6 +41,11 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
   // UI state
   const [showLayoutPreview, setShowLayoutPreview] = useState(false);
 
+  // Swap config state
+  const [showSwapConfigModal, setShowSwapConfigModal] = useState(false);
+  const [deckOrigins, setDeckOrigins] = useState([]);
+  const [swapConfig, setSwapConfig] = useState({});
+
   // Reset form
   const resetForm = () => {
     setFormData(initialFormState);
@@ -46,6 +53,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     setSelectedLayout(null);
     setSelectedUsers([]);
     setErrors({});
+    setSwapConfig({});
+    setDeckOrigins([]);
   };
 
   // Handle form field changes
@@ -60,6 +69,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
   // Handle deck selection and update max users
   const handleDeckChange = async (e) => {
     const deckId = e.target.value;
+    setSelectedDeck(decks.find((deck) => deck.id === deckId));
     setFormData((prevData) => ({
       ...prevData,
       deck_id: deckId,
@@ -73,10 +83,14 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           },
         });
         const origins = response.data;
+
         setFormData((prevData) => ({
           ...prevData,
           max_users: Object.keys(origins).length,
         }));
+
+        setDeckOrigins(Object.values(origins));
+        console.log("Deck origins:", origins);
       } catch (error) {
         console.error("Error selecting deck:", error);
         toast.error("Error selecting deck. Please try again.");
@@ -87,6 +101,15 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         max_users: 0,
       }));
     }
+  };
+
+  const handleSwapConfigSave = (newConfig) => {
+    setSwapConfig(newConfig);
+    setFormData((prev) => ({
+      ...prev,
+      swap_config: newConfig,
+    }));
+    setShowSwapConfigModal(false);
   };
 
   // Create room submission
@@ -104,6 +127,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       total_rounds: formData.total_rounds,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
+      swap_config: formData.swap_config,
     };
 
     try {
@@ -447,6 +471,42 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               </div>
               <input type="number" id="max_users" name="max_users" value={formData.max_users} readOnly className="p-3 border border-gray-300 rounded-lg bg-gray-50" style={{ cursor: "not-allowed" }} />
             </div>
+
+            {/* Swap config */}
+            <div className="flex flex-col col-span-full">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <label className="block text-gray-700 font-semibold">Port Swap Configuration</label>
+                  <Tooltip>Configure port swapping for each round</Tooltip>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSwapConfigModal(true)}
+                  disabled={!selectedDeck || formData.max_users === 0}
+                  className={`ml-4 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium 
+        ${selectedDeck && formData.max_users > 0 ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+                >
+                  {Object.keys(swapConfig).length > 0 ? "Edit Config" : "Set Config"}
+                </button>
+              </div>
+
+              {Object.keys(swapConfig).length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 mt-2">
+                  <div className="text-sm text-gray-600">
+                    <h4 className="font-medium text-gray-700 mb-2">Current Configuration:</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                      {Object.entries(swapConfig).map(([from, to]) => (
+                        <div key={from} className="flex items-center bg-white p-2 rounded-lg border border-gray-200">
+                          <span className="font-medium text-gray-600">{from}</span>
+                          <span className="mx-2 text-gray-400">→</span>
+                          <span className="font-medium text-blue-600">{to}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -486,6 +546,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           </div>
         </div>
       )}
+
+      <SwapConfigModal isOpen={showSwapConfigModal} onClose={() => setShowSwapConfigModal(false)} deckOrigins={deckOrigins} onSave={handleSwapConfigSave} initialConfig={swapConfig} />
     </form>
   );
 };

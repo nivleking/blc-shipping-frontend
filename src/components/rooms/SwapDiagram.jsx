@@ -61,13 +61,34 @@ const SwapDiagram = ({ origins, swapConfig }) => {
 
       {/* Tab Navigation */}
       <div className="flex border-b">
-        <button className={`flex-1 py-2 px-4 ${activeTab === "grid" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-600"}`} onClick={() => setActiveTab("grid")}>
+        <button
+          type="button" // Tambahkan ini
+          onClick={(e) => {
+            e.preventDefault(); // Tambahkan ini
+            setActiveTab("grid");
+          }}
+          className={`flex-1 py-2 px-4 ${activeTab === "grid" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-600"}`}
+        >
           Grid View
         </button>
-        <button className={`flex-1 py-2 px-4 ${activeTab === "chain" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-600"}`} onClick={() => setActiveTab("chain")}>
+        <button
+          type="button" // Tambahkan ini
+          onClick={(e) => {
+            e.preventDefault(); // Tambahkan ini
+            setActiveTab("chain");
+          }}
+          className={`flex-1 py-2 px-4 ${activeTab === "chain" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-600"}`}
+        >
           Chain View
         </button>
-        <button className={`flex-1 py-2 px-4 ${activeTab === "list" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-600"}`} onClick={() => setActiveTab("list")}>
+        <button
+          type="button" // Tambahkan ini
+          onClick={(e) => {
+            e.preventDefault(); // Tambahkan ini
+            setActiveTab("list");
+          }}
+          className={`flex-1 py-2 px-4 ${activeTab === "list" ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-600"}`}
+        >
           List View
         </button>
       </div>
@@ -95,9 +116,9 @@ const SwapDiagram = ({ origins, swapConfig }) => {
                       {/* {!swapConfig[port] && <HiExclamation className="h-4 w-4 text-yellow-500 inline ml-1" />} */}
                     </td>
                     <td className="px-4 py-2">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
                     </td>
                     <td className="px-4 py-2">
                       <span className={`inline-flex items-center ${swapConfig[port] ? "text-green-600" : "text-yellow-600 font-medium"}`}>{swapConfig[port] || "Not assigned"}</span>
