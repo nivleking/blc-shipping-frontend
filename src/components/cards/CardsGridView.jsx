@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FiEdit } from "react-icons/fi";
 
@@ -6,7 +7,47 @@ const cardVariants = {
   visible: { opacity: 1, scale: 1 },
 };
 
-const CardsGridView = ({ currentCards, containers, formatIDR, filterType, setFilterType, filterOrigin, setFilterOrigin, uniqueOrigins, indexOfFirstCard, indexOfLastCard, filteredCards, totalPages, currentPage, paginate, onEditCard }) => {
+const CardsGridView = ({ cards, containers, formatIDR, onEditCard }) => {
+  // Filter states
+  const [filterType, setFilterType] = useState("all");
+  const [filterOrigin, setFilterOrigin] = useState("all");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredCards, setFilteredCards] = useState([]);
+  const cardsPerPage = 6;
+
+  // Get unique origins for filter options
+  const uniqueOrigins = [...new Set(cards.map((card) => card.origin))].sort();
+
+  // Filter cards when dependencies change
+  useEffect(() => {
+    let filtered = [...cards];
+
+    // Apply type filter
+    if (filterType !== "all") {
+      filtered = filtered.filter((card) => card.priority === (filterType === "committed" ? "Committed" : "Non-Committed"));
+    }
+
+    // Apply origin filter
+    if (filterOrigin !== "all") {
+      filtered = filtered.filter((card) => card.origin === filterOrigin);
+    }
+
+    setFilteredCards(filtered);
+    // Reset to first page when filters change
+    setCurrentPage(1);
+  }, [cards, filterType, filterOrigin]);
+
+  // Calculate pagination values
+  const indexOfLastCard = currentPage * cardsPerPage;
+  const indexOfFirstCard = indexOfLastCard - cardsPerPage;
+  const currentCards = filteredCards.slice(indexOfFirstCard, indexOfLastCard);
+  const totalPages = Math.ceil(filteredCards.length / cardsPerPage);
+
+  // Pagination handler
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
     <>
       {/* Filter section */}
@@ -148,7 +189,7 @@ const CardsGridView = ({ currentCards, containers, formatIDR, filterType, setFil
       </div>
 
       {/* Improved Pagination - Only show if we have cards */}
-      {currentCards.length > 0 && (
+      {filteredCards.length > 0 && (
         <div className="p-4 border-t sticky bottom-0 bg-white">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">

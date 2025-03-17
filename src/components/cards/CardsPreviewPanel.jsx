@@ -4,27 +4,14 @@ import PortLegendCards from "./PortLegendCards";
 import EditCardModal from "./EditCardModal";
 import CardsTableView from "./CardsTableView";
 import CardsGridView from "./CardsGridView";
+import CardStatsDashboard from "./CardStatsDashboard";
 
-const CardsPreviewPanel = ({
-  currentCards,
-  containers,
-  formatIDR,
-  filterType,
-  setFilterType,
-  filterOrigin,
-  setFilterOrigin,
-  uniqueOrigins,
-  indexOfFirstCard,
-  indexOfLastCard,
-  filteredCards,
-  totalPages,
-  currentPage,
-  paginate,
-  onCardUpdated,
-  cards,
-}) => {
+const CardsPreviewPanel = ({ cards, containers, formatIDR, onCardUpdated }) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
+
+  // Get unique origins for filters
+  const uniqueOrigins = [...new Set(cards.map((card) => card.origin))].sort();
 
   const handleEditClick = (card) => {
     setSelectedCard(card);
@@ -33,6 +20,9 @@ const CardsPreviewPanel = ({
 
   return (
     <div className="col-span-4 bg-white shadow-md rounded-lg overflow-hidden text-sm">
+      {/* Statistics Dashboard */}
+      {/* <CardStatsDashboard cards={cards} containers={containers} formatIDR={formatIDR} /> */}
+
       <PortLegendCards />
 
       {/* Tabs for Card View and Table View */}
@@ -59,28 +49,12 @@ const CardsPreviewPanel = ({
         <TabPanels>
           {/* Card View Panel */}
           <TabPanel>
-            <CardsGridView
-              currentCards={currentCards}
-              containers={containers}
-              formatIDR={formatIDR}
-              filterType={filterType}
-              setFilterType={setFilterType}
-              filterOrigin={filterOrigin}
-              setFilterOrigin={setFilterOrigin}
-              uniqueOrigins={uniqueOrigins}
-              indexOfFirstCard={indexOfFirstCard}
-              indexOfLastCard={indexOfLastCard}
-              filteredCards={filteredCards}
-              totalPages={totalPages}
-              currentPage={currentPage}
-              paginate={paginate}
-              onEditCard={handleEditClick}
-            />
+            <CardsGridView cards={cards} containers={containers} formatIDR={formatIDR} onEditCard={handleEditClick} />
           </TabPanel>
 
           {/* Table View Panel */}
           <TabPanel>
-            <CardsTableView cards={cards} formatIDR={formatIDR} uniqueOrigins={uniqueOrigins} onEditCard={handleEditClick} />
+            <CardsTableView cards={cards} formatIDR={formatIDR} onEditCard={handleEditClick} uniqueOrigins={uniqueOrigins} />
           </TabPanel>
         </TabPanels>
       </TabGroup>
