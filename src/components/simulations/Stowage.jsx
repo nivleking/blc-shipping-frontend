@@ -29,6 +29,9 @@ const Stowage = ({
   isCardVisible,
   currentRound,
   totalRounds,
+  processedCards,
+  mustProcessCards,
+  cardsLimit,
 }) => {
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
@@ -111,6 +114,9 @@ const Stowage = ({
                       handleAcceptCard={handleAcceptCard}
                       handleRejectCard={handleRejectCard}
                       isProcessingCard={isProcessingCard}
+                      processedCards={processedCards}
+                      mustProcessCards={mustProcessCards}
+                      cardsLimit={cardsLimit}
                     />
                   </div>
                 ) : (

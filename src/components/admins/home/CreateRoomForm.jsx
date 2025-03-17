@@ -21,6 +21,7 @@ const initialFormState = {
   bay_types: [],
   total_rounds: 1,
   cards_limit_per_round: 1,
+  cards_must_process_per_round: 1,
   swap_config: {},
 };
 
@@ -57,12 +58,22 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     setDeckOrigins([]);
   };
 
-  // Handle form field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "cards_must_process_per_round") {
+      const limitPerRound = formData.cards_limit_per_round;
+      const processValue = parseInt(value);
+
+      if (processValue > limitPerRound) {
+        toast.warning("Must process cards cannot exceed cards limit per round");
+        return;
+      }
+    }
+
     setFormData((prevData) => ({
       ...prevData,
-      [name]: value || "",
+      [name]: value,
     }));
   };
 
@@ -117,6 +128,13 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     e.preventDefault();
     setErrors({});
 
+    if (parseInt(formData.cards_must_process_per_round) > parseInt(formData.cards_limit_per_round)) {
+      setErrors({
+        cards_must_process_per_round: ["Must process cards cannot exceed cards limit per round"],
+      });
+      return;
+    }
+
     const payload = {
       id: formData.id,
       name: formData.name,
@@ -125,10 +143,13 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       ship_layout: formData.ship_layout,
       max_users: formData.max_users,
       total_rounds: formData.total_rounds,
+      cards_must_process_per_round: formData.cards_must_process_per_round,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
       swap_config: formData.swap_config,
     };
+
+    console.log("Create room payload:", payload);
 
     try {
       const response = await api.post("rooms", payload, {
@@ -235,6 +256,26 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
           />
           {errors.cards_limit_per_round && <p className="text-red-500 mt-1">{errors.cards_limit_per_round[0]}</p>}
+        </div>
+
+        {/* Cards Must Process Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="cards_must_process_per_round" className="block text-gray-700 font-semibold">
+              Cards Must Process
+            </label>
+            <Tooltip>Number of cards that must be accepted/rejected from shown cards</Tooltip>
+          </div>
+          <input
+            type="number"
+            id="cards_must_process_per_round"
+            name="cards_must_process_per_round"
+            value={formData.cards_must_process_per_round}
+            onChange={handleChange}
+            min="1"
+            max={formData.cards_limit_per_round}
+            className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+          />
         </div>
 
         {/* Assign Users Field */}
@@ -474,7 +515,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
             {/* Swap config */}
             <div className="flex flex-col col-span-full">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-start mb-2">
                 <div className="flex items-center gap-2">
                   <label className="block text-gray-700 font-semibold">Port Swap Configuration</label>
                   <Tooltip>Configure port swapping for each round</Tooltip>

@@ -77,6 +77,9 @@ const Simulation = () => {
   };
   const [currentRound, setCurrentRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(1);
+  const [processedCards, setProcessedCards] = useState(0);
+  const [mustProcessCards, setMustProcessCards] = useState(0);
+  const [cardsLimit, setCardsLimit] = useState(0);
 
   // Capacity Uptake states
   const [capacityData, setCapacityData] = useState({
@@ -375,7 +378,6 @@ const Simulation = () => {
 
     setIsLoading(true);
     try {
-      // Check limit first
       const limitExceeded = await checkLimitCard();
       if (limitExceeded) {
         setSalesCallCards([]);
@@ -388,6 +390,9 @@ const Simulation = () => {
         },
       });
       const deckId = roomResponse.data.deck_id;
+
+      setMustProcessCards(roomResponse.data.cards_must_process_per_round);
+      setCardsLimit(roomResponse.data.cards_limit_per_round);
 
       const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
         headers: {
@@ -419,7 +424,18 @@ const Simulation = () => {
           return !cardTemp || cardTemp.status === "selected";
         });
 
-      setSalesCallCards(filteredCards);
+      let randomizedCards = [];
+      const cardCount = Math.min(cardsLimit, filteredCards.length);
+      for (let i = 0; i < cardCount; i++) {
+        if (filteredCards.length === 0) break;
+        const randomIndex = Math.floor(Math.random() * filteredCards.length);
+        randomizedCards.push(filteredCards[randomIndex]);
+        filteredCards.splice(randomIndex, 1);
+      }
+
+      setSalesCallCards(randomizedCards);
+
+      console.log("Sales Call Cards:", salesCallCards);
     } catch (error) {
       console.error("Error fetching sales call cards:", error);
       toast.error("Failed to load sales call cards");
@@ -492,6 +508,7 @@ const Simulation = () => {
       setCurrentCardIndex(0);
       setWeekSalesCalls([]);
       setWeekRevenueTotal(0);
+      setProcessedCards(0);
 
       if (selectedTab === 2) {
         // Assuming tab index 2 is for Weekly Performance
@@ -502,6 +519,7 @@ const Simulation = () => {
       // Refetch sales cards after a short delay
       setTimeout(() => {
         fetchSalesCallCards();
+        fetchStats();
       }, 500);
     } catch (error) {
       console.error("Error updating after swap:", error);
@@ -655,7 +673,7 @@ const Simulation = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const { baySize, bayCount, bayTypes, section } = response.data;
+      const { baySize, bayCount, bayTypes } = response.data;
       setBaySize(baySize);
       setBayCount(bayCount);
       setBayTypes(bayTypes || Array(bayCount).fill("dry"));
@@ -666,6 +684,11 @@ const Simulation = () => {
 
   useEffect(() => {
     if (currentCardIndex >= salesCallCards.length) {
+      setCurrentCardIndex(0);
+    }
+
+    if (salesCallCards.length === 0) {
+      setIsLimitExceeded(true);
       setCurrentCardIndex(0);
     }
   }, [salesCallCards, currentCardIndex]);
@@ -705,7 +728,25 @@ const Simulation = () => {
       setIsProcessingCard(true);
       setIsCardVisible(false);
 
-      await api.post(
+      const currentCard = salesCallCards[currentCardIndex];
+      if (!currentCard) {
+        console.log("No more cards to process");
+        setIsProcessingCard(false);
+        setIsCardVisible(true);
+        return;
+      }
+
+      const shipBayResponse = await api.get(`ship-bays/${roomId}/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const currentProcessed = shipBayResponse.data.processed_cards;
+
+      if (currentProcessed + 1 >= mustProcessCards) {
+        setIsLimitExceeded(true);
+      }
+
+      const cardResponse = await api.post(
         `/ship-bays/${roomId}/${user.id}/cards`,
         {
           card_action: "accept",
@@ -717,6 +758,8 @@ const Simulation = () => {
           },
         }
       );
+
+      setProcessedCards(cardResponse.data.processed_cards);
 
       // Add the card to weekSalesCalls with status "accepted"
       const card = salesCallCards[currentCardIndex];
@@ -734,7 +777,6 @@ const Simulation = () => {
       // Update total revenue
       setWeekRevenueTotal((prev) => prev + card.revenue);
 
-      const currentCard = salesCallCards.find((card) => card.id === cardId);
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
 
       const cardRevenue = parseFloat(currentCard.revenue) || 0;
@@ -797,7 +839,11 @@ const Simulation = () => {
       // Update states
       setBayData(newBayData);
       setDockData(newDockData);
-      setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
+
+      setCurrentCardIndex((prevIndex) => {
+        const nextIndex = prevIndex < salesCallCards.length - 1 ? prevIndex : 0;
+        return nextIndex;
+      });
 
       await api.put(
         `/ship-bays/${roomId}/${user.id}/section`,
@@ -870,6 +916,14 @@ const Simulation = () => {
       const shipBay = shipBayResponse.data;
       const room = roomResponse.data;
 
+      // cards_must_process_per_round limit
+      const hasReachedMustProcess = shipBay.processed_cards >= room.cards_must_process_per_round;
+      if (hasReachedMustProcess) {
+        setIsLimitExceeded(true);
+        return true;
+      }
+
+      // cards_limit_per_round limit
       const isExceeded = shipBay.current_round_cards >= room.cards_limit_per_round;
       console.log("Is limit exceeded:", isExceeded);
       setIsLimitExceeded(isExceeded);
@@ -896,6 +950,15 @@ const Simulation = () => {
 
       if (isLimitExceeded) {
         toast.error("Card limit reached for this round!");
+        return;
+      }
+
+      if (isProcessingCard) {
+        return;
+      }
+
+      if (!salesCallCards[currentCardIndex]) {
+        console.log("No more cards to process");
         return;
       }
 
@@ -953,8 +1016,18 @@ const Simulation = () => {
         },
       ]);
 
-      setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
-      setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
+      setSalesCallCards((prevCards) => {
+        const updatedCards = prevCards.filter((card) => card.id !== cardId);
+        if (updatedCards.length === 0) {
+          setIsLimitExceeded(true);
+        }
+        return updatedCards;
+      });
+
+      setCurrentCardIndex((prevIndex) => {
+        const nextIndex = prevIndex < salesCallCards.length - 1 ? prevIndex : 0;
+        return nextIndex;
+      });
 
       setTimeout(() => {
         setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
@@ -1527,6 +1600,7 @@ const Simulation = () => {
       });
 
       const stats = shipBayResponse.data;
+
       setMoveStats({
         loadMoves: stats.load_moves || 0,
         dischargeMoves: stats.discharge_moves || 0,
@@ -1535,6 +1609,8 @@ const Simulation = () => {
         loadPenalty: stats.load_penalty || 0,
         dischargePenalty: stats.discharge_penalty || 0,
       });
+
+      setProcessedCards(stats.processed_cards || 0);
       setPenalties(stats.penalty || 0);
 
       // Fetch rankings to determine user's rank
@@ -1850,7 +1926,7 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   dockSize={dockSize}
                   paginatedItems={paginatedItems}
                   isLimitExceeded={isLimitExceeded}
-                  salesCallCards={isLimitExceeded ? [] : salesCallCards}
+                  salesCallCards={salesCallCards}
                   currentCardIndex={currentCardIndex}
                   containers={containers}
                   formatIDR={formatIDR}
@@ -1865,6 +1941,9 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   isCardVisible={isCardVisible}
                   currentRound={currentRound}
                   totalRounds={totalRounds}
+                  processedCards={processedCards}
+                  mustProcessCards={mustProcessCards}
+                  cardsLimit={cardsLimit}
                 />
               </TabPanel>
 
