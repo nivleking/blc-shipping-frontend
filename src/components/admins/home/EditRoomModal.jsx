@@ -1,13 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import { HiCheck, HiChevronUpDown } from "react-icons/hi2";
 import { AiFillEye } from "react-icons/ai";
 import RenderShipBayLayout from "../../simulations/RenderShipBayLayout";
+import { toast } from "react-toastify";
 
 const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEditModal, layouts, availableUsers, decks, handleUpdateRoom, selectedDeck, setSelectedDeck, handleDeckChange }) => {
   const [layoutQuery, setLayoutQuery] = useState("");
   const [query, setQuery] = useState("");
   const [showLayoutPreview, setShowLayoutPreview] = useState(false);
+  const [deckOrigins, setDeckOrigins] = useState([]);
+
+  useEffect(() => {
+    // Fetch origins when deck changes to determine max_users
+    if (editingRoom?.deck && showEditModal) {
+      fetchDeckOrigins(editingRoom.deck);
+    }
+  }, [editingRoom?.deck, showEditModal]);
+
+  const fetchDeckOrigins = async (deckId) => {
+    try {
+      const response = await fetch(`/api/decks/${deckId}/origins`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Update the max_users based on deck origins
+        if (editingRoom) {
+          setEditingRoom({
+            ...editingRoom,
+            max_users: Object.keys(data).length,
+          });
+        }
+        setDeckOrigins(Object.values(data));
+      }
+    } catch (error) {
+      console.error("Error fetching deck origins:", error);
+    }
+  };
 
   if (!showEditModal || !editingRoom) return null;
 
@@ -24,7 +56,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
         </div>
 
         <form onSubmit={handleUpdateRoom} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col">
               <label className="text-gray-700 font-semibold mb-2">Room Name</label>
               <input type="text" value={editingRoom.name} onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
@@ -52,6 +84,17 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                 type="number"
                 value={editingRoom.cards_limit_per_round}
                 onChange={(e) => setEditingRoom({ ...editingRoom, cards_limit_per_round: parseInt(e.target.value) })}
+                min="1"
+                className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-gray-700 font-semibold mb-2">Cards Must Process</label>
+              <input
+                type="number"
+                value={editingRoom.cards_must_process_per_round}
+                onChange={(e) => setEditingRoom({ ...editingRoom, cards_must_process_per_round: parseInt(e.target.value) })}
                 min="1"
                 className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               />
@@ -155,14 +198,37 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
             </div>
 
             <div className="col-span-full">
-              <label className="text-gray-700 font-semibold mb-2">Assigned Users</label>
-              <Combobox multiple value={editingRoom.assigned_users} onChange={(userIds) => setEditingRoom({ ...editingRoom, assigned_users: userIds })}>
+              {/* Updated Assign Users section with limits */}
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-gray-700 font-semibold">Assign Users</label>
+                <span className={`text-sm ${editingRoom.assigned_users.length > editingRoom.max_users ? "text-red-600 font-medium" : "text-gray-500"}`}>
+                  {editingRoom.assigned_users.length}/{editingRoom.max_users} users
+                </span>
+              </div>
+              <Combobox
+                multiple
+                value={editingRoom.assigned_users}
+                onChange={(userIds) => {
+                  // Only allow selection if not exceeding max_users
+                  if (userIds.length <= editingRoom.max_users) {
+                    setEditingRoom({ ...editingRoom, assigned_users: userIds });
+                  } else {
+                    // If exceeding, show toast warning
+                    toast.warning(`Maximum ${editingRoom.max_users} users can be assigned to this room`, {
+                      toastId: "max-users-warning",
+                    });
+                    // Keep the current selection
+                  }
+                }}
+              >
                 <div className="relative">
                   <div className="relative w-full">
                     <ComboboxInput
-                      className="w-full rounded-lg border border-gray-300 bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                      className={`w-full rounded-lg border ${
+                        editingRoom.assigned_users.length > editingRoom.max_users ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
+                      } bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:ring-2`}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder="Select group users..."
+                      placeholder={`Select up to ${editingRoom.max_users} group users...`}
                       displayValue={(selectedIds) =>
                         selectedIds
                           .map((id) => availableUsers.find((user) => user.id === id)?.name)
@@ -181,9 +247,11 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                       <>
                         <div className="px-4 py-2 border-b border-gray-100">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">{editingRoom.assigned_users.length} group users selected</span>
+                            <span className={`text-sm ${editingRoom.assigned_users.length > editingRoom.max_users ? "text-red-600" : "text-gray-500"}`}>
+                              {editingRoom.assigned_users.length}/{editingRoom.max_users} group users selected
+                            </span>
                             {editingRoom.assigned_users.length > 0 && (
-                              <button onClick={() => setEditingRoom({ ...editingRoom, assigned_users: [] })} className="text-xs text-red-500 hover:text-red-700">
+                              <button onClick={() => setEditingRoom({ ...editingRoom, assigned_users: [] })} className="text-xs text-red-500 hover:text-red-700" type="button">
                                 Clear all
                               </button>
                             )}
@@ -191,29 +259,49 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                         </div>
                         {availableUsers
                           .filter((user) => user.name.toLowerCase().includes(query.toLowerCase()))
-                          .map((user) => (
-                            <ComboboxOption
-                              key={user.id}
-                              value={user.id}
-                              className={({ active, selected }) => `relative cursor-pointer select-none px-4 py-3 text-sm transition-colors ${active ? "bg-blue-50" : ""} ${selected ? "bg-blue-50" : ""}`}
-                            >
-                              {({ active, selected }) => (
-                                <div className="flex items-center justify-between">
-                                  <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>{user.name}</span>
-                                  {selected && (
-                                    <span className={`flex items-center ${active ? "text-blue-700" : "text-blue-600"}`}>
-                                      <HiCheck className="h-5 w-5" />
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </ComboboxOption>
-                          ))}
+                          .map((user) => {
+                            // Check if this user is already selected
+                            const isSelected = editingRoom.assigned_users.includes(user.id);
+                            // Disable selecting more users if at max and this one isn't already selected
+                            const disableSelection = editingRoom.assigned_users.length >= editingRoom.max_users && !isSelected;
+
+                            return (
+                              <ComboboxOption
+                                key={user.id}
+                                value={user.id}
+                                disabled={disableSelection}
+                                className={({ active, selected, disabled }) =>
+                                  `relative cursor-${disabled ? "not-allowed" : "pointer"} select-none px-4 py-3 text-sm transition-colors 
+                                  ${active && !disabled ? "bg-blue-50" : ""} 
+                                  ${selected ? "bg-blue-50" : ""} 
+                                  ${disabled ? "opacity-50 bg-gray-100" : ""}`
+                                }
+                              >
+                                {({ active, selected }) => (
+                                  <div className="flex items-center justify-between">
+                                    <span className={`block truncate ${selected ? "font-medium" : "font-normal"}`}>{user.name}</span>
+                                    {selected ? (
+                                      <span className={`flex items-center ${active ? "text-blue-700" : "text-blue-600"}`}>
+                                        <HiCheck className="h-5 w-5" />
+                                      </span>
+                                    ) : disableSelection ? (
+                                      <span className="text-xs text-gray-400">Max limit</span>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </ComboboxOption>
+                            );
+                          })}
                       </>
                     )}
                   </ComboboxOptions>
                 </div>
               </Combobox>
+              {editingRoom.assigned_users.length > editingRoom.max_users && (
+                <p className="text-red-500 mt-1">
+                  You've selected {editingRoom.assigned_users.length} users, but this room can only have {editingRoom.max_users} users
+                </p>
+              )}
             </div>
           </div>
 
@@ -221,7 +309,11 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
             <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+            <button
+              type="submit"
+              className={`px-4 py-2 rounded-lg ${editingRoom.assigned_users.length > editingRoom.max_users ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600"}`}
+              disabled={editingRoom.assigned_users.length > editingRoom.max_users}
+            >
               Save Changes
             </button>
           </div>
