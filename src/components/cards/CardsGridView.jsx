@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
 
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: { opacity: 1, scale: 1 },
 };
 
-const CardsGridView = ({ cards, containers, formatIDR, onEditCard }) => {
+const CardsGridView = ({ cards, containers, formatIDR, onEditCard, onDeleteCard }) => {
   // Filter states
   const [filterType, setFilterType] = useState("all");
   const [filterOrigin, setFilterOrigin] = useState("all");
@@ -124,6 +124,9 @@ const CardsGridView = ({ cards, containers, formatIDR, onEditCard }) => {
                     <div className="flex items-center space-x-2">
                       <button onClick={() => onEditCard(card)} className="p-1 hover:bg-gray-100 rounded-full transition-colors" title="Edit card">
                         <FiEdit className="text-blue-600" />
+                      </button>
+                      <button onClick={() => onDeleteCard(card)} className="p-1 hover:bg-gray-100 rounded-full transition-colors" title="Delete card">
+                        <FiTrash2 className="text-red-600" />
                       </button>
                       <span
                         className={`px-3 py-1 rounded-full text-sm

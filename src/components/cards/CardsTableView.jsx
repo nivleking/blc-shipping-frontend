@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { FiEdit, FiFilter } from "react-icons/fi";
+import { FiEdit, FiFilter, FiTrash2 } from "react-icons/fi";
 import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { BsSearch } from "react-icons/bs";
 
-const CardsTableView = ({ cards, formatIDR, uniqueOrigins, onEditCard }) => {
+const CardsTableView = ({ cards, formatIDR, uniqueOrigins, onEditCard, onDeleteCard }) => {
   // State for search and filters
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("id");
@@ -242,6 +242,9 @@ const CardsTableView = ({ cards, formatIDR, uniqueOrigins, onEditCard }) => {
                   <div className="flex justify-end space-x-2">
                     <button onClick={() => onEditCard(card)} className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50" title="Edit card">
                       <FiEdit />
+                    </button>
+                    <button onClick={() => onDeleteCard(card)} className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50" title="Delete card">
+                      <FiTrash2 />
                     </button>
                   </div>
                 </td>

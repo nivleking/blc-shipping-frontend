@@ -305,6 +305,7 @@ const AdminCreateCards = () => {
                   cards={salesCallCards}
                   containers={containers}
                   formatIDR={formatIDR}
+                  deckId={deckId}
                   onCardUpdated={async () => {
                     await fetchDeck();
                     await fetchContainers();
