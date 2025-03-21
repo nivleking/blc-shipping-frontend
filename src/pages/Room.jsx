@@ -288,6 +288,40 @@ const Room = () => {
             }
           );
         }
+
+        const capacityUptakeData = {
+          room_id: roomId,
+          user_id: user.id,
+          week: 1,
+          capacity_data: {
+            maxCapacity: {
+              dry: 0,
+              reefer: 0,
+              total: 0,
+            },
+            cargoData: {
+              onBoard: {
+                nextPort: { dry: 0, reefer: 0 },
+                laterPort: { dry: 0, reefer: 0 },
+              },
+              newBookings: {
+                nextPort: { dry: 0, reefer: 0 },
+                laterPort: { dry: 0, reefer: 0 },
+              },
+            },
+            week: 1,
+            nextPort: assignedPorts[user.id] || "",
+            laterPorts: [],
+          },
+          sales_calls_data: {
+            weekSalesCalls: [],
+            weekRevenueTotal: 0,
+          },
+        };
+
+        await api.post("/capacity-uptake", capacityUptakeData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
 
       socket.emit("start_simulation", { roomId });
@@ -445,17 +479,78 @@ const Room = () => {
         }
       );
 
+      const userPortsResponse = await api.get(`/rooms/${roomId}/user-port2`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const newPortAssignments = {};
+      userPortsResponse.data.forEach((shipBay) => {
+        newPortAssignments[shipBay.user_id] = shipBay.port;
+      });
+
+      const nextRound = currentRound + 1;
+      for (const user of users) {
+        const capacityUptakeData = {
+          room_id: roomId,
+          user_id: user.id,
+          week: nextRound,
+          capacity_data: {
+            maxCapacity: {
+              dry: 0,
+              reefer: 0,
+              total: 0,
+            },
+            cargoData: {
+              onBoard: {
+                nextPort: { dry: 0, reefer: 0 },
+                laterPort: { dry: 0, reefer: 0 },
+              },
+              newBookings: {
+                nextPort: { dry: 0, reefer: 0 },
+                laterPort: { dry: 0, reefer: 0 },
+              },
+            },
+            week: nextRound,
+            nextPort: newPortAssignments[user.id] || "",
+            laterPorts: getLaterPorts(newPortAssignments[user.id], swapConfig),
+          },
+          sales_calls_data: {
+            weekSalesCalls: [],
+            weekRevenueTotal: 0,
+          },
+        };
+
+        await api.post("/capacity-uptake", capacityUptakeData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
       socket.emit("swap_bays", { roomId });
 
       setCurrentRound((prev) => prev + 1);
 
       toast.success("Bays swapped successfully!");
-
       fetchRankings();
     } catch (error) {
       console.error("Error swapping bays:", error);
       toast.error("Failed to swap bays");
     }
+  };
+
+  // Helper function to get later ports based on swap configuration
+  const getLaterPorts = (currentPort, swapConfig) => {
+    const laterPorts = [];
+    let nextPort = currentPort;
+
+    // Follow the swap chain to get next 2 ports
+    for (let i = 0; i < 2; i++) {
+      if (swapConfig[nextPort]) {
+        nextPort = swapConfig[nextPort];
+        laterPorts.push(nextPort);
+      }
+    }
+
+    return laterPorts;
   };
 
   async function handleSetPorts() {
