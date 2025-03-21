@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { FiHelpCircle } from "react-icons/fi";
 import { AiFillEye } from "react-icons/ai";
 import { HiPencil, HiTrash } from "react-icons/hi2";
 import { IoCreateOutline, IoTimeOutline } from "react-icons/io5";
 import ReactPaginate from "react-paginate";
+import LayoutTableView from "../../components/cards/LayoutTableView";
 
 const LayoutList = ({
   layouts,
@@ -22,6 +23,8 @@ const LayoutList = ({
   handlePageClick,
   itemsPerPage,
 }) => {
+  const [viewMode, setViewMode] = useState("grid");
+
   return (
     <div className="bg-white rounded-lg shadow-lg border border-gray-100">
       <div className="p-6">
@@ -65,6 +68,20 @@ const LayoutList = ({
           </div>
         </div>
 
+        <div className="flex items-center space-x-4">
+          <h3 className="text-lg font-semibold text-gray-800">Ship Layouts</h3>
+
+          {/* View Toggle Buttons */}
+          <div className="bg-gray-100 rounded-lg p-1 flex">
+            <button className={`p-1.5 rounded-md flex items-center ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("grid")} title="Grid view">
+              Grid
+            </button>
+            <button className={`p-1.5 rounded-md flex items-center ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("table")} title="Table view">
+              Table
+            </button>
+          </div>
+        </div>
+
         {layouts.length === 0 ? (
           <div className="text-center py-12">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,6 +95,16 @@ const LayoutList = ({
             <h3 className="mt-2 text-sm font-medium text-gray-900">No layouts</h3>
             <p className="mt-1 text-sm text-gray-500">Get started by creating a new layout.</p>
           </div>
+        ) : viewMode === "table" ? (
+          <LayoutTableView
+            layouts={layouts}
+            currentPageData={currentPageData}
+            setSelectedLayout={setSelectedLayout}
+            setShowPreviewModal={setShowPreviewModal}
+            setFormData={setFormData}
+            setShowEditForm={setShowEditForm}
+            confirmDelete={confirmDelete}
+          />
         ) : (
           <div className="space-y-4">
             {currentPageData.map((layout, index) => (

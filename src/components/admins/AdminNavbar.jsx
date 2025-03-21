@@ -90,7 +90,11 @@ const AdminNavbar = ({ toggleSidebar, isSidebarOpen }) => {
         {/* Admin Menu */}
         <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
           <div className="relative">
-            <FaUserCircle className="w-8 h-8 text-white" />
+            <img
+              src="/blc_circle.png"
+              alt="Profile"
+              className="w-12 h-12 rounded-full object-cover border-2 border-blue-400"
+            />
           </div>
 
           <div className="hidden md:block">
