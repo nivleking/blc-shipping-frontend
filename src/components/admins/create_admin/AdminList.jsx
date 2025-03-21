@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import ReactPaginate from "react-paginate";
 import { AiFillEdit, AiFillDelete } from "react-icons/ai";
-import { IoEyeOutline, IoEyeOffOutline, IoTimeOutline, IoCreateOutline, IoRefreshOutline, IoEnterOutline, IoStatsChartOutline, IoShieldCheckmark } from "react-icons/io5";
+import { IoEyeOutline, IoEyeOffOutline, IoTimeOutline, IoCreateOutline, IoRefreshOutline, IoEnterOutline, IoStatsChartOutline, IoShieldCheckmark, IoGridOutline, IoListOutline } from "react-icons/io5";
+import AdminTableView from "../../../components/cards/AdminTableView";
 
 const AdminList = ({
   admins,
@@ -21,6 +22,8 @@ const AdminList = ({
   formErrors,
   currentUser,
 }) => {
+  const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
+
   return (
     <div className="bg-white rounded-lg shadow-lg border border-gray-100">
       <div className="p-6">
@@ -35,14 +38,26 @@ const AdminList = ({
             <h3 className="ml-3 text-1xl font-bold text-gray-900">Admin List</h3>
           </div>
 
-          {/* Right side - Search Box */}
-          <div className="w-72">
-            <div className="relative">
-              <input type="text" placeholder="Search admins..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg pr-10 focus:outline-none focus:border-blue-500" />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
+          <div className="flex items-center space-x-3">
+            {/* View toggle buttons */}
+            <div className="bg-gray-100 rounded-lg p-1 flex">
+              <button className={`p-1.5 rounded-md flex items-center ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("grid")} title="Card view">
+                <IoGridOutline className="w-5 h-5" />
+              </button>
+              <button className={`p-1.5 rounded-md flex items-center ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("table")} title="Table view">
+                <IoListOutline className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Box */}
+            <div className="w-72">
+              <div className="relative">
+                <input type="text" placeholder="Search admins..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg pr-10 focus:outline-none focus:border-blue-500" />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
@@ -75,7 +90,20 @@ const AdminList = ({
             <h3 className="mt-2 text-sm font-medium text-gray-900">No admins</h3>
             <p className="mt-1 text-sm text-gray-500">Get started by creating a new admin.</p>
           </div>
+        ) : viewMode === "table" ? (
+          // Table View
+          <AdminTableView
+            currentPageData={currentPageData}
+            visiblePasswords={visiblePasswords}
+            passwordVisibility={passwordVisibility}
+            setPasswordVisibility={setPasswordVisibility}
+            togglePasswordVisibility={togglePasswordVisibility}
+            handleEdit={handleEdit}
+            handleDeleteClick={handleDeleteClick}
+            currentUser={currentUser}
+          />
         ) : (
+          // Grid View (original card layout)
           <div className="space-y-4">
             {currentPageData.map((admin, index) => (
               <div key={admin.id} className="flex flex-col sm:flex-row items-start justify-between p-6 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -92,12 +120,6 @@ const AdminList = ({
                       >
                         <IoShieldCheckmark className="w-4 h-4 mr-1" />
                         {admin.is_super_admin ? "Super Admin" : "Admin"}
-                      </span>
-                      <span
-                        className={`px-3 py-1 text-xs font-medium rounded-full 
-                        ${admin.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
-                      >
-                        {admin.status}
                       </span>
                     </div>
                   </div>

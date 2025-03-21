@@ -4,17 +4,23 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
-import ConfirmationModal from "../ConfirmationModal";
 import LoadingOverlay from "../LoadingOverlay";
+import ExcelPreviewModal from "./ExcelPreviewModal";
+
+const formatIDR = (value) => {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
+};
 
 const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState([]);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  // const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const loadingMessages = ["Processing your Excel file..."];
+  const [parsedExcelData, setParsedExcelData] = useState([]);
+  const [showExcelPreview, setShowExcelPreview] = useState(false);
 
   const templateData = [
     {
@@ -139,22 +145,75 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
     if (!file) return;
 
     setSelectedFile(file);
+    setIsUploading(true);
 
-    setShowConfirmModal(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+        // Skip directly to data rows (row 12 and later in the spreadsheet)
+        const formattedData = [];
+
+        // Get the range of the worksheet
+        const range = XLSX.utils.decode_range(worksheet["!ref"]);
+
+        // Loop through each row starting from row 12 (index 11)
+        for (let rowNum = 12; rowNum <= range.e.r; rowNum++) {
+          // Check if this is a valid row with actual data
+          const idCell = worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 0 })];
+          const originCell = worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 1 })];
+
+          // Skip if no ID or if it's an instruction row
+          if (!idCell || !idCell.v || (typeof idCell.v === "string" && (idCell.v.includes("Instructions") || idCell.v.includes("Required") || idCell.v === "ID"))) {
+            continue;
+          }
+
+          // Extract cells for this row
+          const card = {
+            id: String(idCell.v),
+            origin: originCell?.v ? String(originCell.v) : "",
+            destination: worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 2 })]?.v || "",
+            priority: worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 3 })]?.v || "",
+            container_type: String(worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 4 })]?.v || "").toLowerCase(),
+            quantity: parseInt(worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 5 })]?.v) || 0,
+            revenue_per_container: parseInt(worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 6 })]?.v) || 0,
+          };
+
+          // Only add rows with actual data
+          if (card.id && card.origin && card.destination) {
+            formattedData.push(card);
+          }
+        }
+
+        console.log("Formatted Excel data:", formattedData);
+
+        if (formattedData.length > 0) {
+          setParsedExcelData(formattedData);
+          setShowExcelPreview(true);
+        } else {
+          toast.error("No valid data found in Excel file. Please check the template format.");
+          setSelectedFile(null);
+        }
+      } catch (error) {
+        console.error("Error parsing Excel file:", error);
+        toast.error("Failed to parse Excel file");
+        setSelectedFile(null);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   };
 
   const handleFileUpload = async () => {
     if (!selectedFile) return;
 
-    setIsUploading(true);
-    setIsLoading(true);
-    setLoadingMessageIndex(0);
     setErrors([]);
-    setShowConfirmModal(false);
-
-    const messageInterval = setInterval(() => {
-      setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-    }, 3000);
+    setIsLoading(true); // Use isLoading for API operations
 
     const formData = new FormData();
     formData.append("file", selectedFile);
@@ -175,6 +234,8 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
       setSelectedFile(null);
       const fileInput = document.getElementById("file-upload-input");
       if (fileInput) fileInput.value = null;
+
+      return true;
     } catch (error) {
       console.error("Error uploading file:", error);
       if (error.response?.data?.errors) {
@@ -183,15 +244,27 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
       } else {
         toast.error(error.response?.data?.message || "Failed to upload file");
       }
+      return false;
     } finally {
-      clearInterval(messageInterval);
-      setIsUploading(false);
       setIsLoading(false);
     }
   };
 
+  const handleConfirmImport = () => {
+    setShowExcelPreview(false);
+    setIsLoading(true);
+
+    setTimeout(async () => {
+      try {
+        await handleFileUpload();
+      } finally {
+        setIsLoading(false);
+      }
+    }, 800);
+  };
+
   const cancelFileUpload = () => {
-    setShowConfirmModal(false);
+    setShowExcelPreview(false);
     setSelectedFile(null);
     const fileInput = document.getElementById("file-upload-input");
     if (fileInput) fileInput.value = null;
@@ -232,14 +305,8 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
         )}
       </div>
 
-      {/* Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showConfirmModal}
-        onClose={cancelFileUpload}
-        onConfirm={handleFileUpload}
-        title="WARNING"
-        message="Importing cards from an Excel file will replace all existing cards in this deck. This action cannot be undone. Do you want to continue?"
-      />
+      {/* Excel Preview Modal */}
+      <ExcelPreviewModal isOpen={showExcelPreview} onClose={cancelFileUpload} onConfirm={handleConfirmImport} data={parsedExcelData} formatIDR={formatIDR} />
     </div>
   );
 };

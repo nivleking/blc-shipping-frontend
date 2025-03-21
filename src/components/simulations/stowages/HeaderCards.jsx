@@ -1,4 +1,9 @@
+import { useContext } from "react";
+import { AppContext } from "../../../context/AppContext";
+
 const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves = {}, currentRound = 1, totalRounds = 1 }) => {
+  const { user } = useContext(AppContext);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
       {/* Revenue Card */}
@@ -95,7 +100,7 @@ const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves
         <div className="flex items-center justify-between">
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Port</p>
-            <h3 className="text-2xl font-bold">{port}</h3>
+            <h3 className="text-2xl font-bold">{port} - {user && user.name}</h3>
             <div className="flex gap-4 mt-1">
               <div>
                 <p className="text-xs opacity-80">Load Moves</p>

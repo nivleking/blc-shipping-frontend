@@ -19,6 +19,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
     priority: "Committed",
     quantity: 1,
     revenuePerContainer: 0,
+    type: "dry",
   });
 
   const availablePorts = {
@@ -77,6 +78,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
         destination: manualCardForm.destination,
         quantity: parseInt(manualCardForm.quantity),
         revenue: calculateTotalRevenue(),
+        type: manualCardForm.type,
       });
 
       // Then attach the card to the deck
@@ -100,6 +102,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
         priority: "Committed",
         quantity: 1,
         revenuePerContainer: 0,
+        type: "dry",
       });
     } catch (error) {
       console.error("Error creating card:", error);
@@ -112,15 +115,15 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="">
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Creating Card" />}
       <form onSubmit={handleManualCardSubmit}>
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        <div className="">
           {/* Header */}
           <div className="p-6 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center">
               <FaShip className="text-blue-500 text-xl mr-2" />
-              <h3 className="text-xl font-bold text-gray-800">Create Sales Call Card</h3>
+              <h3 className="text-xl font-bold text-gray-800">Create Card</h3>
             </div>
           </div>
 
@@ -128,14 +131,13 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
           <div className="p-6">
             {/* Card Details Section */}
             <div className="space-y-6">
-              {/* Container Type Info */}
+              {/* Container Type Selection Info */}
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <div className="flex items-center text-sm text-blue-700">
                   <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
-                  Container type will be automatically set based on the Card ID
-                  <span className="ml-1 font-medium">(Reefer = ID multiple of 5)</span>
+                  <span>Choose the container type and configure the card details</span>
                 </div>
               </div>
 
@@ -184,8 +186,8 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
                 </div>
               </div>
 
-              {/* ID and Priority Group */}
-              <div className="grid grid-cols-2 gap-6">
+              {/* ID, Type, and Priority Group */}
+              <div className="grid grid-cols-3 gap-4">
                 {/* Card ID */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Card ID</label>
@@ -201,8 +203,24 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
                       className="w-full p-3 bg-gray-50 border-2 rounded-lg 
                       focus:outline-none focus:border-blue-500 transition-colors"
                     />
-                    <p className="mt-1 text-xs text-gray-500">Enter a number between 1-99999</p>
+                    {/* <p className="mt-1 text-xs text-gray-500">Enter a number between 1-99999</p> */}
                   </div>
+                </div>
+
+                {/* Container Type - NEW SELECT INPUT */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Container Type</label>
+                  <select
+                    name="type"
+                    value={manualCardForm.type}
+                    onChange={handleManualCardChange}
+                    className="w-full p-3 bg-gray-50 border-2 rounded-lg 
+                    focus:outline-none focus:border-blue-500 transition-colors"
+                  >
+                    <option value="dry">Dry</option>
+                    <option value="reefer">Reefer</option>
+                  </select>
+                  {/* <p className="mt-1 text-xs text-gray-500">Select container type</p> */}
                 </div>
 
                 {/* Priority Level */}

@@ -1,13 +1,41 @@
-const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR, handleAcceptCard, handleRejectCard, isProcessingCard }) => {
+const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR, handleAcceptCard, handleRejectCard, isProcessingCard, processedCards, mustProcessCards, cardsLimit }) => {
   if (!salesCallCards.length || currentCardIndex >= salesCallCards.length) {
     return null;
   }
 
   const currentCard = salesCallCards[currentCardIndex];
   const isCommitted = currentCard?.priority?.toLowerCase() === "committed";
+  const processPercentage = (processedCards / mustProcessCards) * 100;
 
   return (
     <div key={currentCard.id} className="bg-white rounded-lg shadow-md p-4 w-full">
+      {/* Progress Information */}
+      <div className="mb-4 space-y-3">
+        <div className="flex justify-between items-center">
+          <div className="text-sm">
+            <span className="font-medium text-gray-700">Processed Cards:</span>{" "}
+            <span className={processedCards >= mustProcessCards ? "text-green-600 font-bold" : "text-blue-600"}>
+              {processedCards} / {mustProcessCards}
+            </span>
+          </div>
+          <div className="text-sm text-gray-600">
+            <span className="font-medium">Cards Limit:</span> {cardsLimit}
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className={`h-2 rounded-full transition-all duration-300 ${processedCards >= mustProcessCards ? "bg-green-500" : "bg-blue-500"}`} style={{ width: `${Math.min(processPercentage, 100)}%` }} />
+        </div>
+
+        {/* Status Message */}
+        {processedCards >= mustProcessCards ? (
+          <div className="text-sm text-green-600 bg-green-50 p-2 rounded">✓ Required cards processed - remaining cards are optional</div>
+        ) : (
+          <div className="text-sm text-blue-600">Need to process {mustProcessCards - processedCards} more required cards</div>
+        )}
+      </div>
+
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <tbody>
           <tr className="font-bold">

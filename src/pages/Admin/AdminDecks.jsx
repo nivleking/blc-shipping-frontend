@@ -6,6 +6,7 @@ import { AiFillDelete, AiFillFolderOpen } from "react-icons/ai";
 import "./AdminHome.css";
 import LoadingOverlay from "../../components/LoadingOverlay";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import DecksTableView from "../../components/cards/DecksTableView";
 import { IoCardOutline, IoFileTrayStackedOutline, IoLocationOutline, IoTimeOutline } from "react-icons/io5";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -26,6 +27,7 @@ const AdminDecks = () => {
     isOpen: false,
     deckId: null,
   });
+  const [viewMode, setViewMode] = useState("grid");
 
   // Add effect for delete loading messages rotation
   useEffect(() => {
@@ -194,6 +196,16 @@ const AdminDecks = () => {
       <div className="w-full bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-1xl font-bold text-gray-800 mb-4">All Decks</h3>
+          {/* View Toggle Buttons */}
+          <div className="bg-gray-100 rounded-lg p-1 flex">
+            <button className={`p-1.5 rounded-md flex items-center ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("grid")} title="Grid view">
+              Grid
+            </button>
+            <button className={`p-1.5 rounded-md flex items-center ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("table")} title="Table view">
+              Table
+            </button>
+          </div>
+
           <ReactPaginate
             previousLabel={"Previous"}
             nextLabel={"Next"}
@@ -216,6 +228,8 @@ const AdminDecks = () => {
 
         {decks.length === 0 ? (
           <p className="text-center text-gray-600">There are no decks! Let's create one!</p>
+        ) : viewMode === "table" ? (
+          <DecksTableView decks={decks} currentPageData={currentPageData} handleDeleteClick={handleDeleteClick} />
         ) : (
           <div className="space-y-4 text-sm">
             {currentPageData.map((deck, index) => {

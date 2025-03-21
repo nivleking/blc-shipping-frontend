@@ -1,38 +1,50 @@
 import { useState } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
+import { toast } from "react-toastify";
+import { api } from "../../axios/axios";
 import PortLegendCards from "./PortLegendCards";
 import EditCardModal from "./EditCardModal";
 import CardsTableView from "./CardsTableView";
 import CardsGridView from "./CardsGridView";
+import CardStatsDashboard from "./CardStatsDashboard";
+import ConfirmationModal from "../ConfirmationModal";
 
-const CardsPreviewPanel = ({
-  currentCards,
-  containers,
-  formatIDR,
-  filterType,
-  setFilterType,
-  filterOrigin,
-  setFilterOrigin,
-  uniqueOrigins,
-  indexOfFirstCard,
-  indexOfLastCard,
-  filteredCards,
-  totalPages,
-  currentPage,
-  paginate,
-  onCardUpdated,
-  cards,
-}) => {
+const CardsPreviewPanel = ({ cards, containers, formatIDR, onCardUpdated, deckId }) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState(null);
+
+  // Get unique origins for filters
+  const uniqueOrigins = [...new Set(cards.map((card) => card.origin))].sort();
 
   const handleEditClick = (card) => {
     setSelectedCard(card);
     setEditModalOpen(true);
   };
 
+  const handleDeleteClick = (card) => {
+    setCardToDelete(card);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/decks/${deckId}/remove-card/${cardToDelete.id}`);
+      toast.success(`Card ${cardToDelete.id} deleted successfully`);
+      onCardUpdated(); // Refresh the cards list
+      setDeleteModalOpen(false);
+    } catch (error) {
+      console.error("Error deleting card:", error);
+      toast.error(error.response?.data?.message || "Failed to delete card");
+    }
+  };
+
   return (
     <div className="col-span-4 bg-white shadow-md rounded-lg overflow-hidden text-sm">
+      {/* Statistics Dashboard */}
+      {/* <CardStatsDashboard cards={cards} containers={containers} formatIDR={formatIDR} /> */}
+
       <PortLegendCards />
 
       {/* Tabs for Card View and Table View */}
@@ -59,34 +71,27 @@ const CardsPreviewPanel = ({
         <TabPanels>
           {/* Card View Panel */}
           <TabPanel>
-            <CardsGridView
-              currentCards={currentCards}
-              containers={containers}
-              formatIDR={formatIDR}
-              filterType={filterType}
-              setFilterType={setFilterType}
-              filterOrigin={filterOrigin}
-              setFilterOrigin={setFilterOrigin}
-              uniqueOrigins={uniqueOrigins}
-              indexOfFirstCard={indexOfFirstCard}
-              indexOfLastCard={indexOfLastCard}
-              filteredCards={filteredCards}
-              totalPages={totalPages}
-              currentPage={currentPage}
-              paginate={paginate}
-              onEditCard={handleEditClick}
-            />
+            <CardsGridView cards={cards} containers={containers} formatIDR={formatIDR} onEditCard={handleEditClick} onDeleteCard={handleDeleteClick} />
           </TabPanel>
 
           {/* Table View Panel */}
           <TabPanel>
-            <CardsTableView cards={cards} formatIDR={formatIDR} uniqueOrigins={uniqueOrigins} onEditCard={handleEditClick} />
+            <CardsTableView cards={cards} formatIDR={formatIDR} onEditCard={handleEditClick} onDeleteCard={handleDeleteClick} uniqueOrigins={uniqueOrigins} />
           </TabPanel>
         </TabPanels>
       </TabGroup>
 
       {/* Edit Card Modal */}
       <EditCardModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} card={selectedCard} formatIDR={formatIDR} onCardUpdated={onCardUpdated} />
+
+      {/* Delete Card Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Card"
+        message={cardToDelete ? `Are you sure you want to delete card ${cardToDelete.id}? This action cannot be undone.` : ""}
+      />
     </div>
   );
 };

@@ -147,15 +147,39 @@ const PortLegendSimulation = ({ currentRound, totalRounds }) => {
         </div>
       )}
 
-      {/* Classic port legend at the top */}
-      <div className="text-sm font-medium mb-2 text-gray-700 text-end">Destination Port Legend</div>
-      <div className="flex flex-wrap justify-end gap-3 mb-4">
-        {Object.entries(PORT_COLORS).map(([port, color]) => (
-          <div key={port} className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-            <span className="text-xs text-gray-600">{port}</span>
-          </div>
-        ))}
+      {/* Active port legend at the top with improved design */}
+      <div className="mb-4 bg-white rounded-lg p-3 border border-gray-100 shadow-sm">
+        <div className="text-sm font-medium mb-2 text-gray-700">Active Ports in Simulation</div>
+        <div className="flex flex-wrap gap-2">
+          {(() => {
+            // Get only active ports from the current simulation
+            const activePorts = new Set();
+
+            // Add user's port and directly connected ports
+            if (portInfo.userPort) activePorts.add(portInfo.userPort.substring(0, 3));
+            if (portInfo.receivesFrom) activePorts.add(portInfo.receivesFrom.substring(0, 3));
+            if (portInfo.sendsTo) activePorts.add(portInfo.sendsTo.substring(0, 3));
+
+            // Add all ports in the route
+            portInfo.allPorts.forEach((port) => {
+              if (port) activePorts.add(port.substring(0, 3));
+            });
+
+            // Convert to array and sort
+            const sortedPorts = Array.from(activePorts).sort();
+
+            // Return mapped JSX
+            return sortedPorts.map((port) => (
+              <div key={port} className={`flex items-center gap-2 px-2 py-1 rounded-md ${portInfo.userPort?.startsWith(port) ? "bg-blue-50 border border-blue-200" : "bg-gray-50 border border-gray-200"}`}>
+                <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: PORT_COLORS[port] || "#64748B" }} />
+                <span className={`text-xs ${portInfo.userPort?.startsWith(port) ? "font-medium text-blue-700" : "text-gray-600"}`}>
+                  {port}
+                  {portInfo.userPort?.startsWith(port) && <span className="ml-1 text-blue-700 font-bold">★</span>}
+                </span>
+              </div>
+            ));
+          })()}
+        </div>
       </div>
 
       <div className="mt-3 border-t pt-3">

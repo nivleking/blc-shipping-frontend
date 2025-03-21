@@ -2,7 +2,6 @@ import ContainerBay from "./ContainerBay";
 import DroppableCell from "./DroppableCell";
 import DraggableContainer from "./DraggableContainer";
 
-// Add this helper function
 const isValidPlacement = (droppedItems, baySize, cellId) => {
   const [type, bayIndex, cellIndex] = cellId.split("-");
   const row = Math.floor(cellIndex / baySize.columns);
@@ -18,7 +17,10 @@ const isValidPlacement = (droppedItems, baySize, cellId) => {
   return true;
 };
 
-const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, containers, isHistoryView = false, targetContainers = [] }) => {
+const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, containers, isHistoryView = false, targetContainers = [], currentPort = "" }) => {
+  // Normalize port code for consistency
+  const normalizedCurrentPort = currentPort ? currentPort.trim().toUpperCase() : "";
+
   return (
     <div className="p-5" style={{ height: "100%", backgroundColor: "#f0f0f0", overflowX: "auto" }}>
       <div className="flex" style={{ width: "max-content" }}>
@@ -45,7 +47,12 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
                 const colIndex = cellIndex % baySize.columns;
                 const coordinates = `${bayIndex + 1}${rowIndex}${colIndex}`;
                 const item = droppedItems.find((item) => item.area === cellId);
+
                 const isTarget = targetContainers.some((target) => target.id === item?.id);
+                // const container = containers?.find((c) => c.id === item?.id);
+                // const containerDestination = container?.destination?.trim().toUpperCase();
+
+                const isOptionalTarget = !isTarget;
 
                 return (
                   <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={isValid} isHistoryView={isHistoryView}>
@@ -58,6 +65,7 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
                         type={containers !== undefined ? containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry" : item.type}
                         isHistoryView={isHistoryView}
                         isTarget={isTarget}
+                        isOptionalTarget={isOptionalTarget}
                       />
                     )}
                   </DroppableCell>

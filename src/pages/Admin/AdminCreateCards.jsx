@@ -19,6 +19,18 @@ const formatIDR = (value) => {
   }).format(value);
 };
 
+const ALL_PORTS = {
+  2: ["SBY", "MKS"],
+  3: ["SBY", "MKS", "MDN"],
+  4: ["SBY", "MKS", "MDN", "JYP"],
+  5: ["SBY", "MKS", "MDN", "JYP", "BPN"],
+  6: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS"],
+  7: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR"],
+  8: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH"],
+  9: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
+  10: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
+};
+
 const AdminCreateCards = () => {
   const { deckId } = useParams();
   const navigate = useNavigate();
@@ -29,13 +41,12 @@ const AdminCreateCards = () => {
     ports: 4,
     quantityStandardDeviation: 1,
     revenueStandardDeviation: 500_000,
+    useMarketIntelligence: false,
   });
   const [generateErrors, setGenerateErrors] = useState({});
   const [deck, setDeck] = useState({});
   const [salesCallCards, setSalesCallCards] = useState([]);
   const [containers, setContainers] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const cardsPerPage = 6;
   const [portStats, setPortStats] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
@@ -156,10 +167,6 @@ const AdminCreateCards = () => {
     setPortStats(stats);
   };
 
-  const getUniqueOrigins = (cards) => {
-    return [...new Set(cards.map((card) => card.origin))].sort();
-  };
-
   // const handleMarketIntelligenceUpload = (data) => {
   //   try {
   //     if (!data.ports || !Array.isArray(data.ports)) {
@@ -176,47 +183,6 @@ const AdminCreateCards = () => {
   //     toast.error(error.message);
   //   }
   // };
-
-  const [filterType, setFilterType] = useState("all");
-  const [filterOrigin, setFilterOrigin] = useState("all");
-
-  const getFilteredCards = (cards) => {
-    let filtered = [...cards];
-
-    // Priority filter
-    if (filterType !== "all") {
-      filtered = filtered.filter((card) => card.priority === (filterType === "committed" ? "Committed" : "Non-Committed"));
-    }
-
-    // Origin filter
-    if (filterOrigin !== "all") {
-      filtered = filtered.filter((card) => card.origin === filterOrigin);
-    }
-
-    return filtered;
-  };
-
-  const ALL_PORTS = {
-    2: ["SBY", "MKS"],
-    3: ["SBY", "MKS", "MDN"],
-    4: ["SBY", "MKS", "MDN", "JYP"],
-    5: ["SBY", "MKS", "MDN", "JYP", "BPN"],
-    6: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS"],
-    7: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR"],
-    8: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH"],
-    9: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
-    10: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
-  };
-
-  const filteredCards = getFilteredCards(salesCallCards);
-  const indexOfLastCard = currentPage * cardsPerPage;
-  const indexOfFirstCard = indexOfLastCard - cardsPerPage;
-  const currentCards = filteredCards.slice(indexOfFirstCard, indexOfLastCard);
-  const totalPages = Math.ceil(filteredCards.length / cardsPerPage);
-
-  const paginate = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
 
   const [showInfoModal, setShowInfoModal] = useState(false);
 
@@ -285,7 +251,7 @@ const AdminCreateCards = () => {
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Generating Cards" />}
 
       <div className="container mx-auto px-4 py-6">
-        <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onGenerate={handleGenerateButtonClick} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
+        <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
         <TabGroup>
           <TabList className="flex space-x-1 rounded-xl bg-white shadow-sm p-1 mb-6 mt-4">
             <Tab
@@ -323,13 +289,13 @@ const AdminCreateCards = () => {
                 deckId={deckId}
                 refreshCards={fetchDeck}
                 refreshContainers={fetchContainers}
+                handleGenerateButtonClick={handleGenerateButtonClick}
               />
             </TabPanel>
 
             {/* Market Intelligence Tab */}
             <TabPanel>
-              <MarketIntelligencePanel />
-              <div className="bg-white rounded-lg shadow"></div>
+              <MarketIntelligencePanel deckId={deckId} />
             </TabPanel>
 
             {/* Generated Cards Tab */}
@@ -338,19 +304,8 @@ const AdminCreateCards = () => {
                 <CardsPreviewPanel
                   cards={salesCallCards}
                   containers={containers}
-                  currentPage={currentPage}
-                  currentCards={currentCards}
-                  filteredCards={filteredCards}
-                  totalPages={totalPages}
-                  paginate={paginate}
-                  filterType={filterType}
-                  setFilterType={setFilterType}
-                  filterOrigin={filterOrigin}
-                  setFilterOrigin={setFilterOrigin}
-                  uniqueOrigins={getUniqueOrigins(salesCallCards)}
                   formatIDR={formatIDR}
-                  indexOfFirstCard={indexOfFirstCard}
-                  indexOfLastCard={indexOfLastCard}
+                  deckId={deckId}
                   onCardUpdated={async () => {
                     await fetchDeck();
                     await fetchContainers();
