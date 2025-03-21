@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import ReactPaginate from "react-paginate";
 import { AiFillEdit, AiFillDelete } from "react-icons/ai";
 import { IoEyeOutline, IoEyeOffOutline, IoTimeOutline, IoCreateOutline, IoRefreshOutline, IoEnterOutline, IoStatsChartOutline } from "react-icons/io5";
+import UsersTableView from "../../cards/UsersTableView";
 
 const UserList = ({
   users,
@@ -19,6 +20,8 @@ const UserList = ({
   offset,
   currentUser,
 }) => {
+  const [viewMode, setViewMode] = useState("grid");
+
   return (
     <div className="bg-white rounded-lg shadow-lg border border-gray-100">
       <div className="p-6">
@@ -31,6 +34,16 @@ const UserList = ({
               </svg>
             </div>
             <h3 className="ml-3 text-1xl font-bold text-gray-900">Group User List</h3>
+
+            {/* View Toggle Buttons */}
+            <div className="bg-gray-100 rounded-lg p-1 flex">
+              <button className={`p-1.5 rounded-md flex items-center ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("grid")} title="Grid view">
+                Grid
+              </button>
+              <button className={`p-1.5 rounded-md flex items-center ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("table")} title="Table view">
+                Table
+              </button>
+            </div>
           </div>
 
           {/* Right side - Search Box */}
@@ -60,6 +73,18 @@ const UserList = ({
             <h3 className="mt-2 text-sm font-medium text-gray-900">No users</h3>
             <p className="mt-1 text-sm text-gray-500">Get started by creating a new user.</p>
           </div>
+        ) : viewMode === "table" ? (
+          <UsersTableView
+            users={users}
+            currentPageData={currentPageData}
+            handleEdit={handleEdit}
+            handleDeleteClick={handleDeleteClick}
+            togglePasswordVisibility={togglePasswordVisibility}
+            visiblePasswords={visiblePasswords}
+            passwordVisibility={passwordVisibility}
+            setPasswordVisibility={setPasswordVisibility}
+            currentUser={currentUser}
+          />
         ) : (
           <div className="space-y-4">
             {currentPageData.map((userGroup, index) => (
