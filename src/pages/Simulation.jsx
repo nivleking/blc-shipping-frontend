@@ -33,6 +33,7 @@ const Simulation = () => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
   const [port, setPort] = useState("");
+  const [deckId, setDeckId] = useState("");
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +58,6 @@ const Simulation = () => {
   const [showSwapAlert, setShowSwapAlert] = useState(false);
   const [section, setSection] = useState(1);
   const [targetContainers, setTargetContainers] = useState([]);
-  const paginatedItems = droppedItems.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
   const [penalties, setPenalties] = useState(0);
   const [rank, setRank] = useState(1);
   const [moveStats, setMoveStats] = useState({
@@ -390,6 +390,7 @@ const Simulation = () => {
         },
       });
       const deckId = roomResponse.data.deck_id;
+      setDeckId(deckId);
 
       setMustProcessCards(roomResponse.data.cards_must_process_per_round);
       setCardsLimit(roomResponse.data.cards_limit_per_round);
@@ -1881,7 +1882,7 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                 </div>
               </Tab>
 
-              {/* <Tab
+              <Tab
                 className={({ selected }) =>
                   `w-full rounded-lg py-2.5 text-sm font-medium leading-5
                   ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
@@ -1893,7 +1894,7 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   </svg>
                   Market Intelligence
                 </div>
-              </Tab> */}
+              </Tab>
             </TabList>
 
             <TabPanels className="mt-4">
@@ -1924,7 +1925,6 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   droppedItems={droppedItems}
                   draggingItem={draggingItem}
                   dockSize={dockSize}
-                  paginatedItems={paginatedItems}
                   isLimitExceeded={isLimitExceeded}
                   salesCallCards={salesCallCards}
                   currentCardIndex={currentCardIndex}
@@ -1944,6 +1944,7 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   processedCards={processedCards}
                   mustProcessCards={mustProcessCards}
                   cardsLimit={cardsLimit}
+                  port={port}
                 />
               </TabPanel>
 
@@ -1955,12 +1956,11 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
               </TabPanel>
 
               {/* Market Intelligence Tab */}
-              {/* <TabPanel>
+              <TabPanel>
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h3 className="text-xl font-bold mb-4">Market Intelligence</h3>
-                  <MarketIntelligence port={port} />
+                  <MarketIntelligence port={port} roomId={roomId} deckId={deckId} />
                 </div>
-              </TabPanel> */}
+              </TabPanel>
             </TabPanels>
           </TabGroup>
         </div>

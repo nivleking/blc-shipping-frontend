@@ -12,7 +12,6 @@ const Stowage = ({
   droppedItems,
   draggingItem,
   dockSize,
-  paginatedItems,
   salesCallCards,
   currentCardIndex,
   containers,
@@ -32,6 +31,7 @@ const Stowage = ({
   processedCards,
   mustProcessCards,
   cardsLimit,
+  port,
 }) => {
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
@@ -71,14 +71,14 @@ const Stowage = ({
               {section === 1 && targetContainers.length > 0 && <span className="ml-4 text-sm text-yellow-600 font-semibold animate-pulse">{targetContainers.length} containers need unloading</span>}
             </h3>
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <ShipBay bayCount={bayCount} baySize={baySize} bayTypes={bayTypes} droppedItems={droppedItems} draggingItem={draggingItem} containers={containers} targetContainers={targetContainers} />
+              <ShipBay bayCount={bayCount} baySize={baySize} bayTypes={bayTypes} droppedItems={droppedItems} draggingItem={draggingItem} containers={containers} targetContainers={targetContainers} currentPort={port} />
             </div>
           </div>
 
           {/* Bottom Grid - Ship Dock and Sales Call Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Ship Dock Section */}
-            <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
+            <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200 overflow-hidden">
               <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
                 <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
@@ -86,8 +86,8 @@ const Stowage = ({
                 Ship Dock
                 {section === 1 && targetContainers.length > 0 && draggingTargetContainer && <span className="ml-4 text-sm text-yellow-600 font-semibold">Drop container here</span>}
               </h3>
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <ShipDock dockSize={dockSize} paginatedItems={paginatedItems} draggingItem={draggingItem} containers={containers} section={section} draggingTargetContainer={draggingTargetContainer} />
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 overflow-auto">
+                <ShipDock dockSize={dockSize} allItems={droppedItems} draggingItem={draggingItem} containers={containers} section={section} draggingTargetContainer={draggingTargetContainer} />
               </div>
             </div>
 
