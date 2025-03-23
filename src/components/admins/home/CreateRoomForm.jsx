@@ -296,14 +296,17 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               type="number"
               name="move_cost"
               id="move_cost"
-              className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md"
+              className="block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="1000000"
               min="1"
               value={formData.move_cost}
               onChange={handleChange}
             />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500 sm:text-sm">per move</span>
+            </div>
           </div>
-          <p className="mt-1 text-xs text-gray-500">Cost per move (discharge/load) operation</p>
+          <p className="mt-1 text-xs text-gray-500">Penalty cost applied for each container move operation</p>
         </div>
 
         {/* Deck Selection */}

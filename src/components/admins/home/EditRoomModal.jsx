@@ -112,14 +112,17 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                   type="number"
                   id="move_cost"
                   name="move_cost"
-                  className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="1000000"
                   min="1"
                   value={editingRoom.move_cost || 1000000}
                   onChange={(e) => setEditingRoom({ ...editingRoom, move_cost: parseInt(e.target.value, 10) })}
                 />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">per move</span>
+                </div>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Cost per move operation (discharge/load)</p>
+              <p className="mt-1 text-xs text-gray-500">Penalty cost applied for each container move operation</p>
             </div>
 
             <div className="flex flex-col">
