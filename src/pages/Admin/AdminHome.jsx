@@ -205,6 +205,7 @@ const AdminHome = () => {
           name: editingRoom.name,
           description: editingRoom.description,
           total_rounds: editingRoom.total_rounds,
+          move_cost: editingRoom.move_cost,
           cards_limit_per_round: editingRoom.cards_limit_per_round,
           cards_must_process_per_round: editingRoom.cards_must_process_per_round,
           assigned_users: editingRoom.assigned_users,

@@ -22,6 +22,7 @@ const initialFormState = {
   total_rounds: 1,
   cards_limit_per_round: 1,
   cards_must_process_per_round: 1,
+  move_cost: 1000000,
   swap_config: {},
 };
 
@@ -151,6 +152,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       ship_layout: formData.ship_layout,
       max_users: formData.max_users,
       total_rounds: formData.total_rounds,
+      move_cost: formData.move_cost,
       cards_must_process_per_round: formData.cards_must_process_per_round,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
@@ -280,6 +282,30 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
           />
         </div>
+
+        {/* Move Cost Field */}
+        <div className="col-span-2 sm:col-span-1">
+          <label htmlFor="move_cost" className="block text-sm font-medium text-gray-700">
+            Move Cost (IDR)
+          </label>
+          <div className="mt-1 relative rounded-md shadow-sm">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500 sm:text-sm">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="move_cost"
+              id="move_cost"
+              className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md"
+              placeholder="1000000"
+              min="1"
+              value={formData.move_cost}
+              onChange={handleChange}
+            />
+          </div>
+          <p className="mt-1 text-xs text-gray-500">Cost per move (discharge/load) operation</p>
+        </div>
+
         {/* Deck Selection */}
         <div className="flex flex-col relative">
           <div className="flex items-center">

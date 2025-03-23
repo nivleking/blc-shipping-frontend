@@ -4,6 +4,7 @@ import ShipDock from "./ShipDock";
 import SalesCallCard from "./SalesCallCard";
 import DraggableContainer from "./DraggableContainer";
 import PortLegendSimulation from "../cards/PortLegendSimulation";
+import BayStatisticsTable from "./BayStatisticsTable";
 
 const Stowage = ({
   bayCount,
@@ -32,6 +33,17 @@ const Stowage = ({
   mustProcessCards,
   cardsLimit,
   port,
+  bayMoves = {},
+  bayPairs = [],
+  totalMoves = 0,
+  idealCraneSplit = 2,
+  longCraneMoves = 0,
+  extraMovesOnLongCrane = 0,
+  selectedHistoricalWeek,
+  setSelectedHistoricalWeek,
+  historicalStats,
+  showHistorical,
+  setShowHistorical,
 }) => {
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
@@ -41,10 +53,12 @@ const Stowage = ({
 
       {/* Section Header */}
       <div className="flex justify-between items-center mb-4 mt-4 bg-white rounded-xl shadow-sm p-4">
-        <h2 className="text-xl font-semibold text-gray-800">
-          Section {section}: {section === 1 ? "Unload Port Containers" : "Handle Sales Calls"}
-          {currentRound > totalRounds && section === 1 && <span className="ml-2 text-sm text-red-600 font-medium">(Final Unloading Phase)</span>}
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-center gap-2">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Section {section}: {section === 1 ? "Unload Port Containers" : "Handle Sales Calls"}
+            {currentRound > totalRounds && section === 1 && <span className="ml-2 text-sm text-red-600 font-medium">(Final Unloading Phase)</span>}
+          </h2>
+        </div>
         {section === 1 && (
           <div className="flex items-center gap-4">
             <div className="text-sm text-gray-600">Remaining containers to unload: {targetContainers && targetContainers.length}</div>
@@ -61,7 +75,7 @@ const Stowage = ({
 
       <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex flex-col gap-6">
-          {/* Ship Bay Section */}
+          {/* Ship Bay Section - Full Width */}
           <div className="w-full bg-white rounded-xl shadow-xl p-6 border border-gray-200">
             <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
               <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -75,9 +89,9 @@ const Stowage = ({
             </div>
           </div>
 
-          {/* Bottom Grid - Ship Dock and Sales Call Cards */}
+          {/* Two Column Layout: Ship Dock (Left) and Right Side Content (Bay Stats + Sales Calls) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Ship Dock Section */}
+            {/* Ship Dock Section - Left Column */}
             <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200 overflow-hidden">
               <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
                 <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
@@ -91,39 +105,82 @@ const Stowage = ({
               </div>
             </div>
 
-            {/* Sales Call Cards Section - Only show in section 2 */}
-            {section === 2 && (
+            {/* Right Column - Split into Two Sections */}
+            <div className="flex flex-col gap-6">
+              {/* Top Right - Bay Statistics */}
               <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
                 <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
                   <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                   </svg>
-                  Sales Calls
+                  Bay Statistics
                 </h3>
-                {isLimitExceeded ? (
-                  <div className="text-center p-8 bg-gray-50 rounded-lg">
-                    <p className="text-gray-600">You have reached the maximum number of cards for this round.</p>
-                  </div>
-                ) : salesCallCards.length > 0 ? (
-                  <div className={`transition-opacity duration-300 ${isCardVisible ? "opacity-100" : "opacity-0"}`}>
-                    <SalesCallCard
-                      salesCallCards={salesCallCards}
-                      currentCardIndex={currentCardIndex}
-                      containers={containers}
-                      formatIDR={formatIDR}
-                      handleAcceptCard={handleAcceptCard}
-                      handleRejectCard={handleRejectCard}
-                      isProcessingCard={isProcessingCard}
-                      processedCards={processedCards}
-                      mustProcessCards={mustProcessCards}
-                      cardsLimit={cardsLimit}
-                    />
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500">No sales call cards available</p>
-                )}
+                <div className="bg-gray-50 p-2 rounded-lg border border-gray-200 overflow-x-auto max-h-[300px]">
+                  <BayStatisticsTable
+                    bayCount={bayCount}
+                    bayMoves={bayMoves}
+                    bayPairs={bayPairs}
+                    totalMoves={totalMoves}
+                    idealCraneSplit={idealCraneSplit}
+                    longCraneMoves={longCraneMoves}
+                    extraMovesOnLongCrane={extraMovesOnLongCrane}
+                    currentRound={currentRound}
+                    selectedWeek={selectedHistoricalWeek}
+                    setSelectedWeek={setSelectedHistoricalWeek}
+                    historicalStats={historicalStats}
+                    showHistorical={showHistorical}
+                    setShowHistorical={setShowHistorical}
+                  />
+                </div>
               </div>
-            )}
+
+              {/* Sales Call section - bottom right */}
+              {section === 2 ? (
+                <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
+                  <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                    <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                    </svg>
+                    Sales Calls
+                  </h3>
+                  {isLimitExceeded ? (
+                    <div className="text-center p-8 bg-gray-50 rounded-lg">
+                      <p className="text-gray-600">You have reached the maximum number of cards for this round.</p>
+                    </div>
+                  ) : salesCallCards.length > 0 ? (
+                    <div className={`transition-opacity duration-300 ${isCardVisible ? "opacity-100" : "opacity-0"}`}>
+                      <SalesCallCard
+                        salesCallCards={salesCallCards}
+                        currentCardIndex={currentCardIndex}
+                        containers={containers}
+                        formatIDR={formatIDR}
+                        handleAcceptCard={handleAcceptCard}
+                        handleRejectCard={handleRejectCard}
+                        isProcessingCard={isProcessingCard}
+                        processedCards={processedCards}
+                        mustProcessCards={mustProcessCards}
+                        cardsLimit={cardsLimit}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500">No sales call cards available</p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
+                  <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                    <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                    </svg>
+                    Sales Calls
+                  </h3>
+                  <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-600 mb-2">Complete unloading port containers first</p>
+                    <p className="text-sm text-gray-500">Sales calls will be available in Section 2</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

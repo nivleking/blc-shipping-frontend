@@ -81,6 +81,75 @@ const Simulation = () => {
   const [mustProcessCards, setMustProcessCards] = useState(0);
   const [cardsLimit, setCardsLimit] = useState(0);
 
+  const [bayMoves, setBayMoves] = useState({});
+  const [bayPairs, setBayPairs] = useState([]);
+  const [idealCraneSplit, setIdealCraneSplit] = useState(2);
+  const [longCraneMoves, setLongCraneMoves] = useState(0);
+
+  const [extraMovesOnLongCrane, setExtraMovesOnLongCrane] = useState(0);
+
+  // Add function to fetch bay statistics
+  const fetchBayStatistics = async () => {
+    try {
+      const response = await api.get(`/ship-bays/${roomId}/${user.id}/statistics`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = response.data;
+      setBayMoves(data.bay_moves || {});
+      setBayPairs(data.bay_pairs || []);
+      setIdealCraneSplit(data.ideal_crane_split || 2);
+      setLongCraneMoves(data.long_crane_moves || 0);
+      setExtraMovesOnLongCrane(data.extra_moves_on_long_crane || 0);
+    } catch (error) {
+      console.error("Error fetching bay statistics:", error);
+    }
+  };
+
+  // Call this in useEffect after data changes
+  useEffect(() => {
+    if (user && token && roomId) {
+      fetchBayStatistics();
+    }
+  }, [droppedItems, section, moveStats.loadMoves, moveStats.dischargeMoves]);
+
+  const [selectedHistoricalWeek, setSelectedHistoricalWeek] = useState(currentRound);
+  const [historicalStats, setHistoricalStats] = useState(null);
+  const [showHistorical, setShowHistorical] = useState(false);
+
+  const fetchHistoricalStats = async (week) => {
+    try {
+      setIsLoading(true);
+      console.log("Fetching historical statistics for week:", week);
+
+      const url = `/rooms/${roomId}/users/${user.id}/bay-statistics-history/${week}`;
+      const response = await api.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data && Object.keys(response.data).length > 0) {
+        setHistoricalStats(response.data);
+      } else {
+        console.warn("No historical data found or empty response:", response.data);
+        setHistoricalStats(null);
+      }
+    } catch (error) {
+      console.error("Error fetching historical statistics:", error);
+      setHistoricalStats(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add this useEffect to Simulation.jsx
+  useEffect(() => {
+    if (showHistorical && selectedHistoricalWeek && selectedHistoricalWeek !== currentRound) {
+      fetchHistoricalStats(selectedHistoricalWeek);
+    } else {
+      setHistoricalStats(null);
+    }
+  }, [selectedHistoricalWeek, showHistorical, currentRound, roomId, user?.id, token]);
+
   // Capacity Uptake states
   const [capacityData, setCapacityData] = useState({
     maxCapacity: { dry: 0, reefer: 0, total: 0 },
@@ -1184,6 +1253,20 @@ const Simulation = () => {
     const activeItem = droppedItems.find((item) => item.id === active.id);
     if (activeItem && activeItem.area === over.id) return;
 
+    // Extract bay indexes for tracking
+    let sourceBayIndex = null;
+    let destinationBayIndex = null;
+
+    // Parse source bay index if it's a bay area
+    if (activeItem?.area?.startsWith("bay-")) {
+      sourceBayIndex = parseInt(activeItem.area.split("-")[1]);
+    }
+
+    // Parse destination bay index if it's a bay area
+    if (over.id.startsWith("bay-")) {
+      destinationBayIndex = parseInt(over.id.split("-")[1]);
+    }
+
     // Special handling for Section 1: Remove containers destined for current port
     if (section === 1) {
       // Check if this is a move from bay to dock
@@ -1221,13 +1304,14 @@ const Simulation = () => {
               autoClose: 2000,
             });
 
-            // Track discharge move
+            // Track discharge move - Include bay_index
             try {
               await api.post(
                 `/ship-bays/${roomId}/${user.id}/moves`,
                 {
                   move_type: "discharge",
                   count: 1,
+                  bay_index: sourceBayIndex, // Add bay_index parameter
                 },
                 {
                   headers: {
@@ -1380,12 +1464,23 @@ const Simulation = () => {
       const toArea = over.id;
       const moveType = fromArea.startsWith("bay") ? "discharge" : "load";
 
-      // Track the move
+      // Determine which bay index to use for tracking
+      let relevantBayIndex = moveType === "discharge" ? sourceBayIndex : destinationBayIndex;
+
+      // For moves between bays, use destination bay index
+      if (fromArea.startsWith("bay") && toArea.startsWith("bay")) {
+        relevantBayIndex = destinationBayIndex;
+      }
+
+      console.log(`Move type: ${moveType}, Source bay: ${sourceBayIndex}, Destination bay: ${destinationBayIndex}, Using bay_index: ${relevantBayIndex}`);
+
+      // Track the move with bay_index
       await api.post(
         `/ship-bays/${roomId}/${user.id}/moves`,
         {
           move_type: moveType,
           count: 1,
+          bay_index: relevantBayIndex,
         },
         {
           headers: {
@@ -1945,6 +2040,17 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   mustProcessCards={mustProcessCards}
                   cardsLimit={cardsLimit}
                   port={port}
+                  bayMoves={bayMoves}
+                  bayPairs={bayPairs}
+                  totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
+                  idealCraneSplit={idealCraneSplit}
+                  longCraneMoves={longCraneMoves}
+                  extraMovesOnLongCrane={extraMovesOnLongCrane}
+                  selectedHistoricalWeek={selectedHistoricalWeek}
+                  setSelectedHistoricalWeek={setSelectedHistoricalWeek}
+                  historicalStats={historicalStats}
+                  showHistorical={showHistorical}
+                  setShowHistorical={setShowHistorical}
                 />
               </TabPanel>
 

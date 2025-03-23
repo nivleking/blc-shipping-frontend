@@ -100,6 +100,28 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
               />
             </div>
 
+            <div className="mb-4">
+              <label htmlFor="move_cost" className="block text-sm font-medium text-gray-700">
+                Move Cost (IDR)
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  id="move_cost"
+                  name="move_cost"
+                  className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md"
+                  placeholder="1000000"
+                  min="1"
+                  value={editingRoom.move_cost || 1000000}
+                  onChange={(e) => setEditingRoom({ ...editingRoom, move_cost: parseInt(e.target.value, 10) })}
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Cost per move operation (discharge/load)</p>
+            </div>
+
             <div className="flex flex-col">
               <label className="text-gray-700 font-semibold mb-2">Deck</label>
               <Combobox
