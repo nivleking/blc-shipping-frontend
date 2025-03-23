@@ -8,6 +8,7 @@ import RenderShipBayLayout from "../../../components/simulations/RenderShipBayLa
 import { api } from "../../../axios/axios";
 import { toast } from "react-toastify";
 import SwapConfigModal from "../../rooms/SwapConfigModal";
+import DeckPreviewModal from "./DeckPreviewModal";
 
 const initialFormState = {
   id: "",
@@ -42,6 +43,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
   // UI state
   const [showLayoutPreview, setShowLayoutPreview] = useState(false);
+  const [showDeckPreview, setShowDeckPreview] = useState(false);
 
   // Swap config state
   const [showSwapConfigModal, setShowSwapConfigModal] = useState(false);
@@ -284,26 +286,26 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         </div>
 
         {/* Move Cost Field */}
-        <div className="col-span-2 sm:col-span-1">
-          <label htmlFor="move_cost" className="block text-sm font-medium text-gray-700">
+        <div className="flex flex-col">
+          <label htmlFor="move_cost" className="block text-gray-700 font-semibold">
             Move Cost (IDR)
           </label>
-          <div className="mt-1 relative rounded-md shadow-sm">
+          <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 sm:text-sm">Rp</span>
+              <span className="text-gray-500">Rp</span>
             </div>
             <input
               type="number"
               name="move_cost"
               id="move_cost"
-              className="block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="1000000"
               min="1"
               value={formData.move_cost}
               onChange={handleChange}
             />
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 sm:text-sm">per move</span>
+              <span className="text-gray-500">per move</span>
             </div>
           </div>
           <p className="mt-1 text-xs text-gray-500">Penalty cost applied for each container move operation</p>
@@ -378,6 +380,14 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               )}
             </div>
           </Combobox>
+
+          {/* Add this Preview button */}
+          {selectedDeck && (
+            <button type="button" onClick={() => setShowDeckPreview(true)} className="mt-2 inline-flex items-center gap-x-2 text-sm text-blue-600 hover:text-blue-700">
+              <AiFillEye className="h-5 w-5" />
+              Preview Cards
+            </button>
+          )}
           {errors.deck && <p className="text-red-500 mt-1">{errors.deck[0]}</p>}
         </div>
 
@@ -649,6 +659,9 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           </div>
         </div>
       )}
+
+      {/* Deck Preview Modal */}
+      {showDeckPreview && selectedDeck && <DeckPreviewModal isOpen={showDeckPreview} onClose={() => setShowDeckPreview(false)} deckId={selectedDeck.id} token={token} />}
 
       <SwapConfigModal isOpen={showSwapConfigModal} onClose={() => setShowSwapConfigModal(false)} deckOrigins={deckOrigins} onSave={handleSwapConfigSave} initialConfig={swapConfig} />
     </form>

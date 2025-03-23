@@ -4,11 +4,13 @@ import { HiCheck, HiChevronUpDown } from "react-icons/hi2";
 import { AiFillEye } from "react-icons/ai";
 import RenderShipBayLayout from "../../simulations/RenderShipBayLayout";
 import { toast } from "react-toastify";
+import DeckPreviewModal from "./DeckPreviewModal";
 
 const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEditModal, layouts, availableUsers, decks, handleUpdateRoom, selectedDeck, setSelectedDeck, handleDeckChange }) => {
   const [layoutQuery, setLayoutQuery] = useState("");
   const [query, setQuery] = useState("");
   const [showLayoutPreview, setShowLayoutPreview] = useState(false);
+  const [showDeckPreview, setShowDeckPreview] = useState(false);
   const [deckOrigins, setDeckOrigins] = useState([]);
 
   useEffect(() => {
@@ -101,28 +103,27 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
             </div>
 
             <div className="mb-4">
-              <label htmlFor="move_cost" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="move_cost" className="block text-gray-700 font-semibold mb-2">
                 Move Cost (IDR)
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">Rp</span>
+                  <span className="text-gray-500">Rp</span>
                 </div>
                 <input
                   type="number"
                   id="move_cost"
                   name="move_cost"
-                  className="block w-full pl-10 pr-12 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   placeholder="1000000"
                   min="1"
                   value={editingRoom.move_cost || 1000000}
                   onChange={(e) => setEditingRoom({ ...editingRoom, move_cost: parseInt(e.target.value, 10) })}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">per move</span>
+                  <span className="text-gray-500">per move</span>
                 </div>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Penalty cost applied for each container move operation</p>
             </div>
 
             <div className="flex flex-col">
@@ -176,6 +177,14 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                   </ComboboxOptions>
                 </div>
               </Combobox>
+
+              {/* Add this Preview button */}
+              {selectedDeck && (
+                <button type="button" onClick={() => setShowDeckPreview(true)} className="mt-2 inline-flex items-center gap-x-2 text-sm text-blue-600 hover:text-blue-700">
+                  <AiFillEye className="h-5 w-5" />
+                  Preview Cards
+                </button>
+              )}
             </div>
 
             <div className="flex flex-col">
@@ -371,6 +380,9 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
             </div>
           </div>
         )}
+
+        {/* Deck Preview Modal */}
+        {showDeckPreview && selectedDeck && <DeckPreviewModal isOpen={showDeckPreview} onClose={() => setShowDeckPreview(false)} deckId={selectedDeck.id} token={localStorage.getItem("token")} />}
       </div>
     </div>
   );
