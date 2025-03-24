@@ -583,49 +583,56 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
           {errors.ship_layout && <p className="text-red-500 mt-1">{errors.ship_layout[0]}</p>}
         </div>
-        <div className="col-span-full space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Swap config */}
-            <div className="flex flex-col col-span-full">
-              <div className="flex items-center justify-start mb-2">
-                <div className="flex items-center gap-2">
-                  <label className="block text-gray-700 font-semibold">Port Swap Configuration</label>
-                  <Tooltip>Configure port swapping for each round</Tooltip>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowSwapConfigModal(true)}
-                  disabled={!selectedDeck || formData.max_users === 0}
-                  className={`ml-4 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium 
-        ${selectedDeck && formData.max_users > 0 ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
-                >
-                  {Object.keys(swapConfig).length > 0 ? "Edit Config" : "Set Config"}
-                </button>
-              </div>
+        {/* Port Swap Configuration */}
+        <div className="flex flex-col lg:col-span-3 md:col-span-2">
+          <div className="flex items-center">
+            <label className="block text-gray-700 font-semibold">Port Swap Configuration</label>
+            <Tooltip>Configure port swapping for each round</Tooltip>
+          </div>
 
-              {Object.keys(swapConfig).length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mt-2">
-                  <div className="text-sm text-gray-600">
-                    <h4 className="font-medium text-gray-700 mb-2">Current Configuration:</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                      {Object.entries(swapConfig).map(([from, to]) => (
-                        <div key={from} className="flex items-center bg-white p-2 rounded-lg border border-gray-200">
-                          <span className="font-medium text-gray-600">{from}</span>
-                          <span className="mx-2 text-gray-400">→</span>
-                          <span className="font-medium text-blue-600">{to}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+          <div className="flex items-center mt-2">
+            <div className={`rounded-lg border ${Object.keys(swapConfig).length > 0 ? "border-blue-200 bg-blue-50" : "border-gray-300"} px-3 py-3 w-full flex justify-between items-center`}>
+              {Object.keys(swapConfig).length > 0 ? (
+                <div className="text-sm text-gray-700 flex-1 truncate">
+                  {Object.keys(swapConfig).length} port {Object.keys(swapConfig).length === 1 ? "swap" : "swaps"} configured
                 </div>
+              ) : (
+                <div className="text-sm text-gray-500">No port swaps configured yet</div>
               )}
+
+              <button
+                type="button"
+                onClick={() => setShowSwapConfigModal(true)}
+                disabled={!selectedDeck || formData.max_users === 0}
+                className={`ml-2 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+          ${selectedDeck && formData.max_users > 0 ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+              >
+                {Object.keys(swapConfig).length > 0 ? "Edit Config" : "Set Config"}
+              </button>
             </div>
           </div>
+
+          {/* Preview current config if exists */}
+          {Object.keys(swapConfig).length > 0 && (
+            <div className="mt-2 border border-gray-200 rounded-lg p-3 max-h-36 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {Object.entries(swapConfig).map(([from, to]) => (
+                  <div key={from} className="flex items-center bg-white p-2 rounded-lg border border-gray-200 text-sm">
+                    <span className="font-medium text-gray-600">{from}</span>
+                    <span className="mx-1 text-gray-400">→</span>
+                    <span className="font-medium text-blue-600">{to}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {errors.swap_config && <p className="text-red-500 mt-1">{errors.swap_config[0]}</p>}
         </div>
       </div>
 
       {/* Submit Button */}
-      <div className="flex justify-start space-x-4">
+      <div className="flex justify-end space-x-4">
         <button type="submit" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">
           Create Room
         </button>
