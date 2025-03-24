@@ -73,13 +73,13 @@ const PenaltyTable = () => (
         <tbody className="bg-white divide-y divide-red-200">
           <tr className="hover:bg-red-50">
             <td className="px-4 py-3 text-sm text-red-900">Dry</td>
-            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">8,000,000</td>
-            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">4,000,000</td>
+            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">0</td>
+            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">0</td>
           </tr>
           <tr className="hover:bg-red-50">
             <td className="px-4 py-3 text-sm text-red-900">Reefer</td>
-            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">15,000,000</td>
-            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">9,000,000</td>
+            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">0</td>
+            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">0</td>
           </tr>
         </tbody>
       </table>
