@@ -27,6 +27,8 @@ export default defineConfig(({ mode }) => {
         "frontend.kelvinsidhartasie.my.id",
         "*.slg.petra.ac.id",
         "slg.petra.ac.id",
+        "*.blc.works",
+        "blc.works",
       ],
     },
   };

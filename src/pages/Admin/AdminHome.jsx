@@ -22,6 +22,11 @@ const initialFormState = {
   bay_types: [],
   total_rounds: 1,
   cards_limit_per_round: 1,
+  cards_must_process_per_round: 1,
+  move_cost: 1000000,
+  extra_moves_cost: 50000,
+  ideal_crane_split: 2,
+  swap_config: {},
 };
 
 const AdminHome = () => {
@@ -196,27 +201,28 @@ const AdminHome = () => {
     setShowEditConfirmModal(true);
   };
 
-  // New function to handle actual update after confirmation
   const confirmUpdateRoom = async () => {
     try {
-      const response = await api.put(
-        `/rooms/${editingRoom.id}`,
-        {
-          name: editingRoom.name,
-          description: editingRoom.description,
-          total_rounds: editingRoom.total_rounds,
-          cards_limit_per_round: editingRoom.cards_limit_per_round,
-          cards_must_process_per_round: editingRoom.cards_must_process_per_round,
-          assigned_users: editingRoom.assigned_users,
-          deck: editingRoom.deck,
-          ship_layout: editingRoom.ship_layout,
+      const updatedFields = {
+        name: editingRoom.name,
+        description: editingRoom.description,
+        total_rounds: editingRoom.total_rounds,
+        cards_limit_per_round: editingRoom.cards_limit_per_round,
+        cards_must_process_per_round: editingRoom.cards_must_process_per_round,
+        move_cost: editingRoom.move_cost,
+        extra_moves_cost: editingRoom.extra_moves_cost,
+        ideal_crane_split: editingRoom.ideal_crane_split,
+        swap_config: editingRoom.swap_config,
+        assigned_users: editingRoom.assigned_users,
+        deck: editingRoom.deck,
+        ship_layout: editingRoom.ship_layout,
+      };
+
+      const response = await api.put(`/rooms/${editingRoom.id}`, updatedFields, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      });
 
       if (response.status === 200) {
         setRooms((prevRooms) => prevRooms.map((room) => (room.id === editingRoom.id ? response.data : room)));
@@ -225,7 +231,6 @@ const AdminHome = () => {
     } catch (error) {
       console.error("Error updating room:", error);
       toast.error(error.response?.data?.message || "Failed to update room");
-      // If update fails, reopen the edit modal
       setShowEditModal(true);
     } finally {
       setShowEditConfirmModal(false);

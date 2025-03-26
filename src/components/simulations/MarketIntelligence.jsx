@@ -3,7 +3,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { api } from "../../axios/axios";
 import { AppContext } from "../../context/AppContext";
 
-const MarketIntelligence = ({ port, roomId, deckId }) => {
+const MarketIntelligence = ({ port, roomId, deckId, moveCost }) => {
   const { token } = useContext(AppContext);
   const [isLoading, setIsLoading] = useState(true);
   const [priceData, setPriceData] = useState({});
@@ -367,20 +367,20 @@ const MarketIntelligence = ({ port, roomId, deckId }) => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     <tr className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">Dry</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(8000000)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(16000000)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(0)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(0)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">Reefer</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(16000000)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(24000000)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(0)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(0)}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
               <div className="mt-4 p-4 bg-red-50 rounded-lg">
-                <p className="text-sm text-red-600">Note: An additional {formatCurrency(8000000)} penalty per container for previously rolled containers</p>
+                <p className="text-sm text-red-600">Note: An additional {formatCurrency(0)} penalty per container for previously rolled containers</p>
               </div>
 
               <div className="mt-6">
@@ -389,11 +389,11 @@ const MarketIntelligence = ({ port, roomId, deckId }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-3 bg-white rounded-lg border border-gray-200">
                       <p className="text-sm text-gray-600 mb-1">Load Move Penalty:</p>
-                      <p className="text-lg font-semibold text-red-600">{formatCurrency(1000000)}</p>
+                      <p className="text-lg font-semibold text-red-600">{formatCurrency(moveCost)}</p>
                     </div>
                     <div className="p-3 bg-white rounded-lg border border-gray-200">
                       <p className="text-sm text-gray-600 mb-1">Discharge Move Penalty:</p>
-                      <p className="text-lg font-semibold text-red-600">{formatCurrency(1000000)}</p>
+                      <p className="text-lg font-semibold text-red-600">{formatCurrency(moveCost)}</p>
                     </div>
                   </div>
                 </div>

@@ -4,26 +4,19 @@ import DroppableCell from "./DroppableCell";
 import DraggableContainer from "./DraggableContainer";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { BiErrorCircle } from "react-icons/bi";
+import Tooltip from "../Tooltip";
 
-// Ganti paginatedItems dengan allItems dan sesuaikan itemsPerPage
 const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, draggingTargetContainer }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 36; // 6x6 grid (sesuaikan dengan row*column)
 
-  const totalCells = dockSize.rows * dockSize.columns;
-  const totalPages = Math.max(1, Math.ceil(totalCells / itemsPerPage));
-
-  // Count dock items and calculate capacity
+  // Count dock items
   const dockItems = allItems.filter((item) => item.area && item.area.startsWith("docks-"));
-  const usedCapacity = dockItems.length;
-  const maxCapacity = totalCells;
-  const capacityPercentage = (usedCapacity / maxCapacity) * 100;
 
-  // Define capacity thresholds
-  const isNearCapacity = capacityPercentage >= 70;
-  const isAtCapacity = capacityPercentage >= 90;
-  const remainingCapacity = maxCapacity - usedCapacity;
+  // Calculate total pages based on actual containers, not fixed grid size
+  const totalPages = Math.max(1, Math.ceil(dockItems.length / itemsPerPage));
 
+  // Get visible items for current page
   const getVisibleItems = () => {
     const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -45,7 +38,7 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
 
   // Auto-navigate to first page with containers if current page is empty
   useEffect(() => {
-    if (currentPage > 0 && !hasContainersOnPage && allItems.length > 0) {
+    if (currentPage > 0 && !hasContainersOnPage && dockItems.length > 0) {
       // Find first page with containers
       for (let i = 0; i < totalPages; i++) {
         const testItems = allItems.filter((item) => {
@@ -62,7 +55,7 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
         }
       }
     }
-  }, [allItems, currentPage, totalPages, hasContainersOnPage]);
+  }, [allItems, currentPage, totalPages, hasContainersOnPage, dockItems.length]);
 
   // Visible dimensions always 6x6
   const visibleSize = {
@@ -70,30 +63,57 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
     columns: 6,
   };
 
+  // Calculate current page capacity stats (for UI feedback only)
+  const currentPageItems = visibleItems.length;
+  const currentPageCapacity = itemsPerPage;
+  const currentPagePercentage = (currentPageItems / currentPageCapacity) * 100;
+
+  // Define thresholds for current page only
+  const isCurrentPageNearCapacity = currentPagePercentage >= 70;
+  const isCurrentPageFull = currentPagePercentage >= 90;
+
+  // Total stats for informational purposes
+  const totalContainers = dockItems.length;
+  const visibleGridCapacity = visibleSize.rows * visibleSize.columns;
+
   return (
     <div className="flex flex-col w-full">
-      {/* Capacity Indicator */}
-      <div className={`mb-4 ${isAtCapacity ? "animate-pulse" : ""}`}>
+      {/* Summary information */}
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center">
+          <h3 className="text-lg font-semibold">Ship Dock</h3>
+          <Tooltip>Containers waiting to be loaded onto the ship bays. You can drag containers from here to the ship bays.</Tooltip>
+        </div>
+
+        <div className="text-sm text-gray-600">
+          Total containers: {totalContainers}
+          {totalPages > 1 && ` (showing ${currentPageItems} on page ${currentPage + 1} of ${totalPages})`}
+        </div>
+      </div>
+
+      {/* Current page capacity indicator */}
+      {/* <div className={`mb-4 ${isCurrentPageFull ? "animate-pulse" : ""}`}>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium">Dock Capacity</span>
-          <span className={`text-sm font-medium ${isAtCapacity ? "text-red-600" : isNearCapacity ? "text-amber-500" : "text-green-600"}`}>
-            {usedCapacity} / {maxCapacity} containers
+          <span className="text-sm font-medium">Current Page Capacity</span>
+          <span className={`text-sm font-medium ${isCurrentPageFull ? "text-red-600" : isCurrentPageNearCapacity ? "text-amber-500" : "text-green-600"}`}>
+            {currentPageItems} / {currentPageCapacity} slots
           </span>
         </div>
 
         <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div className={`h-2.5 rounded-full transition-all duration-500 ${isAtCapacity ? "bg-red-600" : isNearCapacity ? "bg-amber-500" : "bg-green-500"}`} style={{ width: `${Math.min(100, capacityPercentage)}%` }}></div>
+          <div
+            className={`h-2.5 rounded-full transition-all duration-500 ${isCurrentPageFull ? "bg-red-600" : isCurrentPageNearCapacity ? "bg-amber-500" : "bg-green-500"}`}
+            style={{ width: `${Math.min(100, currentPagePercentage)}%` }}
+          ></div>
         </div>
 
-        {isNearCapacity && (
-          <div className={`mt-2 flex items-center p-2 rounded-lg ${isAtCapacity ? "bg-red-50 border border-red-200" : "bg-amber-50 border border-amber-200"}`}>
-            <BiErrorCircle className={`mr-2 text-lg ${isAtCapacity ? "text-red-500" : "text-amber-500"}`} />
-            <p className={`text-sm ${isAtCapacity ? "text-red-700" : "text-amber-700"}`}>
-              {isAtCapacity ? `Warning: Only ${remainingCapacity} spots remaining! Containers beyond capacity may not be saved.` : "Dock is nearing capacity. Consider rearranging containers."}
-            </p>
+        {isCurrentPageFull && (
+          <div className="mt-2 flex items-center p-2 rounded-lg bg-blue-50 border border-blue-200">
+            <BiErrorCircle className="mr-2 text-lg text-blue-500" />
+            <p className="text-sm text-blue-700">Current page is full. Use pagination controls to navigate to the next page for more space.</p>
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* Pagination UI */}
       <div className="flex items-center justify-between mb-3">
@@ -147,10 +167,10 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
         )}
       </div>
 
-      {/* Container Grid dengan Border yang berubah warna ketika mendekati kapasitas */}
-      <div className={`relative ${!hasContainersOnPage && totalCells > 0 ? "min-h-[300px] flex items-center justify-center" : ""}`}>
-        <div className={`rounded-xl overflow-hidden transition-all duration-300 ${isAtCapacity ? "ring-4 ring-red-400 shadow-lg shadow-red-200" : isNearCapacity ? "ring-4 ring-amber-400 shadow-lg shadow-amber-200" : ""}`}>
-          <ContainerDock id="docks" rows={visibleSize.rows} columns={visibleSize.columns} capacityStatus={isAtCapacity ? "critical" : isNearCapacity ? "warning" : "normal"}>
+      {/* Container Grid */}
+      <div className={`relative ${!hasContainersOnPage && totalContainers > 0 ? "min-h-[300px] flex items-center justify-center" : ""}`}>
+        <div className={`rounded-xl overflow-hidden transition-all duration-300 ${isCurrentPageFull ? "ring-4 ring-blue-400 shadow-lg shadow-blue-200" : isCurrentPageNearCapacity ? "ring-4 ring-amber-400 shadow-lg shadow-amber-200" : ""}`}>
+          <ContainerDock id="docks" rows={visibleSize.rows} columns={visibleSize.columns} capacityStatus={isCurrentPageFull ? "critical" : isCurrentPageNearCapacity ? "warning" : "normal"}>
             {Array.from({ length: itemsPerPage }).map((_, index) => {
               const cellIndex = currentPage * itemsPerPage + index;
               const cellId = `docks-${cellIndex}`;
@@ -162,14 +182,40 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
               const isDropTarget = section === 1 && draggingTargetContainer && !item;
 
               return (
-                <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={remainingCapacity > 0} isDropTarget={isDropTarget}>
+                <DroppableCell
+                  key={cellId}
+                  id={cellId}
+                  coordinates={coordinates}
+                  isValid={true} // Always allow dropping - we're not limited by grid size anymore
+                  isDropTarget={isDropTarget}
+                >
                   {item && <DraggableContainer id={item.id} text={item.id} isDragging={draggingItem === item.id} color={item.color} type={containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry"} />}
                 </DroppableCell>
               );
             })}
           </ContainerDock>
         </div>
+
+        {/* Empty state message */}
+        {!hasContainersOnPage && totalContainers > 0 && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl">
+            <div className="text-center p-6">
+              <BiErrorCircle className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">No containers on this page</h3>
+              <p className="mt-1 text-sm text-gray-500">Try navigating to another page to see your containers.</p>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Pagination explanation if needed */}
+      {totalPages > 1 && (
+        <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-sm text-gray-600">
+            <span className="font-medium">Storage capacity is unlimited.</span> You're viewing page {currentPage + 1} of {totalPages}. Use the pagination controls to navigate between pages of containers.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

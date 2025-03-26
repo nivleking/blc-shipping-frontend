@@ -288,40 +288,6 @@ const Room = () => {
             }
           );
         }
-
-        const capacityUptakeData = {
-          room_id: roomId,
-          user_id: user.id,
-          week: 1,
-          capacity_data: {
-            maxCapacity: {
-              dry: 0,
-              reefer: 0,
-              total: 0,
-            },
-            cargoData: {
-              onBoard: {
-                nextPort: { dry: 0, reefer: 0 },
-                laterPort: { dry: 0, reefer: 0 },
-              },
-              newBookings: {
-                nextPort: { dry: 0, reefer: 0 },
-                laterPort: { dry: 0, reefer: 0 },
-              },
-            },
-            week: 1,
-            nextPort: assignedPorts[user.id] || "",
-            laterPorts: [],
-          },
-          sales_calls_data: {
-            weekSalesCalls: [],
-            weekRevenueTotal: 0,
-          },
-        };
-
-        await api.post("/capacity-uptake", capacityUptakeData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
       }
 
       socket.emit("start_simulation", { roomId });
@@ -488,43 +454,6 @@ const Room = () => {
         newPortAssignments[shipBay.user_id] = shipBay.port;
       });
 
-      const nextRound = currentRound + 1;
-      for (const user of users) {
-        const capacityUptakeData = {
-          room_id: roomId,
-          user_id: user.id,
-          week: nextRound,
-          capacity_data: {
-            maxCapacity: {
-              dry: 0,
-              reefer: 0,
-              total: 0,
-            },
-            cargoData: {
-              onBoard: {
-                nextPort: { dry: 0, reefer: 0 },
-                laterPort: { dry: 0, reefer: 0 },
-              },
-              newBookings: {
-                nextPort: { dry: 0, reefer: 0 },
-                laterPort: { dry: 0, reefer: 0 },
-              },
-            },
-            week: nextRound,
-            nextPort: newPortAssignments[user.id] || "",
-            laterPorts: getLaterPorts(newPortAssignments[user.id], swapConfig),
-          },
-          sales_calls_data: {
-            weekSalesCalls: [],
-            weekRevenueTotal: 0,
-          },
-        };
-
-        await api.post("/capacity-uptake", capacityUptakeData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
-
       socket.emit("swap_bays", { roomId });
 
       setCurrentRound((prev) => prev + 1);
@@ -684,8 +613,11 @@ const Room = () => {
                     </th>
                     {showRankings && (
                       <>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
-                          Penalty
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
+                          Move Penalty
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
+                          Extra Moves
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                           Moves
@@ -711,7 +643,7 @@ const Room = () => {
                             <span className={`px-2 py-1 text-sm font-semibold rounded-full ${index === 0 ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>#{index + 1}</span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{rank.user?.name}</div>
+                            <div className="text-sm font-medium text-gray-900">{rank.user_name}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-green-600 font-medium">{formatIDR(rank.total_revenue)}</div>
@@ -721,6 +653,9 @@ const Room = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-red-600">{formatIDR(rank.penalty)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-red-600">{formatIDR(rank.extra_moves_penalty || 0)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex flex-col text-sm text-gray-500">
@@ -738,7 +673,7 @@ const Room = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="px-6 py-4 text-center text-gray-500 italic">
+                        <td colSpan="8" className="px-6 py-4 text-center text-gray-500 italic">
                           No rankings available yet.
                         </td>
                       </tr>

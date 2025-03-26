@@ -161,7 +161,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
         const range = XLSX.utils.decode_range(worksheet["!ref"]);
 
         // Loop through each row starting from row 12 (index 11)
-        for (let rowNum = 12; rowNum <= range.e.r; rowNum++) {
+        for (let rowNum = 11; rowNum <= range.e.r; rowNum++) {
           // Check if this is a valid row with actual data
           const idCell = worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 0 })];
           const originCell = worksheet[XLSX.utils.encode_cell({ r: rowNum, c: 1 })];
