@@ -8,6 +8,7 @@ import RenderShipBayLayout from "../../../components/simulations/RenderShipBayLa
 import { api } from "../../../axios/axios";
 import { toast } from "react-toastify";
 import SwapConfigModal from "../../rooms/SwapConfigModal";
+import DeckPreviewModal from "./DeckPreviewModal";
 
 const initialFormState = {
   id: "",
@@ -22,6 +23,9 @@ const initialFormState = {
   total_rounds: 1,
   cards_limit_per_round: 1,
   cards_must_process_per_round: 1,
+  move_cost: 100000,
+  extra_moves_cost: 50000,
+  ideal_crane_split: 2,
   swap_config: {},
 };
 
@@ -41,6 +45,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
   // UI state
   const [showLayoutPreview, setShowLayoutPreview] = useState(false);
+  const [showDeckPreview, setShowDeckPreview] = useState(false);
 
   // Swap config state
   const [showSwapConfigModal, setShowSwapConfigModal] = useState(false);
@@ -151,6 +156,9 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       ship_layout: formData.ship_layout,
       max_users: formData.max_users,
       total_rounds: formData.total_rounds,
+      move_cost: formData.move_cost,
+      extra_moves_cost: formData.extra_moves_cost,
+      ideal_crane_split: formData.ideal_crane_split,
       cards_must_process_per_round: formData.cards_must_process_per_round,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
@@ -172,6 +180,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         resetForm();
       }
     } catch (error) {
+      console.log("Error creating room:", error);
       toast.error(error.response?.data?.message || "An error occurred while creating the room!");
       setErrors(error.response?.data?.errors || {});
     }
@@ -280,6 +289,74 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
           />
         </div>
+
+        {/* Move Cost Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="move_cost" className="block text-gray-700 font-semibold">
+              Move Cost (Rp)
+            </label>
+            <Tooltip>Cost per move (discharge or load)</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="move_cost"
+              id="move_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="100000"
+              min="1"
+              value={formData.move_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Extra Moves Cost Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
+              Extra Moves Cost (Rp)
+            </label>
+            <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="extra_moves_cost"
+              id="extra_moves_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="50000"
+              min="1"
+              value={formData.extra_moves_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Ideal Crane Split Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="ideal_crane_split" className="block text-gray-700 font-semibold">
+              Ideal Crane Split
+            </label>
+            <Tooltip>Number of cranes to be used as a ideal value for splitting</Tooltip>
+          </div>
+          <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        </div>
+
         {/* Deck Selection */}
         <div className="flex flex-col relative">
           <div className="flex items-center">
@@ -349,6 +426,14 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               )}
             </div>
           </Combobox>
+
+          {/* Add this Preview button */}
+          {selectedDeck && (
+            <button type="button" onClick={() => setShowDeckPreview(true)} className="mt-2 inline-flex items-center gap-x-2 text-sm text-blue-600 hover:text-blue-700">
+              <AiFillEye className="h-5 w-5" />
+              Preview Cards
+            </button>
+          )}
           {errors.deck && <p className="text-red-500 mt-1">{errors.deck[0]}</p>}
         </div>
 
@@ -544,49 +629,56 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
           {errors.ship_layout && <p className="text-red-500 mt-1">{errors.ship_layout[0]}</p>}
         </div>
-        <div className="col-span-full space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Swap config */}
-            <div className="flex flex-col col-span-full">
-              <div className="flex items-center justify-start mb-2">
-                <div className="flex items-center gap-2">
-                  <label className="block text-gray-700 font-semibold">Port Swap Configuration</label>
-                  <Tooltip>Configure port swapping for each round</Tooltip>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowSwapConfigModal(true)}
-                  disabled={!selectedDeck || formData.max_users === 0}
-                  className={`ml-4 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium 
-        ${selectedDeck && formData.max_users > 0 ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
-                >
-                  {Object.keys(swapConfig).length > 0 ? "Edit Config" : "Set Config"}
-                </button>
-              </div>
+        {/* Port Swap Configuration */}
+        <div className="flex flex-col lg:col-span-3 md:col-span-2">
+          <div className="flex items-center">
+            <label className="block text-gray-700 font-semibold">Port Swap Configuration</label>
+            <Tooltip>Configure port swapping for each round</Tooltip>
+          </div>
 
-              {Object.keys(swapConfig).length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4 mt-2">
-                  <div className="text-sm text-gray-600">
-                    <h4 className="font-medium text-gray-700 mb-2">Current Configuration:</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                      {Object.entries(swapConfig).map(([from, to]) => (
-                        <div key={from} className="flex items-center bg-white p-2 rounded-lg border border-gray-200">
-                          <span className="font-medium text-gray-600">{from}</span>
-                          <span className="mx-2 text-gray-400">→</span>
-                          <span className="font-medium text-blue-600">{to}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+          <div className="flex items-center mt-2">
+            <div className={`rounded-lg border ${Object.keys(swapConfig).length > 0 ? "border-blue-200 bg-blue-50" : "border-gray-300"} px-3 py-3 w-full flex justify-between items-center`}>
+              {Object.keys(swapConfig).length > 0 ? (
+                <div className="text-sm text-gray-700 flex-1 truncate">
+                  {Object.keys(swapConfig).length} port {Object.keys(swapConfig).length === 1 ? "swap" : "swaps"} configured
                 </div>
+              ) : (
+                <div className="text-sm text-gray-500">No port swaps configured yet</div>
               )}
+
+              <button
+                type="button"
+                onClick={() => setShowSwapConfigModal(true)}
+                disabled={!selectedDeck || formData.max_users === 0}
+                className={`ml-2 inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+          ${selectedDeck && formData.max_users > 0 ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"}`}
+              >
+                {Object.keys(swapConfig).length > 0 ? "Edit Config" : "Set Config"}
+              </button>
             </div>
           </div>
+
+          {/* Preview current config if exists */}
+          {Object.keys(swapConfig).length > 0 && (
+            <div className="mt-2 border border-gray-200 rounded-lg p-3 max-h-36 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {Object.entries(swapConfig).map(([from, to]) => (
+                  <div key={from} className="flex items-center bg-white p-2 rounded-lg border border-gray-200 text-sm">
+                    <span className="font-medium text-gray-600">{from}</span>
+                    <span className="mx-1 text-gray-400">→</span>
+                    <span className="font-medium text-blue-600">{to}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {errors.swap_config && <p className="text-red-500 mt-1">{errors.swap_config[0]}</p>}
         </div>
       </div>
 
       {/* Submit Button */}
-      <div className="flex justify-start space-x-4">
+      <div className="flex justify-end space-x-4">
         <button type="submit" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">
           Create Room
         </button>
@@ -620,6 +712,9 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           </div>
         </div>
       )}
+
+      {/* Deck Preview Modal */}
+      {showDeckPreview && selectedDeck && <DeckPreviewModal isOpen={showDeckPreview} onClose={() => setShowDeckPreview(false)} deckId={selectedDeck.id} token={token} />}
 
       <SwapConfigModal isOpen={showSwapConfigModal} onClose={() => setShowSwapConfigModal(false)} deckOrigins={deckOrigins} onSave={handleSwapConfigSave} initialConfig={swapConfig} />
     </form>
