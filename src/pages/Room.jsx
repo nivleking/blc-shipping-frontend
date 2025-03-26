@@ -277,16 +277,39 @@ const Room = () => {
         const userPort = userShipBay.port;
         const matchedCards = cards.filter((card) => card.origin === userPort);
 
-        for (const matchedCard of matchedCards) {
-          await api.post(
-            `/rooms/${roomId}/create-card-temporary/${user.id}`,
-            { card_id: matchedCard.id },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+        // for (const matchedCard of matchedCards) {
+        //   await api.post(
+        //     `/rooms/${roomId}/create-card-temporary/${user.id}`,
+        //     { card_id: matchedCard.id },
+        //     {
+        //       headers: {
+        //         Authorization: `Bearer ${token}`,
+        //       },
+        //     }
+        //   );
+        // }
+
+        // If there are cards to create temporaries for
+        if (matchedCards.length > 0) {
+          // Prepare data for batch creation
+          const batchData = {
+            room_id: roomId,
+            user_id: user.id,
+            round: 1, // Starting round
+            cards: matchedCards.map((card) => ({
+              card_id: card.id,
+              status: "selected",
+            })),
+          };
+
+          // Make a single API call to create all card temporaries
+          await api.post(`/card-temporary/batch`, batchData, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          console.log(`Created ${matchedCards.length} card temporaries in batch`);
         }
       }
 
