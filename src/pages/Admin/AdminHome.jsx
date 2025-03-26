@@ -22,6 +22,11 @@ const initialFormState = {
   bay_types: [],
   total_rounds: 1,
   cards_limit_per_round: 1,
+  cards_must_process_per_round: 1,
+  move_cost: 1000000,
+  extra_moves_cost: 50000,
+  ideal_crane_split: 2,
+  swap_config: {},
 };
 
 const AdminHome = () => {
@@ -205,6 +210,9 @@ const AdminHome = () => {
         cards_limit_per_round: editingRoom.cards_limit_per_round,
         cards_must_process_per_round: editingRoom.cards_must_process_per_round,
         move_cost: editingRoom.move_cost,
+        extra_moves_cost: editingRoom.extra_moves_cost,
+        ideal_crane_split: editingRoom.ideal_crane_split,
+        swap_config: editingRoom.swap_config,
         assigned_users: editingRoom.assigned_users,
         deck: editingRoom.deck,
         ship_layout: editingRoom.ship_layout,

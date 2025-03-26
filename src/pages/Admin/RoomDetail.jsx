@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { api } from "../../axios/axios";
 import { AiOutlineArrowLeft } from "react-icons/ai";
-import CapacityUptakeHistory from "../../components/details/CapacityUptakeHistory";
 import { AppContext } from "../../context/AppContext";
 import ShipBay from "../../components/simulations/ShipBay";
 
@@ -197,9 +196,7 @@ const RoomDetail = () => {
           </TabList>
 
           <TabPanels>
-            <TabPanel>
-              <CapacityUptakeHistory roomId={roomId} token={token} />
-            </TabPanel>
+            <TabPanel></TabPanel>
 
             {/* Simulation History Panel */}
             <TabPanel>

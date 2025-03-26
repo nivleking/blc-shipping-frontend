@@ -23,7 +23,9 @@ const initialFormState = {
   total_rounds: 1,
   cards_limit_per_round: 1,
   cards_must_process_per_round: 1,
-  move_cost: 1000000,
+  move_cost: 100000,
+  extra_moves_cost: 50000,
+  ideal_crane_split: 2,
   swap_config: {},
 };
 
@@ -155,6 +157,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       max_users: formData.max_users,
       total_rounds: formData.total_rounds,
       move_cost: formData.move_cost,
+      extra_moves_cost: formData.extra_moves_cost,
+      ideal_crane_split: formData.ideal_crane_split,
       cards_must_process_per_round: formData.cards_must_process_per_round,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
@@ -176,6 +180,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         resetForm();
       }
     } catch (error) {
+      console.log("Error creating room:", error);
       toast.error(error.response?.data?.message || "An error occurred while creating the room!");
       setErrors(error.response?.data?.errors || {});
     }
@@ -287,9 +292,12 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
         {/* Move Cost Field */}
         <div className="flex flex-col">
-          <label htmlFor="move_cost" className="block text-gray-700 font-semibold">
-            Move Cost (IDR)
-          </label>
+          <div className="flex items-center">
+            <label htmlFor="move_cost" className="block text-gray-700 font-semibold">
+              Move Cost (Rp)
+            </label>
+            <Tooltip>Cost per move (discharge or load)</Tooltip>
+          </div>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span className="text-gray-500">Rp</span>
@@ -299,7 +307,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               name="move_cost"
               id="move_cost"
               className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="1000000"
+              placeholder="100000"
               min="1"
               value={formData.move_cost}
               onChange={handleChange}
@@ -308,7 +316,45 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               <span className="text-gray-500">per move</span>
             </div>
           </div>
-          <p className="mt-1 text-xs text-gray-500">Penalty cost applied for each container move operation</p>
+        </div>
+
+        {/* Extra Moves Cost Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
+              Extra Moves Cost (Rp)
+            </label>
+            <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="extra_moves_cost"
+              id="extra_moves_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="50000"
+              min="1"
+              value={formData.extra_moves_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Ideal Crane Split Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="ideal_crane_split" className="block text-gray-700 font-semibold">
+              Ideal Crane Split
+            </label>
+            <Tooltip>Number of cranes to be used as a ideal value for splitting</Tooltip>
+          </div>
+          <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
         </div>
 
         {/* Deck Selection */}

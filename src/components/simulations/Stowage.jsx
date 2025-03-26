@@ -44,6 +44,7 @@ const Stowage = ({
   historicalStats,
   showHistorical,
   setShowHistorical,
+  onRefreshCards,
 }) => {
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
@@ -130,6 +131,7 @@ const Stowage = ({
                     historicalStats={historicalStats}
                     showHistorical={showHistorical}
                     setShowHistorical={setShowHistorical}
+                    onRefreshCards={onRefreshCards}
                   />
                 </div>
               </div>
@@ -137,12 +139,20 @@ const Stowage = ({
               {/* Sales Call section - bottom right */}
               {section === 2 ? (
                 <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
-                  <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                    <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                    </svg>
-                    Sales Calls
-                  </h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-2xl font-semibold text-gray-800 flex items-center">
+                      <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                      </svg>
+                      Sales Calls
+                    </h3>
+                    {/* <button onClick={onRefreshCards} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center">
+                      <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Refresh Sales Cards
+                    </button> */}
+                  </div>
                   {isLimitExceeded ? (
                     <div className="text-center p-8 bg-gray-50 rounded-lg">
                       <p className="text-gray-600">You have reached the maximum number of cards for this round.</p>
@@ -160,13 +170,23 @@ const Stowage = ({
                         processedCards={processedCards}
                         mustProcessCards={mustProcessCards}
                         cardsLimit={cardsLimit}
+                        onRefreshCards={onRefreshCards}
                       />
                     </div>
                   ) : (
-                    <p className="text-center text-gray-500">No sales call cards available</p>
+                    <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+                      <p className="text-gray-600 mb-4">No sales call cards available</p>
+                      <button onClick={onRefreshCards} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center">
+                        <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refresh Sales Cards
+                      </button>
+                    </div>
                   )}
                 </div>
               ) : (
+                // Keep the existing code for section 1
                 <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-200">
                   <h3 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
                     <svg className="w-7 h-7 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">

@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { AppContext } from "../../../context/AppContext";
 
-const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves = {}, currentRound = 1, totalRounds = 1 }) => {
+const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatIDR, moves = {}, currentRound = 1, totalRounds = 1, moveCost, extraMovesCost }) => {
   const { user } = useContext(AppContext);
 
   return (
@@ -42,6 +42,17 @@ const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Expenses</p>
             <h3 className="text-2xl font-bold">{formatIDR(penalties)}</h3>
+            <div className="flex gap-4 mt-1">
+              <div>
+                <p className="text-xs opacity-80">Move Cost</p>
+                <p className="text-sm font-bold">{formatIDR(moveCost) || 0}</p>
+              </div>
+
+              <div>
+                <p className="text-xs opacity-80">Extra Cost</p>
+                <p className="text-sm font-bold">{formatIDR(extraMovesCost) || 0}</p>
+              </div>
+            </div>
           </div>
           <div className="p-2 bg-white/20 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,8 +110,10 @@ const HeaderCards = ({ revenue, penalties, rank, section, port, formatIDR, moves
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
           <div className="text-white">
-            <p className="text-sm font-medium opacity-80">Port</p>
-            <h3 className="text-2xl font-bold">{port} - {user && user.name}</h3>
+            <p className="text-sm font-medium opacity-80">Room {roomId}</p>
+            <h3 className="text-2xl font-bold">
+              {port} - {user && user.name}
+            </h3>
             <div className="flex gap-4 mt-1">
               <div>
                 <p className="text-xs opacity-80">Load Moves</p>
