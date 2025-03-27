@@ -236,16 +236,6 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
           ))}
         </div>
       )}
-
-      {/* Pagination explanation if needed */}
-      {showPaginationControls && (
-        <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Storage capacity is unlimited.</span> Use the pagination dots above to navigate between pages of containers.
-            <span className="ml-1 text-green-600 font-medium">Green dots indicate pages with containers.</span>
-          </p>
-        </div>
-      )}
     </div>
   );
 };

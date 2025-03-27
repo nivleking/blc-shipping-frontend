@@ -11,7 +11,6 @@ import WeeklyPerformance from "../components/simulations/WeeklyPerformance";
 import MarketIntelligence from "../components/simulations/MarketIntelligence";
 import Stowage from "../components/simulations/Stowage";
 import CapacityUptake from "../components/simulations/CapacityUptake";
-import LeaderboardSimulation from "../components/simulations/LeaderboardSimulation";
 
 const PORT_COLORS = {
   SBY: "#EF4444", // red
@@ -44,39 +43,20 @@ const Simulation = () => {
   const [moveCost, setMoveCost] = useState(0);
   const [extraMovesCost, setExtraMovesCost] = useState(0);
 
-  // Leaderboard states
-  const [rankings, setRankings] = useState([]);
-  const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
+  // const fetchRankings = async () => {
+  //   try {
+  //     const response = await api.get(`/rooms/${roomId}/rankings`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
 
-  const fetchRankings = async () => {
-    try {
-      setIsLeaderboardLoading(true);
-      const response = await api.get(`/rooms/${roomId}/rankings`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setRankings(response.data);
-      setIsLeaderboardLoading(false);
-
-      console.log("Rankings updated:", response.data);
-
-      socket.emit("rankings_updated", {
-        roomId,
-        rankings: response.data,
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching rankings:", error);
-      setIsLeaderboardLoading(false);
-      return [];
-    }
-  };
-
-  const handleRankingsUpdate = (updatedRankings) => {
-    setRankings(updatedRankings);
-  };
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error("Error fetching rankings:", error);
+  //     return [];
+  //   }
+  // };
 
   // Stowage states
   const [droppedItems, setDroppedItems] = useState([]);
@@ -194,10 +174,6 @@ const Simulation = () => {
   useEffect(() => {
     if (selectedTab === 0) {
       console.log("Capacity Uptake");
-    }
-
-    if (selectedTab === 2) {
-      fetchRankings();
     }
   }, [selectedTab]);
 
@@ -833,7 +809,7 @@ const Simulation = () => {
 
       toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
 
-      fetchRankings();
+      // fetchRankings();
 
       socket.emit("stats_requested", {
         roomId,
@@ -1241,7 +1217,7 @@ const Simulation = () => {
                 userId: user.id,
               });
 
-              fetchRankings();
+              // fetchRankings();
 
               return; // Exit early since we've handled this special case
             } catch (error) {
@@ -1339,15 +1315,6 @@ const Simulation = () => {
     });
     setBayData(newBayData);
 
-    // const newDockData = Array.from({ length: dockSize.rows }).map((_, rowIndex) => {
-    //   return Array.from({ length: dockSize.columns }).map((_, colIndex) => {
-    //     const cellId = `docks-${rowIndex * dockSize.columns + colIndex}`;
-    //     const item = updatedDroppedItems.find((item) => item.area === cellId);
-    //     return item ? item.id : null;
-    //   });
-    // });
-    // setDockData(newDockData);
-
     const dockItems = updatedDroppedItems
       .filter((item) => item.area && item.area.startsWith("docks-"))
       .map((item) => ({
@@ -1399,7 +1366,6 @@ const Simulation = () => {
         );
       }
 
-      console.log("Revenue:", revenue);
       const resBay = await api.post("/ship-bays", {
         arena: newBayData,
         user_id: user.id,
@@ -1428,57 +1394,43 @@ const Simulation = () => {
       });
       console.log("API call successful for docks", resDock.data);
 
-      const resLog = await api.post(
-        "/simulation-logs",
-        {
-          arena: newBayData,
-          user_id: user.id,
-          room_id: roomId,
-          revenue: revenue,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
       // Request updated stats after move
       socket.emit("stats_requested", {
         roomId,
         userId: user.id,
       });
 
-      fetchRankings();
+      // fetchRankings();
 
-      console.log("API call successful for logs", resLog.data);
+      // console.log("API call successful for logs", resLog.data);
     } catch (error) {
       console.error("API call failed", error);
     }
   }
 
-  useEffect(() => {
-    const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
-      return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
-        return Array.from({ length: baySize.columns }).map((_, colIndex) => {
-          const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
-          const item = droppedItems.find((item) => item.area === cellId);
-          return item ? item.id : 0;
-        });
-      });
-    });
-    setBayData(newBayData);
-    console.log("Bay Data:", newBayData);
+  // useEffect(() => {
+  //   const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
+  //     return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
+  //       return Array.from({ length: baySize.columns }).map((_, colIndex) => {
+  //         const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
+  //         const item = droppedItems.find((item) => item.area === cellId);
+  //         return item ? item.id : 0;
+  //       });
+  //     });
+  //   });
+  //   setBayData(newBayData);
+  //   console.log("Bay Data:", newBayData);
 
-    const newDockData = Array.from({ length: 3 }).map((_, rowIndex) => {
-      return Array.from({ length: 5 }).map((_, colIndex) => {
-        const cellId = `docks-${rowIndex * 5 + colIndex}`;
-        const item = droppedItems.find((item) => item.area === cellId);
-        return item ? item.id : 0;
-      });
-    });
-    setDockData(newDockData);
-    console.log("Dock Data:", newDockData);
-  }, [droppedItems, baySize, bayCount]);
+  //   const newDockData = Array.from({ length: 3 }).map((_, rowIndex) => {
+  //     return Array.from({ length: 5 }).map((_, colIndex) => {
+  //       const cellId = `docks-${rowIndex * 5 + colIndex}`;
+  //       const item = droppedItems.find((item) => item.area === cellId);
+  //       return item ? item.id : 0;
+  //     });
+  //   });
+  //   setDockData(newDockData);
+  //   console.log("Dock Data:", newDockData);
+  // }, [droppedItems, baySize, bayCount]);
 
   useEffect(() => {
     socket.on("end_simulation", ({ roomId: endedRoomId }) => {
@@ -1588,18 +1540,10 @@ const Simulation = () => {
         }
       });
 
-      socket.on("rankings_updated", ({ roomId: updatedRoomId, rankings: updatedRankings }) => {
-        if (roomId === updatedRoomId) {
-          console.log("Receiving rankings update:", updatedRankings);
-          setRankings(updatedRankings);
-        }
-      });
-
       return () => {
         socket.off("stats_requested");
         socket.off("stats_updated");
         socket.off("port_config_updated");
-        socket.off("rankings_updated");
       };
     }
   }, [user, token, roomId]);
@@ -1783,54 +1727,6 @@ const Simulation = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Direct connections visualization (keep this part too for clarity) */}
-                <div className="flex items-center justify-center gap-2 mt-2">
-                  {/* Port that sends TO user */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: PORT_COLORS[swapInfo.sendsTo?.substring(0, 3)?.toUpperCase()] || "#64748B" }}>
-                      {swapInfo.sendsTo?.substring(0, 1)?.toUpperCase() || "-"}
-                    </div>
-                    <span className="text-xs font-medium mt-1 block">{(swapInfo && swapInfo.sendsTo) || "Unknown"}</span>
-                  </div>
-
-                  {/* First arrow */}
-                  <svg className="w-8 h-5 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-
-                  {/* User's port (highlighted) */}
-                  <div className="flex flex-col items-center">
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold
-border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
-                      style={{ backgroundColor: PORT_COLORS[port?.substring(0, 3)?.toUpperCase()] || "#64748B" }}
-                    >
-                      {port?.substring(0, 1)?.toUpperCase()}
-                    </div>
-                    <span className="text-sm font-bold mt-1 block text-blue-900">{port}</span>
-                    <span className="text-xs font-medium text-blue-800">(Your Port)</span>
-                  </div>
-
-                  {/* Second arrow */}
-                  <svg className="w-8 h-5 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-
-                  {/* Port that user sends TO (receivesFrom in variable naming) */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: PORT_COLORS[swapInfo.receivesFrom?.substring(0, 3)?.toUpperCase()] || "#64748B" }}>
-                      {swapInfo.receivesFrom?.substring(0, 1)?.toUpperCase() || "-"}
-                    </div>
-                    <span className="text-xs font-medium mt-1 block">{swapInfo.receivesFrom || "Unknown"}</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-2 border-t border-blue-200">
-                  <p className="text-sm text-center text-blue-800 font-medium">
-                    After swapping, containers from <span className="font-bold">{swapInfo.sendsTo}</span> will arrive at your port, and you will send containers to <span className="font-bold">{swapInfo.receivesFrom}</span>.
-                  </p>
-                </div>
               </div>
 
               <p className="text-red-600 font-bold text-center">Please wait while containers are being swapped!</p>
@@ -1892,24 +1788,6 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                   Stowage
-                </div>
-              </Tab>
-              <Tab
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
-      ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
-                }
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  Leaderboard
                 </div>
               </Tab>
               <Tab
@@ -1988,10 +1866,6 @@ border-4 border-yellow-300 outline outline-2 outline-yellow-500 shadow-lg"
                   setShowHistorical={setShowHistorical}
                   onRefreshCards={handleRefreshCards}
                 />
-              </TabPanel>
-
-              <TabPanel>
-                <LeaderboardSimulation roomId={roomId} formatIDR={formatIDR} onRankingsUpdate={handleRankingsUpdate} />
               </TabPanel>
 
               {/* Weekly Performance Tab */}

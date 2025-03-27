@@ -47,7 +47,7 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
     ${!isHistoryView ? "cursor-move" : "cursor-default"}
     relative transition-all
     ${isDragging && !isHistoryView ? "scale-105 shadow-xl" : "shadow-md"}
-    ${isTarget ? "ring-4 ring-yellow-400 pulse" : ""}
+    ${isTarget ? "ring-4 ring-yellow-400" : ""}
     ${isOptionalTarget ? "ring-3 ring-green-400 border-dashed" : ""}
     w-full h-full max-w-[80px] max-h-[60px] mx-auto
   `;
