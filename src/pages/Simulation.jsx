@@ -76,7 +76,11 @@ const Simulation = () => {
   const [isSwapping, setIsSwapping] = useState(false);
   const [showSwapAlert, setShowSwapAlert] = useState(false);
   const [section, setSection] = useState(1);
+
   const [targetContainers, setTargetContainers] = useState([]);
+  const [containerDestinationsCache, setContainerDestinationsCache] = useState({});
+  // const [destinationsFetched, setDestinationsFetched] = useState(false);
+
   const [penalties, setPenalties] = useState(0);
   const [rank, setRank] = useState(1);
   const [moveStats, setMoveStats] = useState({
@@ -1599,59 +1603,66 @@ const Simulation = () => {
     }
   };
 
-  // Update useEffect
   useEffect(() => {
     const fetchTargetContainers = async () => {
-      if (section === 1) {
-        const targets = [];
+      if (section !== 1) return;
 
-        for (const item of droppedItems) {
-          // Only check items in bay
-          const isInBay = item.area.startsWith("bay-");
-          if (!isInBay) continue;
+      const bayContainerIds = droppedItems.filter((item) => item.area.startsWith("bay-")).map((item) => item.id);
 
-          const container = containers.find((c) => c.id === item.id);
-          if (!container) continue;
-
-          const card = await fetchCardById(container.card_id);
-          if (!card) continue;
-
-          if (card.destination === port) {
-            targets.push(item);
-          }
-        }
-
-        console.log("Target Bay Containers:", targets);
-        setTargetContainers(targets);
+      if (bayContainerIds.length === 0) {
+        setTargetContainers([]);
+        return;
       }
+
+      // Find containers we don't have destination data for yet
+      const containersToFetch = bayContainerIds.filter((id) => !containerDestinationsCache.hasOwnProperty(id));
+
+      // If we have containers that need destination data, fetch them in batch
+      if (containersToFetch.length > 0) {
+        try {
+          const response = await api.post(
+            "/containers/destinations",
+            {
+              containerIds: containersToFetch,
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          // Update our cache with new destination data
+          setContainerDestinationsCache((prev) => ({
+            ...prev,
+            ...response.data,
+          }));
+        } catch (error) {
+          console.error("Error fetching container destinations:", error);
+        }
+      }
+
+      // Now we can identify target containers using our local cache
+      const targets = droppedItems.filter((item) => {
+        const isInBay = item.area.startsWith("bay-");
+        if (!isInBay) return false;
+
+        const destination = containerDestinationsCache[item.id];
+        return destination === port;
+      });
+
+      console.log("Target Bay Containers:", targets);
+      setTargetContainers(targets);
     };
 
     fetchTargetContainers();
-  }, [droppedItems, containers, port, section, token]);
+  }, [droppedItems, containerDestinationsCache, port, section, token]);
 
-  // Update validation
-  const canProceedToSectionTwo = async () => {
-    for (const item of droppedItems) {
-      const isInBay = item.area.startsWith("bay-");
-      if (!isInBay) continue;
-
-      const container = containers.find((c) => c.id === item.id);
-      if (!container) continue;
-
-      const card = await fetchCardById(container.card_id);
-      if (!card) continue;
-
-      if (card.destination === port) {
-        return false;
-      }
-    }
-    return true;
+  const canProceedToSectionTwo = () => {
+    return targetContainers.length === 0;
   };
 
-  // Update handleNextSection to save section to database
+  // Update handleNextSection to use the simplified check
   const handleNextSection = async () => {
-    const canProceed = await canProceedToSectionTwo();
-    if (!canProceed) {
+    if (!canProceedToSectionTwo()) {
       toast.error("Please unload all containers destined for your port first!", {
         position: "top-center",
         autoClose: 3000,
@@ -1660,7 +1671,6 @@ const Simulation = () => {
     }
 
     try {
-      // Update section in database
       await api.put(
         `/ship-bays/${roomId}/${user.id}/section`,
         {
@@ -1673,14 +1683,10 @@ const Simulation = () => {
         }
       );
 
-      // Update local state
       setSection(2);
     } catch (error) {
       console.error("Error updating section:", error);
-      toast.error("Failed to update section", {
-        position: "top-center",
-        autoClose: 3000,
-      });
+      toast.error("Failed to update section");
     }
   };
 
