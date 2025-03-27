@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ContainerDock from "./ContainerDock";
 import DroppableCell from "./DroppableCell";
 import DraggableContainer from "./DraggableContainer";
@@ -8,13 +8,28 @@ import Tooltip from "../Tooltip";
 
 const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, draggingTargetContainer }) => {
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 36; // 6x6 grid (sesuaikan dengan row*column)
+  const itemsPerPage = 36; // 6x6 grid
 
   // Count dock items
   const dockItems = allItems.filter((item) => item.area && item.area.startsWith("docks-"));
 
-  // Calculate total pages based on actual containers, not fixed grid size
-  const totalPages = Math.max(1, Math.ceil(dockItems.length / itemsPerPage));
+  // Calculate pages based on container positions, not just count
+  const containerPositions = useMemo(() => {
+    return dockItems.map((item) => {
+      const positionMatch = item.area.match(/docks-(\d+)/);
+      return positionMatch ? parseInt(positionMatch[1]) : 0;
+    });
+  }, [dockItems]);
+
+  // Get the highest position to determine the max page needed
+  const maxPosition = Math.max(...containerPositions, 0);
+  const maxPage = Math.max(Math.floor(maxPosition / itemsPerPage), 0);
+
+  // Calculate total pages needed based on the maximum position
+  const totalPages = Math.max(1, maxPage + 1);
+
+  // Check if we have containers on pages beyond page 0
+  const hasContainersOnLaterPages = containerPositions.some((pos) => pos >= itemsPerPage);
 
   // Get visible items for current page
   const getVisibleItems = () => {
@@ -36,26 +51,36 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
   const visibleItems = getVisibleItems();
   const hasContainersOnPage = visibleItems.length > 0;
 
+  // Calculate container counts per page
+  const containersByPage = useMemo(() => {
+    const pages = {};
+
+    dockItems.forEach((item) => {
+      const positionMatch = item.area.match(/docks-(\d+)/);
+      if (positionMatch) {
+        const position = parseInt(positionMatch[1]);
+        const pageNum = Math.floor(position / itemsPerPage);
+        pages[pageNum] = (pages[pageNum] || 0) + 1;
+      }
+    });
+
+    return pages;
+  }, [dockItems, itemsPerPage]);
+
   // Auto-navigate to first page with containers if current page is empty
   useEffect(() => {
     if (currentPage > 0 && !hasContainersOnPage && dockItems.length > 0) {
       // Find first page with containers
-      for (let i = 0; i < totalPages; i++) {
-        const testItems = allItems.filter((item) => {
-          if (!item.area || !item.area.startsWith("docks-")) return false;
-          const cellIndexMatch = item.area.match(/docks-(\d+)/);
-          if (!cellIndexMatch) return false;
-          const cellIndex = parseInt(cellIndexMatch[1]);
-          return cellIndex >= i * itemsPerPage && cellIndex < (i + 1) * itemsPerPage;
-        });
-
-        if (testItems.length > 0) {
-          setCurrentPage(i);
-          break;
-        }
+      const pagesWithContainers = Object.keys(containersByPage)
+        .map(Number)
+        .sort((a, b) => a - b);
+      if (pagesWithContainers.length > 0) {
+        setCurrentPage(pagesWithContainers[0]);
+      } else {
+        setCurrentPage(0);
       }
     }
-  }, [allItems, currentPage, totalPages, hasContainersOnPage, dockItems.length]);
+  }, [allItems, currentPage, hasContainersOnPage, dockItems.length, containersByPage]);
 
   // Visible dimensions always 6x6
   const visibleSize = {
@@ -76,6 +101,10 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
   const totalContainers = dockItems.length;
   const visibleGridCapacity = visibleSize.rows * visibleSize.columns;
 
+  // Determine if we should show pagination controls
+  // Show if we have multiple pages OR if we have containers on later pages
+  const showPaginationControls = totalPages > 1 || hasContainersOnLaterPages;
+
   return (
     <div className="flex flex-col w-full">
       {/* Summary information */}
@@ -87,35 +116,11 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
 
         <div className="text-sm text-gray-600">
           Total containers: {totalContainers}
-          {totalPages > 1 && ` (showing ${currentPageItems} on page ${currentPage + 1} of ${totalPages})`}
+          {showPaginationControls && ` (showing ${currentPageItems} on page ${currentPage + 1} of ${totalPages})`}
         </div>
       </div>
 
-      {/* Current page capacity indicator */}
-      {/* <div className={`mb-4 ${isCurrentPageFull ? "animate-pulse" : ""}`}>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium">Current Page Capacity</span>
-          <span className={`text-sm font-medium ${isCurrentPageFull ? "text-red-600" : isCurrentPageNearCapacity ? "text-amber-500" : "text-green-600"}`}>
-            {currentPageItems} / {currentPageCapacity} slots
-          </span>
-        </div>
-
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div
-            className={`h-2.5 rounded-full transition-all duration-500 ${isCurrentPageFull ? "bg-red-600" : isCurrentPageNearCapacity ? "bg-amber-500" : "bg-green-500"}`}
-            style={{ width: `${Math.min(100, currentPagePercentage)}%` }}
-          ></div>
-        </div>
-
-        {isCurrentPageFull && (
-          <div className="mt-2 flex items-center p-2 rounded-lg bg-blue-50 border border-blue-200">
-            <BiErrorCircle className="mr-2 text-lg text-blue-500" />
-            <p className="text-sm text-blue-700">Current page is full. Use pagination controls to navigate to the next page for more space.</p>
-          </div>
-        )}
-      </div> */}
-
-      {/* Pagination UI */}
+      {/* Pagination UI - Always show when we have containers beyond page 0 */}
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm text-gray-500">
           <span className="font-medium">
@@ -124,7 +129,7 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
           <span className="ml-2 text-gray-400">({hasContainersOnPage ? `${visibleItems.length} containers` : `No containers`})</span>
         </div>
 
-        {totalPages > 1 && (
+        {showPaginationControls && (
           <div className="flex space-x-2 items-center">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
@@ -148,8 +153,17 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
                   pageNum = currentPage - 2 + i;
                 }
 
+                // Highlight pages that have containers
+                const hasContainers = containersByPage[pageNum] > 0;
+
                 return (
-                  <button key={pageNum} onClick={() => setCurrentPage(pageNum)} className={`w-8 h-8 rounded-md ${currentPage === pageNum ? "bg-blue-600 text-white font-medium" : "hover:bg-gray-100"}`}>
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 rounded-md flex items-center justify-center
+                      ${currentPage === pageNum ? "bg-blue-600 text-white font-medium" : "hover:bg-gray-100"}
+                      ${hasContainers && currentPage !== pageNum ? "border-2 border-green-400" : ""}`}
+                  >
                     {pageNum + 1}
                   </button>
                 );
@@ -208,12 +222,18 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
         )}
       </div>
 
-      {/* Pagination explanation if needed */}
-      {totalPages > 1 && (
-        <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Storage capacity is unlimited.</span> You're viewing page {currentPage + 1} of {totalPages}. Use the pagination controls to navigate between pages of containers.
-          </p>
+      {/* Visual indicator of pages with containers */}
+      {showPaginationControls && (
+        <div className="flex justify-center mt-2 space-x-1">
+          {Array.from({ length: totalPages }).map((_, index) => (
+            <div
+              key={`page-indicator-${index}`}
+              onClick={() => setCurrentPage(index)}
+              className={`w-2 h-2 rounded-full cursor-pointer transition-all
+                ${currentPage === index ? "bg-blue-600 scale-125" : containersByPage[index] ? "bg-green-400" : "bg-gray-300"}`}
+              title={`Page ${index + 1}${containersByPage[index] ? ` (${containersByPage[index]} containers)` : " (empty)"}`}
+            />
+          ))}
         </div>
       )}
     </div>
