@@ -52,9 +52,6 @@ const AdminHome = () => {
   useEffect(() => {
     if (token) {
       fetchRooms();
-      fetchDecks();
-      fetchLayouts();
-      fetchAvailableUsers();
     }
   }, [token]);
 
@@ -65,87 +62,31 @@ const AdminHome = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setRooms(response.data);
 
-      await fetchAdmins();
-      if (response.data.length > 0) {
-        const newPageCount = Math.ceil(response.data.length / itemsPerPage);
+      console.log("Rooms fetched:", response.data);
+
+      setRooms(response.data.rooms);
+      setAdmins(response.data.admins);
+      setDecks(response.data.decks);
+      setLayouts(response.data.layouts);
+      setAvailableUsers(response.data.availableUsers);
+
+      if (response.data.rooms.length > 0) {
+        const newPageCount = Math.ceil(response.data.rooms.length / itemsPerPage);
         if (currentPage >= newPageCount) {
           setCurrentPage(0);
         }
       } else {
         setCurrentPage(0);
       }
-      console.log("Rooms fetched:", response.data);
     } catch (error) {
       console.error("Error fetching rooms:", error);
     }
   }
 
-  async function fetchAdmins() {
-    try {
-      const response = await api.get("all-admins", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const adminsMap = {};
-      response.data.forEach((admin) => {
-        adminsMap[admin.id] = admin;
-      });
-
-      setAdmins(adminsMap);
-      console.log("Admins fetched:", adminsMap);
-    } catch (error) {
-      console.error("Error fetching admins:", error);
-    }
-  }
-
-  async function fetchDecks() {
-    try {
-      const response = await api.get("decks", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setDecks(response.data);
-    } catch (error) {
-      console.error("Error fetching decks:", error);
-    }
-  }
-
-  const fetchLayouts = async () => {
-    try {
-      const response = await api.get("/ship-layouts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setLayouts(response.data);
-    } catch (error) {
-      console.error("Error fetching layouts:", error);
-    }
-  };
-
-  const fetchAvailableUsers = async () => {
-    try {
-      const response = await api.get("/rooms/available-users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setAvailableUsers(response.data);
-      console.log("Available users fetched:", response.data);
-    } catch (error) {
-      console.error("Error fetching available users:", error);
-    }
-  };
-
   function handleDeleteRoom(roomId) {
     return async (e) => {
       e.preventDefault();
-      // Instead of deleting immediately, show the confirmation modal
       setRoomToDelete(roomId);
       setShowDeleteModal(true);
     };
