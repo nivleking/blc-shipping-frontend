@@ -4,10 +4,11 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { BsFiletypeXlsx } from "react-icons/bs";
 import MarketIntelligencePreviewModal from "./MarketIntelligencePreviewModal";
-import { toast } from "react-toastify";
 import "./UploadDataPanel.css";
+import { useToast } from "../../toast/useToast";
 
 const UploadDataPanel = ({ handleUpload }) => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [previewData, setPreviewData] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
@@ -127,10 +128,10 @@ const UploadDataPanel = ({ handleUpload }) => {
       const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       saveAs(blob, "market_intelligence_template.xlsx");
 
-      toast.success("Template downloaded successfully");
+      showSuccess("Template downloaded successfully");
     } catch (error) {
       console.error("Error generating Excel template:", error);
-      toast.error("Failed to generate Excel template");
+      showError("Failed to generate Excel template");
     }
   };
 

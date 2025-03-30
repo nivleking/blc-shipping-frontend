@@ -3,12 +3,12 @@ import { AppContext } from "../../context/AppContext";
 import { api, socket } from "../../axios/axios";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import "./UserHome.css";
 import LoadingOverlay from "../../components/LoadingOverlay";
+import useToast from "../../toast/useToast";
 
 const UserHome = () => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const { user, token } = useContext(AppContext);
   const [roomId, setRoomId] = useState("");
   const [error, setError] = useState("");
@@ -33,7 +33,7 @@ const UserHome = () => {
     setError("");
 
     if (!roomId) {
-      toast.error("Please enter a Room ID");
+      showError("Please enter a Room ID");
       return;
     }
 
@@ -59,7 +59,7 @@ const UserHome = () => {
       }
     } catch (error) {
       console.error("Error joining room:", error);
-      toast.error(error.response?.data?.message || "An error occurred. Please try again.");
+      showError(error.response?.data?.message || "An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -67,8 +67,6 @@ const UserHome = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <ToastContainer autoClose={2000} />
-
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={currentMessageIndex} title="Searching Room..." />}
 
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">

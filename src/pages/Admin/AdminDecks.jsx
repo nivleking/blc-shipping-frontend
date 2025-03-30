@@ -8,10 +8,10 @@ import LoadingOverlay from "../../components/LoadingOverlay";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import DecksTableView from "../../components/cards/DecksTableView";
 import { IoCardOutline, IoFileTrayStackedOutline, IoLocationOutline, IoTimeOutline } from "react-icons/io5";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import useToast from "../../toast/useToast";
 
 const AdminDecks = () => {
+  const { showSuccess, showError } = useToast();
   const [decks, setDecks] = useState([]);
   const [formData, setFormData] = useState({ name: "" });
   const [errors, setErrors] = useState({});
@@ -61,11 +61,11 @@ const AdminDecks = () => {
     try {
       await api.delete(`/decks/${confirmModal.deckId}`);
       setDecks(decks.filter((deck) => deck.id !== confirmModal.deckId));
-      toast.success("Deck deleted successfully!");
+      showSuccess("Deck deleted successfully!");
     } catch (error) {
       setErrors(error.response.data.errors);
       console.error("Error deleting deck:", error);
-      toast.error(error.response?.data?.message || "Failed to delete deck");
+      showError(error.response?.data?.message || "Failed to delete deck");
     } finally {
       setIsDeletingLoading(false);
     }
@@ -100,7 +100,7 @@ const AdminDecks = () => {
       setDecks(decksWithCards);
     } catch (error) {
       console.error("Error fetching decks:", error);
-      toast.error("Failed to fetch decks");
+      showError("Failed to fetch decks");
     }
   }
 
@@ -113,7 +113,7 @@ const AdminDecks = () => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      toast.error("Deck name is required");
+      showError("Deck name is required");
       return;
     }
 
@@ -123,11 +123,11 @@ const AdminDecks = () => {
       const response = await api.post("/decks", formData);
       setDecks([...decks, response.data]);
       setFormData({ name: "" });
-      toast.success("Deck created successfully!");
+      showSuccess("Deck created successfully!");
     } catch (error) {
       setErrors(error.response.data.errors);
       console.error("Error creating deck:", error);
-      toast.error(error.response?.data?.message || "Failed to create deck");
+      showError(error.response?.data?.message || "Failed to create deck");
     } finally {
       setIsLoading(false);
       setLoadingMessageIndex(0);
@@ -173,10 +173,6 @@ const AdminDecks = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <ToastContainer />
-      {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Creating New Deck" />}
-      {isDeletingLoading && <LoadingOverlay messages={deleteLoadingMessages} currentMessageIndex={deleteLoadingMessageIndex} title="Deleting Deck" />}
-
       <div className="mb-4">
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-lg space-y-6">
           <div className="w-full">

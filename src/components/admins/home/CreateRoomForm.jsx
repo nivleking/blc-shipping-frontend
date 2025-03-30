@@ -5,10 +5,11 @@ import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/h
 import { AiFillEye } from "react-icons/ai";
 import Tooltip from "../../../components/Tooltip";
 import RenderShipBayLayout from "../../../components/simulations/RenderShipBayLayout";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../axios/axios";
-import { toast } from "react-toastify";
 import SwapConfigModal from "../../rooms/SwapConfigModal";
 import DeckPreviewModal from "./DeckPreviewModal";
+import useToast from "../../../toast/useToast";
 
 const initialFormState = {
   id: "",
@@ -33,6 +34,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
   // Form state
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
+  const { showSuccess, showError, showWarning } = useToast();
+  const queryClient = useQueryClient();
 
   // Selection state
   const [selectedDeck, setSelectedDeck] = useState(null);
@@ -63,6 +66,25 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     setDeckOrigins([]);
   };
 
+  const createRoomMutation = useMutation({
+    mutationFn: async (newRoomData) => {
+      return api.post("/rooms", newRoomData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["rooms"]);
+      resetForm();
+      showSuccess("Room created successfully!");
+    },
+    onError: (error) => {
+      console.error("Error creating room:", error);
+      showError(error.response?.data?.message || "Failed to create room");
+    },
+  });
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -71,7 +93,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       const processValue = parseInt(value);
 
       if (processValue > limitPerRound) {
-        toast.warning("Must process cards cannot exceed cards limit per round");
+        showWarning("Must process cards cannot exceed cards limit per round");
         return;
       }
     }
@@ -109,7 +131,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         console.log("Deck origins:", origins);
       } catch (error) {
         console.error("Error selecting deck:", error);
-        toast.error("Error selecting deck. Please try again.");
+        showError("Error selecting deck. Please try again.");
       }
     } else {
       setFormData((prevData) => ({
@@ -144,7 +166,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       setErrors({
         assigned_users: [`You can only assign up to ${formData.max_users} users to this room`],
       });
-      toast.error(`Too many users selected: max ${formData.max_users} allowed`);
+      showError(`Too many users selected: max ${formData.max_users} allowed`);
       return;
     }
 
@@ -167,23 +189,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
     console.log("Create room payload:", payload);
 
-    try {
-      const response = await api.post("rooms", payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 200) {
-        await refreshRooms();
-        toast.success("Room created successfully!");
-        resetForm();
-      }
-    } catch (error) {
-      console.log("Error creating room:", error);
-      toast.error(error.response?.data?.message || "An error occurred while creating the room!");
-      setErrors(error.response?.data?.errors || {});
-    }
+    createRoomMutation.mutate(payload);
   };
 
   // Filter decks based on query
@@ -452,15 +458,12 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             multiple
             value={selectedUsers}
             onChange={(userIds) => {
-              // Only allow selection if not exceeding max_users
               if (userIds.length <= formData.max_users) {
                 setSelectedUsers(userIds);
               } else {
-                // If exceeding, show toast warning
-                toast.warning(`Maximum ${formData.max_users} users can be assigned to this room`, {
+                showWarning(`Maximum ${formData.max_users} users can be assigned to this room`, {
                   toastId: "max-users-warning",
                 });
-                // Keep the current selection
               }
             }}
           >

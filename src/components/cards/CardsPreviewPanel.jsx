@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
 import PortLegendCards from "./PortLegendCards";
 import EditCardModal from "./EditCardModal";
@@ -8,8 +7,10 @@ import CardsTableView from "./CardsTableView";
 import CardsGridView from "./CardsGridView";
 import CardStatsDashboard from "./CardStatsDashboard";
 import ConfirmationModal from "../ConfirmationModal";
+import useToast from "../../toast/useToast";
 
 const CardsPreviewPanel = ({ cards, containers, formatIDR, onCardUpdated, deckId }) => {
+  const { showSuccess, showError } = useToast();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -31,12 +32,12 @@ const CardsPreviewPanel = ({ cards, containers, formatIDR, onCardUpdated, deckId
   const handleConfirmDelete = async () => {
     try {
       await api.delete(`/decks/${deckId}/remove-card/${cardToDelete.id}`);
-      toast.success(`Card ${cardToDelete.id} deleted successfully`);
+      showSuccess(`Card ${cardToDelete.id} deleted successfully`);
       onCardUpdated(); // Refresh the cards list
       setDeleteModalOpen(false);
     } catch (error) {
       console.error("Error deleting card:", error);
-      toast.error(error.response?.data?.message || "Failed to delete card");
+      showError(error.response?.data?.message || "Failed to delete card");
     }
   };
 

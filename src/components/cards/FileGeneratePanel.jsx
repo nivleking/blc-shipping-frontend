@@ -2,16 +2,17 @@ import { useState } from "react";
 import { BsCloudUpload, BsDownload } from "react-icons/bs";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
 import LoadingOverlay from "../LoadingOverlay";
 import ExcelPreviewModal from "./ExcelPreviewModal";
+import useToast from "../../toast/useToast";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
 };
 
 const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }) => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState([]);
   // const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -194,12 +195,12 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
           setParsedExcelData(formattedData);
           setShowExcelPreview(true);
         } else {
-          toast.error("No valid data found in Excel file. Please check the template format.");
+          showError("No valid data found in Excel file. Please check the template format.");
           setSelectedFile(null);
         }
       } catch (error) {
         console.error("Error parsing Excel file:", error);
-        toast.error("Failed to parse Excel file");
+        showError("Failed to parse Excel file");
         setSelectedFile(null);
       } finally {
         setIsUploading(false);
@@ -225,7 +226,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
         },
       });
 
-      toast.success(`${response.data.message}`);
+      showSuccess(`${response.data.message}`);
 
       // Refresh data
       await refreshCards();
@@ -240,9 +241,9 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
       console.error("Error uploading file:", error);
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
-        toast.error("Please fix the validation errors");
+        showError("Please fix the validation errors");
       } else {
-        toast.error(error.response?.data?.message || "Failed to upload file");
+        showError(error.response?.data?.message || "Failed to upload file");
       }
       return false;
     } finally {

@@ -2,9 +2,9 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api, socket } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
-import { toast, ToastContainer } from "react-toastify";
 import AssignPortModal from "../components/rooms/AssignPortModal";
 import SwapConfigModal from "../components/rooms/SwapConfigModal";
+import useToast from "../toast/useToast";
 
 const PORT_COLORS = {
   SBY: "#EF4444", // red
@@ -24,6 +24,7 @@ const formatIDR = (value) => {
 };
 
 const Room = () => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const { roomId } = useParams();
   const [users, setUsers] = useState([]);
   const [adminName, setAdminName] = useState("");
@@ -321,12 +322,12 @@ const Room = () => {
 
   const handleStartClick = () => {
     if (users.length < 1) {
-      toast.error("You need at least one user to start the simulation");
+      showError("You need at least one user to start the simulation");
       return;
     }
 
     if (!portsSet) {
-      toast.error("Please assign ports to users first");
+      showError("Please assign ports to users first");
       return;
     }
 
@@ -341,7 +342,7 @@ const Room = () => {
 
   async function endSimulation() {
     if (currentRound <= totalRounds) {
-      toast.error(`Simulation can only be ended after the final unloading phase (Week ${totalRounds + 1})`);
+      showError(`Simulation can only be ended after the final unloading phase (Week ${totalRounds + 1})`);
       return;
     }
 
@@ -365,10 +366,10 @@ const Room = () => {
       socket.emit("end_simulation", { roomId });
 
       setRoomStatus("finished");
-      toast.success("Simulation has been successfully completed!");
+      showSuccess("Simulation has been successfully completed!");
     } catch (error) {
       console.error("There was an error ending the simulation!", error);
-      toast.error("Failed to end simulation. Please try again.");
+      showError("Failed to end simulation. Please try again.");
     }
   }
 
@@ -407,13 +408,13 @@ const Room = () => {
       }
     } catch (error) {
       console.error("Error fetching deck origins:", error);
-      toast.error("Failed to fetch port information");
+      showError("Failed to fetch port information");
     }
   };
 
   const handleSwapConfigSave = async (newSwapConfig) => {
     if (currentRound > totalRounds) {
-      toast.error("Cannot modify swap configuration during final unloading phase");
+      showError("Cannot modify swap configuration during final unloading phase");
       return;
     }
 
@@ -435,16 +436,16 @@ const Room = () => {
 
       socket.emit("port_config_updated", { roomId });
 
-      toast.success("Port swap configuration saved successfully!");
+      showSuccess("Port swap configuration saved successfully!");
     } catch (error) {
       console.error("Error saving swap configuration:", error);
-      toast.error("Failed to save port swap configuration");
+      showError("Failed to save port swap configuration");
     }
   };
 
   const handleSwapBays = async () => {
     if (currentRound > totalRounds) {
-      toast.error("Bay swapping is disabled during final unloading phase");
+      showError("Bay swapping is disabled during final unloading phase");
       return;
     }
 
@@ -481,11 +482,11 @@ const Room = () => {
 
       setCurrentRound((prev) => prev + 1);
 
-      toast.success("Bays swapped successfully!");
+      showSuccess("Bays swapped successfully!");
       fetchRankings();
     } catch (error) {
       console.error("Error swapping bays:", error);
-      toast.error("Failed to swap bays");
+      showError("Failed to swap bays");
     }
   };
 
@@ -529,7 +530,7 @@ const Room = () => {
       setShipBay(res.data.shipbays);
       setShowPortPopup(false);
       setPortsSet(true);
-      toast.success("Ports assigned successfully!");
+      showSuccess("Ports assigned successfully!");
     } catch (error) {
       console.error("There was an error setting the ports!", error);
     }
@@ -553,8 +554,6 @@ const Room = () => {
 
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
-
       {/* Enhanced Header */}
       <div className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-4 shadow-lg">
         <div className="container mx-auto">

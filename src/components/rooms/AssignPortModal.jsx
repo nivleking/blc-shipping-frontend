@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { toast } from "react-toastify";
+import useToast from "../../toast/useToast";
 
 const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }) => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [assignmentMode, setAssignmentMode] = useState("manual");
 
   const handleRandomAssignment = () => {
@@ -22,7 +23,7 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
     });
 
     setPorts(newPorts);
-    toast.success("Ports assigned randomly!");
+    showSuccess("Ports assigned randomly!");
   };
 
   const handleManualPortChange = (userId, port) => {
@@ -30,7 +31,7 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
     const isPortAssigned = Object.entries(ports).some(([key, value]) => value === port && key !== userId.toString());
 
     if (isPortAssigned) {
-      toast.error("This port is already assigned to another user!");
+      showError("This port is already assigned to another user!");
       return;
     }
 

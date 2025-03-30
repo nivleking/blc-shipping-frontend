@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
 import { FaShip } from "react-icons/fa";
 import LoadingOverlay from "../LoadingOverlay";
+import useToast from "../../toast/useToast";
 
 const validateId = (id) => {
   const num = parseInt(id);
@@ -10,6 +10,7 @@ const validateId = (id) => {
 };
 
 const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainers }) => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPorts, setSelectedPorts] = useState(4);
   const [manualCardForm, setManualCardForm] = useState({
@@ -67,7 +68,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
 
     try {
       if (!validateId(manualCardForm.id)) {
-        toast.error("Invalid ID. Must be a number between 1-99999");
+        showError("Invalid ID. Must be a number between 1-99999");
         return;
       }
 
@@ -92,7 +93,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
       // Refresh the container list
       await refreshContainers();
 
-      toast.success("Sales call card created and added to deck!");
+      showSuccess("Sales call card created and added to deck!");
 
       // Reset form
       setManualCardForm({
@@ -106,7 +107,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
       });
     } catch (error) {
       console.error("Error creating card:", error);
-      toast.error(error.response?.data?.message || "Failed to create card");
+      showError(error.response?.data?.message || "Failed to create card");
     } finally {
       clearInterval(messageInterval);
       setIsSubmitting(false);

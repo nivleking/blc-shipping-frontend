@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { api } from "../../axios/axios";
 import GenerateCardsNavbar from "../../components/cards/GenerateCardsNavbar";
 import MarketIntelligencePanel from "../../components/cards/MarketIntelligencePanel";
@@ -11,6 +9,7 @@ import InfoModal from "../../components/cards/InfoModal";
 import CardsPreviewPanel from "../../components/cards/CardsPreviewPanel";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import LoadingOverlay from "../../components/LoadingOverlay";
+import useToast from "../../toast/useToast";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", {
@@ -32,6 +31,7 @@ const ALL_PORTS = {
 };
 
 const AdminCreateCards = () => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const { deckId } = useParams();
   const navigate = useNavigate();
   const [generateFormData, setGenerateFormData] = useState({
@@ -105,9 +105,9 @@ const AdminCreateCards = () => {
         ...prevData,
         ...config,
       }));
-      toast.success("Preset configuration applied");
+      showSuccess("Preset configuration applied");
     } catch (error) {
-      toast.error("Failed to apply preset configuration");
+      showError("Failed to apply preset configuration");
     }
   };
 
@@ -118,10 +118,10 @@ const AdminCreateCards = () => {
           ...prevData,
           ports: portCount,
         }));
-        toast.info(`Port count set to ${portCount}`);
+        showInfo(`Port count set to ${portCount}`);
       }
     } catch (error) {
-      toast.error("Failed to set port count");
+      showError("Failed to set port count");
     }
   };
 
@@ -131,9 +131,9 @@ const AdminCreateCards = () => {
         ...prevData,
         totalRevenueEachPort: revenue,
       }));
-      toast.info(`Revenue per port set to ${formatIDR(revenue)}`);
+      showInfo(`Revenue per port set to ${formatIDR(revenue)}`);
     } catch (error) {
-      toast.error("Failed to set revenue");
+      showError("Failed to set revenue");
     }
   };
 
@@ -143,9 +143,9 @@ const AdminCreateCards = () => {
         ...prevData,
         totalContainerQuantityEachPort: quantity,
       }));
-      toast.info(`Container quantity per port set to ${quantity}`);
+      showInfo(`Container quantity per port set to ${quantity}`);
     } catch (error) {
-      toast.error("Failed to set container quantity");
+      showError("Failed to set container quantity");
     }
   };
 
@@ -180,7 +180,7 @@ const AdminCreateCards = () => {
   //       // Add other mappings as needed
   //     }));
   //   } catch (error) {
-  //     toast.error(error.message);
+  //     showError(error.message);
   //   }
   // };
 
@@ -200,10 +200,10 @@ const AdminCreateCards = () => {
       await api.delete(`/decks/${deckId}/cards`);
       await fetchDeck();
       await fetchContainers();
-      toast.success("All cards have been deleted successfully");
+      showSuccess("All cards have been deleted successfully");
     } catch (error) {
       console.error("Error deleting cards:", error);
-      toast.error("Failed to delete cards");
+      showError("Failed to delete cards");
     } finally {
       setShowDeleteConfirm(false);
     }
@@ -224,7 +224,7 @@ const AdminCreateCards = () => {
       await fetchContainers();
       calculateDeckStats(response.data.cards);
 
-      toast.success("Cards generated successfully!");
+      showSuccess("Cards generated successfully!");
 
       setGenerateFormData({
         totalRevenueEachPort: 250_000_000,
@@ -237,7 +237,7 @@ const AdminCreateCards = () => {
     } catch (error) {
       setGenerateErrors(error.response?.data?.errors || {});
       setSalesCallCards([]);
-      toast.error(error.response?.data?.message || "Failed to generate cards");
+      showError(error.response?.data?.message || "Failed to generate cards");
     } finally {
       setIsLoading(false);
       setShowGenerateConfirm(false);
@@ -246,8 +246,6 @@ const AdminCreateCards = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <ToastContainer position="top-center" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
-
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Generating Cards" />}
 
       <div className="container mx-auto px-4 py-6">

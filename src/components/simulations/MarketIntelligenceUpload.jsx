@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
+import useToast from "../../toast/useToast";
 
 const MarketIntelligenceUpload = ({ onUpload }) => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [dragActive, setDragActive] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -38,7 +39,7 @@ const MarketIntelligenceUpload = ({ onUpload }) => {
     const validExcelTypes = ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"];
 
     if (!validExcelTypes.includes(file.type)) {
-      toast.error("Please upload an Excel file (.xlsx or .xls)");
+      showError("Please upload an Excel file (.xlsx or .xls)");
       return;
     }
 
@@ -66,7 +67,7 @@ const MarketIntelligenceUpload = ({ onUpload }) => {
           const rows = XLSX.utils.sheet_to_json(worksheet);
 
           if (rows.length === 0) {
-            toast.error("Excel file is empty");
+            showError("Excel file is empty");
             return;
           }
 
@@ -138,7 +139,7 @@ const MarketIntelligenceUpload = ({ onUpload }) => {
 
           // Check if we have valid price data
           if (Object.keys(priceData).length === 0) {
-            toast.error("Could not find valid price data in the Excel file. Please check the column headers.");
+            showError("Could not find valid price data in the Excel file. Please check the column headers.");
             return;
           }
 
@@ -147,14 +148,13 @@ const MarketIntelligenceUpload = ({ onUpload }) => {
             price_data: priceData,
           };
 
-          // Show import summary toast
-          toast.info(`Imported ${importedCount} price entries${skippedCount > 0 ? `, skipped ${skippedCount} rows` : ""}${invalidCount > 0 ? `, ${invalidCount} invalid entries` : ""}`);
+          showInfo(`Imported ${importedCount} price entries${skippedCount > 0 ? `, skipped ${skippedCount} rows` : ""}${invalidCount > 0 ? `, ${invalidCount} invalid entries` : ""}`);
 
           // Pass the data to parent component
           onUpload(marketIntelligenceData);
         } catch (error) {
           console.error("Excel processing error:", error);
-          toast.error("Error processing Excel file");
+          showError("Error processing Excel file");
         } finally {
           setIsProcessing(false);
         }
@@ -163,7 +163,7 @@ const MarketIntelligenceUpload = ({ onUpload }) => {
       reader.readAsArrayBuffer(file);
     } catch (error) {
       console.error("File processing error:", error);
-      toast.error("Error processing file");
+      showError("Error processing file");
       setIsProcessing(false);
     }
   };

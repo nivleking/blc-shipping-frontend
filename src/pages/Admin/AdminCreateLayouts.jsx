@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { api } from "../../axios/axios";
-import { ToastContainer, toast } from "react-toastify";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { useContext } from "react";
 import { AppContext } from "../../context/AppContext";
@@ -9,6 +8,7 @@ import LoadingOverlay from "../../components/LoadingOverlay";
 import LayoutList from "../../components/ship_layouts/LayoutList";
 import LayoutFormModal from "../../components/ship_layouts/LayoutFormModal";
 import LayoutPreviewModal from "../../components/ship_layouts/LayoutPreviewModal";
+import useToast from "../../toast/useToast";
 
 const loadingMessages = {
   create: ["Creating new ship layout..."],
@@ -21,11 +21,12 @@ const initialFormState = {
   name: "",
   description: "",
   bay_size: { rows: 2, columns: 2 },
-  bay_count: 1  ,
+  bay_count: 1,
   bay_types: ["dry"],
 };
 
 const AdminCreateLayouts = () => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const { token } = useContext(AppContext);
   const [layouts, setLayouts] = useState([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -67,7 +68,7 @@ const AdminCreateLayouts = () => {
       setLayouts(response.data);
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to fetch layouts");
+      showError("Failed to fetch layouts");
     } finally {
       setIsLoading(false);
     }
@@ -81,22 +82,22 @@ const AdminCreateLayouts = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      toast.error("Layout name is required");
+      showError("Layout name is required");
       return;
     }
 
     if (formData.bay_count < 1 || formData.bay_count > 10) {
-      toast.error("Bay count must be between 1 and 10");
+      showError("Bay count must be between 1 and 10");
       return;
     }
 
     if (formData.bay_size.rows < 2 || formData.bay_size.rows > 10) {
-      toast.error("Bay rows must be between 2 and 10");
+      showError("Bay rows must be between 2 and 10");
       return;
     }
 
     if (formData.bay_size.columns < 2 || formData.bay_size.columns > 10) {
-      toast.error("Bay columns must be between 1 and 8");
+      showError("Bay columns must be between 1 and 8");
       return;
     }
 
@@ -113,12 +114,12 @@ const AdminCreateLayouts = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      toast.success("Layout saved successfully!");
+      showSuccess("Layout saved successfully!");
       fetchLayouts();
       setFormData(initialFormState);
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error.response?.data?.message || "Failed to save layout");
+      showError(error.response?.data?.message || "Failed to save layout");
     } finally {
       setIsLoading(false);
     }
@@ -127,27 +128,27 @@ const AdminCreateLayouts = () => {
   const handleEdit = async (e) => {
     e.preventDefault();
     if (!selectedLayout) {
-      toast.error("No layout selected for editing");
+      showError("No layout selected for editing");
       return;
     }
 
     if (!formData.name.trim()) {
-      toast.error("Layout name is required");
+      showError("Layout name is required");
       return;
     }
 
     if (formData.bay_count < 1 || formData.bay_count > 10) {
-      toast.error("Bay count must be between 1 and 10");
+      showError("Bay count must be between 1 and 10");
       return;
     }
 
     if (formData.bay_size.rows < 2 || formData.bay_size.rows > 10) {
-      toast.error("Bay rows must be between 2 and 10");
+      showError("Bay rows must be between 2 and 10");
       return;
     }
 
     if (formData.bay_size.columns < 2 || formData.bay_size.columns > 10) {
-      toast.error("Bay columns must be between 1 and 8");
+      showError("Bay columns must be between 1 and 8");
       return;
     }
 
@@ -164,13 +165,13 @@ const AdminCreateLayouts = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      toast.success("Layout updated successfully!");
+      showSuccess("Layout updated successfully!");
       fetchLayouts();
       setSelectedLayout(null);
       setFormData(initialFormState);
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error.response?.data?.message || "Failed to update layout");
+      showError(error.response?.data?.message || "Failed to update layout");
     } finally {
       setIsLoading(false);
     }
@@ -207,13 +208,13 @@ const AdminCreateLayouts = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      toast.success("Layout deleted successfully!");
+      showSuccess("Layout deleted successfully!");
       fetchLayouts();
       setLayoutToDelete(null);
       setSelectedLayout(null);
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to delete layout");
+      showError("Failed to delete layout");
     } finally {
       setIsLoading(false);
     }
@@ -245,7 +246,6 @@ const AdminCreateLayouts = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <ToastContainer />
       {isLoading && loadingOperation && (
         <LoadingOverlay
           messages={loadingMessages[loadingOperation]}

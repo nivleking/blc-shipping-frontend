@@ -3,12 +3,13 @@ import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOption
 import { HiCheck, HiChevronUpDown } from "react-icons/hi2";
 import { AiFillEye } from "react-icons/ai";
 import RenderShipBayLayout from "../../simulations/RenderShipBayLayout";
-import { toast } from "react-toastify";
 import DeckPreviewModal from "./DeckPreviewModal";
 import Tooltip from "../../Tooltip";
 import SwapConfigModal from "../../rooms/SwapConfigModal";
+import useToast from "../../../toast/useToast";
 
 const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEditModal, layouts, availableUsers, decks, handleUpdateRoom, selectedDeck, setSelectedDeck, handleDeckChange }) => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [layoutQuery, setLayoutQuery] = useState("");
   const [query, setQuery] = useState("");
   const [showLayoutPreview, setShowLayoutPreview] = useState(false);
@@ -63,7 +64,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
       const processValue = parseInt(value);
 
       if (processValue > limitPerRound) {
-        toast.warning("Must process cards cannot exceed cards limit per round");
+        showWarning("Must process cards cannot exceed cards limit per round");
         return;
       }
     }
@@ -461,15 +462,10 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                 multiple
                 value={editingRoom.assigned_users || []}
                 onChange={(userIds) => {
-                  // Only allow selection if not exceeding max_users
                   if (userIds.length <= editingRoom.max_users) {
                     setEditingRoom({ ...editingRoom, assigned_users: userIds });
                   } else {
-                    // If exceeding, show toast warning
-                    toast.warning(`Maximum ${editingRoom.max_users} users can be assigned to this room`, {
-                      toastId: "max-users-warning",
-                    });
-                    // Keep the current selection
+                    showWarning(`Maximum ${editingRoom.max_users} users can be assigned to this room`);
                   }
                 }}
               >

@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useContext } from "react";
 import { api } from "../../axios/axios";
 import { AppContext } from "../../context/AppContext";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import PasswordConfirmationModal from "../../components/PasswordConfirmationModal";
 import AdminList from "../../components/admins/create_admin/AdminList";
 import CreateAdminForm from "../../components/admins/create_admin/CreateAdminForm";
 import LoadingOverlay from "../../components/LoadingOverlay";
 import "./AdminHome.css";
+import useToast from "../../toast/useToast";
 
-// Define loading messages for different operations
 const loadingMessages = {
   create: ["Creating new admin..."],
   update: ["Updating admin information..."],
@@ -20,6 +18,7 @@ const loadingMessages = {
 };
 
 const AdminCreateAdmin = () => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const { user, token } = useContext(AppContext);
   const [formData, setFormData] = useState({
     name: "",
@@ -50,7 +49,6 @@ const AdminCreateAdmin = () => {
   });
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Effect for loading message rotation
   useEffect(() => {
     let interval;
     if (isLoading && loadingOperation) {
@@ -97,7 +95,6 @@ const AdminCreateAdmin = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
           },
         }
       );
@@ -111,11 +108,11 @@ const AdminCreateAdmin = () => {
           ...prev,
           [passwordModal.adminId]: false,
         }));
-        toast.success("Password retrieved successfully");
+        showSuccess("Password retrieved successfully");
       }
     } catch (error) {
       console.error("Error fetching password:", error);
-      toast.error(error.response?.data?.message || "Failed to retrieve password");
+      showError(error.response?.data?.message || "Failed to retrieve password");
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +148,7 @@ const AdminCreateAdmin = () => {
     setLoadingMessageIndex(0);
 
     // Add delay for loading state visibility
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
       await api.delete(`/users/${confirmModal.adminId}`, {
@@ -161,10 +158,10 @@ const AdminCreateAdmin = () => {
       });
 
       setAdmins(admins.filter((admin) => admin.id !== confirmModal.adminId));
-      toast.success("Admin deleted successfully");
+      showSuccess("Admin deleted successfully");
     } catch (error) {
       console.error("Error deleting admin:", error);
-      toast.error("Failed to delete admin");
+      showError("Failed to delete admin");
     } finally {
       setIsLoading(false);
     }
@@ -200,7 +197,7 @@ const AdminCreateAdmin = () => {
       setAdmins(processedAdmins);
     } catch (error) {
       console.error("Error fetching admins:", error);
-      toast.error("Failed to fetch admins");
+      showError("Failed to fetch admins");
     } finally {
       setIsLoading(false);
     }
@@ -248,14 +245,14 @@ const AdminCreateAdmin = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        toast.success("Admin updated successfully");
+        showSuccess("Admin updated successfully");
       } else {
         await api.post("/users/register", dataToSubmit, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        toast.success("New admin created successfully");
+        showSuccess("New admin created successfully");
       }
 
       setFormData({
@@ -270,7 +267,7 @@ const AdminCreateAdmin = () => {
     } catch (error) {
       setFormErrors(error.response.data.errors);
       console.error("Error creating/updating admin:", error);
-      toast.error(error.response.data.message || "Something went wrong");
+      showError(error.response.data.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -297,28 +294,6 @@ const AdminCreateAdmin = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        limit={3}
-        toastStyle={{
-          backgroundColor: "#ffffff",
-          color: "#1f2937",
-          borderRadius: "0.5rem",
-          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-          fontSize: "0.875rem",
-          padding: "1rem",
-        }}
-      />
-
       {/* Loading Overlay */}
       {isLoading && loadingOperation && (
         <LoadingOverlay

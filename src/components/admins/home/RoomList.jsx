@@ -8,6 +8,7 @@ import { IoCreateOutline, IoTimeOutline } from "react-icons/io5";
 import { HiPencilAlt } from "react-icons/hi";
 import ReactPaginate from "react-paginate";
 import RoomTableView from "./RoomTableView";
+import ViewToggle from "../../ViewToggle";
 
 const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, currentPage, handlePageClick, handleOpenRoom, handleEditRoom, handleDeleteRoom }) => {
   const navigate = useNavigate();
@@ -52,15 +53,7 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
         <div className="flex items-center space-x-3">
           <h3 className="text-1xl font-bold text-gray-800">All Rooms</h3>
 
-          {/* View Toggle Buttons */}
-          <div className="bg-gray-100 rounded-lg p-1 flex">
-            <button className={`p-1.5 rounded-md flex items-center ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("grid")} title="Grid view">
-              List
-            </button>
-            <button className={`p-1.5 rounded-md flex items-center ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("table")} title="Table view">
-              Table
-            </button>
-          </div>
+          <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
         </div>
 
         {rooms.length > 0 && (
@@ -188,7 +181,7 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
                     <AiFillEye className="mr-2 h-4 w-4" /> View
                   </button>
                 )}
-                {room.status !== "finished" && (
+                {user && room.status !== "finished" && (
                   <button
                     onClick={() => handleOpenRoom(room.id)}
                     className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${

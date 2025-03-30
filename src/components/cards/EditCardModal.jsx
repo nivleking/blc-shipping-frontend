@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
 import { Fragment } from "react";
 import { api } from "../../axios/axios";
-import { toast } from "react-toastify";
 import { FaShip } from "react-icons/fa";
+import useToast from "../../toast/useToast";
 
 const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
+  const { showSuccess, showError, showWarrning } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     type: "",
@@ -38,7 +39,7 @@ const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
       setAvailablePorts(validPorts);
     } catch (error) {
       console.error("Error fetching ports:", error);
-      toast.error("Failed to fetch available ports");
+      showError("Failed to fetch available ports");
     }
   };
 
@@ -74,7 +75,7 @@ const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
       // Send update request to API
       await api.put(`/cards/${card.id}`, formData);
 
-      toast.success("Card updated successfully");
+      showSuccess("Card updated successfully");
 
       // Notify parent component to refresh card data
       if (onCardUpdated) {
@@ -84,7 +85,7 @@ const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
       onClose();
     } catch (error) {
       console.error("Error updating card:", error);
-      toast.error(error.response?.data?.message || "Failed to update card");
+      showError(error.response?.data?.message || "Failed to update card");
     } finally {
       setIsSubmitting(false);
     }

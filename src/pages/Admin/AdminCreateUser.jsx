@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { api } from "../../axios/axios";
 import { AppContext } from "../../context/AppContext";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import PasswordConfirmationModal from "../../components/PasswordConfirmationModal";
 import UserList from "../../components/admins/create_user/UserList";
 import CreateUserForm from "../../components/admins/create_user/CreateUserForm";
 import LoadingOverlay from "../../components/LoadingOverlay";
+import useToast from "../../toast/useToast";
 
 // Define loading messages for different operations
 const loadingMessages = {
@@ -19,6 +18,7 @@ const loadingMessages = {
 };
 
 const AdminCreateUser = () => {
+  const { showSuccess, showError } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     is_admin: false,
@@ -106,7 +106,6 @@ const AdminCreateUser = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
           },
         }
       );
@@ -120,11 +119,11 @@ const AdminCreateUser = () => {
           ...prev,
           [passwordModal.userId]: false,
         }));
-        toast.success("Password retrieved successfully");
+        showSuccess("Password retrieved successfully");
       }
     } catch (error) {
       console.error("Error fetching password:", error);
-      toast.error(error.response?.data?.message || "Failed to retrieve password");
+      showError(error.response?.data?.message || "Failed to retrieve password");
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +149,7 @@ const AdminCreateUser = () => {
       setUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);
-      toast.error("Failed to fetch users");
+      showError("Failed to fetch users");
     } finally {
       setIsLoading(false);
     }
@@ -190,7 +189,7 @@ const AdminCreateUser = () => {
     setLoadingMessageIndex(0);
 
     // Add delay for loading state visibility
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
       await api.delete(`/users/${confirmModal.userId}`, {
@@ -200,10 +199,10 @@ const AdminCreateUser = () => {
       });
 
       setUsers(users.filter((user) => user.id !== confirmModal.userId));
-      toast.success("User deleted successfully");
+      showSuccess("User deleted successfully");
     } catch (error) {
       console.error("Error deleting user:", error);
-      toast.error("Failed to delete user");
+      showError("Failed to delete user");
     } finally {
       setIsLoading(false);
     }
@@ -218,7 +217,7 @@ const AdminCreateUser = () => {
     setLoadingMessageIndex(0);
 
     // Add delay for loading state visibility
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
       const dataToSubmit = { ...formData };
@@ -243,14 +242,14 @@ const AdminCreateUser = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        toast.success("User updated successfully");
+        showSuccess("User updated successfully");
       } else {
         await api.post("/users/register", dataToSubmit, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        toast.success("New user created successfully");
+        showSuccess("New user created successfully");
       }
 
       setFormData({
@@ -265,7 +264,7 @@ const AdminCreateUser = () => {
     } catch (error) {
       setFormErrors(error.response.data.errors);
       console.error("Error creating/updating user:", error);
-      toast.error(error.response.data.message || "Something went wrong");
+      showError(error.response.data.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -273,28 +272,6 @@ const AdminCreateUser = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        limit={3}
-        toastStyle={{
-          backgroundColor: "#ffffff",
-          color: "#1f2937",
-          borderRadius: "0.5rem",
-          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-          fontSize: "0.875rem",
-          padding: "1rem",
-        }}
-      />
-
       {/* Loading Overlay */}
       {isLoading && loadingOperation && (
         <LoadingOverlay

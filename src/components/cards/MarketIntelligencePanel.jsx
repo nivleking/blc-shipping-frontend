@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
 import { api } from "../../axios/axios";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 
 import PriceTablePanel from "./PriceTablePanel";
 import ManualEntryPanel from "./ManualEntryPanel";
 import UploadDataPanel from "./UploadDataPanel";
+import useToast from "../../toast/useToast";
 
 const MarketIntelligencePanel = ({ deckId }) => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [marketIntelligenceData, setMarketIntelligenceData] = useState(null);
   const [selectedPorts, setSelectedPorts] = useState(4);
@@ -101,9 +102,9 @@ const MarketIntelligencePanel = ({ deckId }) => {
         setSelectedPorts(portSet.size);
       }
 
-      toast.success("Market intelligence data loaded from file");
+      showSuccess("Market intelligence data loaded from file");
     } else {
-      toast.error("Invalid market intelligence data format");
+      showError("Invalid market intelligence data format");
     }
   };
 
@@ -368,12 +369,12 @@ const MarketIntelligencePanel = ({ deckId }) => {
 
   const handleSave = async () => {
     if (!deckId) {
-      toast.error("No deck selected");
+      showError("No deck selected");
       return;
     }
 
     if (!marketIntelligenceName.trim()) {
-      toast.error("Please enter a name for the market intelligence");
+      showError("Please enter a name for the market intelligence");
       return;
     }
 
@@ -388,7 +389,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
       // If we already have market intelligence data, update it
       if (marketIntelligenceData?.id) {
         await api.put(`/market-intelligence/${marketIntelligenceData.id}`, payload);
-        toast.success("Market intelligence updated successfully");
+        showSuccess("Market intelligence updated successfully");
 
         // Update the local state with the new data to ensure UI reflects changes
         setMarketIntelligenceData({
@@ -400,7 +401,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
       } else {
         // Otherwise, create new
         const response = await api.post(`/decks/${deckId}/market-intelligence`, payload);
-        toast.success("Market intelligence created successfully");
+        showSuccess("Market intelligence created successfully");
 
         // Update the local state with the returned data
         setMarketIntelligenceData(response.data);
@@ -409,7 +410,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
       await fetchMarketIntelligenceList();
     } catch (error) {
       console.error("Error saving market intelligence:", error);
-      toast.error("Failed to save market intelligence data");
+      showError("Failed to save market intelligence data");
     } finally {
       setIsSubmitting(false);
     }
@@ -431,10 +432,10 @@ const MarketIntelligencePanel = ({ deckId }) => {
       });
       setSelectedPorts(portSet.size);
 
-      toast.success("Market intelligence data loaded");
+      showSuccess("Market intelligence data loaded");
     } catch (error) {
       console.error("Error loading market intelligence:", error);
-      toast.error("Failed to load market intelligence data");
+      showError("Failed to load market intelligence data");
     } finally {
       setIsLoading(false);
     }

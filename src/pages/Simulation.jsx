@@ -3,14 +3,13 @@ import { api, socket } from "../axios/axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import HeaderCards from "../components/simulations/stowages/HeaderCards";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import LoadingSpinner from "../components/simulations/LoadingSpinner";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import WeeklyPerformance from "../components/simulations/WeeklyPerformance";
 import MarketIntelligence from "../components/simulations/MarketIntelligence";
 import Stowage from "../components/simulations/Stowage";
 import CapacityUptake from "../components/simulations/CapacityUptake";
+import useToast from "../toast/useToast";
 
 const PORT_COLORS = {
   SBY: "#EF4444", // red
@@ -30,6 +29,7 @@ const formatIDR = (value) => {
 };
 
 const Simulation = () => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
   const [port, setPort] = useState("");
@@ -292,7 +292,7 @@ const Simulation = () => {
       }
     } catch (error) {
       console.error("Error fetching sales call cards:", error);
-      toast.error("Failed to load sales call cards");
+      showError("Failed to load sales call cards");
     } finally {
       setIsLoading(false);
     }
@@ -302,14 +302,14 @@ const Simulation = () => {
     if (salesCallCards.length === 0 || currentCardIndex >= salesCallCards.length) {
       // Check if limit is exceeded
       if (isLimitExceeded) {
-        toast.warning("You have reached the maximum card limit for this round!");
+        showWarning("You have reached the maximum card limit for this round!");
         return;
       }
 
       fetchSalesCallCards(true);
-      toast.info("Fetching available cards for this round...");
+      showInfo("Fetching available cards for this round...");
     } else {
-      toast.info("Cards are still available. Refresh is only possible when no cards are available.");
+      showInfo("Cards are still available. Refresh is only possible when no cards are available.");
     }
   };
 
@@ -403,7 +403,7 @@ const Simulation = () => {
       }, 500);
     } catch (error) {
       console.error("Error updating after swap:", error);
-      toast.error("Failed to update bay data");
+      showError("Failed to update bay data");
     } finally {
       setIsSwapping(false);
     }
@@ -640,12 +640,12 @@ const Simulation = () => {
 
   async function handleAcceptCard(cardId) {
     if (section !== 2) {
-      toast.error("Please complete section 1 first!");
+      showError("Please complete section 1 first!");
       return;
     }
 
     if (isLimitExceeded) {
-      toast.error("Card limit reached for this round!");
+      showError("Card limit reached for this round!");
       return;
     }
 
@@ -811,9 +811,7 @@ const Simulation = () => {
         setIsCardVisible(true);
       }, 1500);
 
-      toast.success(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
-
-      // fetchRankings();
+      showSuccess(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
 
       socket.emit("stats_requested", {
         roomId,
@@ -821,7 +819,7 @@ const Simulation = () => {
       });
     } catch (error) {
       console.error("Error accepting card:", error);
-      toast.error("Failed to process card");
+      showError("Failed to process card");
       setIsCardVisible(true);
     } finally {
       setIsProcessingCard(false);
@@ -885,12 +883,12 @@ const Simulation = () => {
   async function handleRejectCard(cardId) {
     try {
       if (section !== 2) {
-        toast.error("Please complete section 1 first!");
+        showError("Please complete section 1 first!");
         return;
       }
 
       if (isLimitExceeded) {
-        toast.error("Card limit reached for this round!");
+        showError("Card limit reached for this round!");
         return;
       }
 
@@ -1006,12 +1004,8 @@ const Simulation = () => {
       if (section === 1) {
         const isTargetContainer = targetContainers.some((target) => target.id === sourceItem.id);
 
-        // If it's a target container, show a toast hint
         if (isTargetContainer) {
-          toast.info("Drag this container to the ship dock to unload it", {
-            position: "top-center",
-            autoClose: 2000,
-          });
+          showInfo("Drag this container to the ship dock to unload it");
         }
       }
     }
@@ -1047,15 +1041,6 @@ const Simulation = () => {
     if (type === "bay") {
       const row = Math.floor(cellIndex / baySize.columns);
       const col = cellIndex % baySize.columns;
-
-      // const sourceItem = droppedItems.find((item) => item.id === draggingItem);
-      // if (sourceItem && isBottomContainer(sourceItem.area, targetArea)) {
-      //   // toast.error("Cannot move bottom container upward", {
-      //   //   position: "top-right",
-      //   //   autoClose: 3000,
-      //   // });
-      //   return false;
-      // }
 
       if (row < baySize.rows - 1) {
         const belowCellId = `bay-${bayIndex}-${(row + 1) * baySize.columns + col}`;
@@ -1172,10 +1157,7 @@ const Simulation = () => {
             });
             setBayData(newBayData);
 
-            toast.success("Container unloaded successfully!", {
-              position: "top-right",
-              autoClose: 2000,
-            });
+            showSuccess("Container unloaded successfully!");
 
             // Track discharge move - Include bay_index
             try {
@@ -1221,12 +1203,10 @@ const Simulation = () => {
                 userId: user.id,
               });
 
-              // fetchRankings();
-
-              return; // Exit early since we've handled this special case
+              return;
             } catch (error) {
               console.error("API call failed", error);
-              toast.error("Failed to update container status");
+              showError("Failed to update container status");
             }
           }
         } catch (error) {
@@ -1240,32 +1220,19 @@ const Simulation = () => {
     if (type === "bay") {
       console.log("Container:", container);
       if (!isValidContainerForBay(container, parseInt(bayIndex))) {
-        toast.error(container.type?.toLowerCase() === "reefer" ? "Reefer containers can only be placed in reefer bays" : "Invalid container placement", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        showError(container.type?.toLowerCase() === "reefer" ? "Reefer containers can only be placed in reefer bays" : "Invalid container placement");
         return;
       }
     }
 
     if (activeItem && isDirectUpperMove(activeItem.area, over.id, baySize)) {
-      toast.error("Invalid placement - container cannot float", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      showError("Invalid placement - container cannot float");
       return;
     }
 
     const isSourceBlocked = isBlockedByContainerAbove(droppedItems, activeItem.area);
     if (isSourceBlocked) {
-      toast.error("Cannot move container - blocked by container above", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      showError("Cannot move container - blocked by container above");
       return;
     }
 
@@ -1273,40 +1240,19 @@ const Simulation = () => {
     const isSpaceValid = checkSpace(droppedItems, baySize, over.id);
 
     if (!isAboveClear) {
-      toast.error("Cannot place container - blocked by container above", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      showError("Cannot place container - blocked by container above");
       return;
     }
 
     if (!isSpaceValid) {
-      toast.error("Invalid placement - container cannot float", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      showError("Invalid placement - container cannot float");
       return;
     }
 
     const updatedDroppedItems = droppedItems.map((item) => (item.id === active.id ? { ...item, area: over.id } : item));
     setDroppedItems(updatedDroppedItems);
 
-    toast.success("Container placed successfully!", {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
+    showSuccess("Container placed successfully!");
 
     const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
       return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
@@ -1404,37 +1350,11 @@ const Simulation = () => {
         userId: user.id,
       });
 
-      // fetchRankings();
-
       // console.log("API call successful for logs", resLog.data);
     } catch (error) {
       console.error("API call failed", error);
     }
   }
-
-  // useEffect(() => {
-  //   const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
-  //     return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
-  //       return Array.from({ length: baySize.columns }).map((_, colIndex) => {
-  //         const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
-  //         const item = droppedItems.find((item) => item.area === cellId);
-  //         return item ? item.id : 0;
-  //       });
-  //     });
-  //   });
-  //   setBayData(newBayData);
-  //   console.log("Bay Data:", newBayData);
-
-  //   const newDockData = Array.from({ length: 3 }).map((_, rowIndex) => {
-  //     return Array.from({ length: 5 }).map((_, colIndex) => {
-  //       const cellId = `docks-${rowIndex * 5 + colIndex}`;
-  //       const item = droppedItems.find((item) => item.area === cellId);
-  //       return item ? item.id : 0;
-  //     });
-  //   });
-  //   setDockData(newDockData);
-  //   console.log("Dock Data:", newDockData);
-  // }, [droppedItems, baySize, bayCount]);
 
   useEffect(() => {
     socket.on("end_simulation", ({ roomId: endedRoomId }) => {
@@ -1663,10 +1583,7 @@ const Simulation = () => {
   // Update handleNextSection to use the simplified check
   const handleNextSection = async () => {
     if (!canProceedToSectionTwo()) {
-      toast.error("Please unload all containers destined for your port first!", {
-        position: "top-center",
-        autoClose: 3000,
-      });
+      showError("Please unload all containers destined for your port first!");
       return;
     }
 
@@ -1686,7 +1603,7 @@ const Simulation = () => {
       setSection(2);
     } catch (error) {
       console.error("Error updating section:", error);
-      toast.error("Failed to update section");
+      showError("Failed to update section");
     }
   };
 
@@ -1740,8 +1657,6 @@ const Simulation = () => {
           </div>
         </div>
       )}
-
-      <ToastContainer position="top-right" theme="light" autoClose={3000} />
 
       {isLoading ? (
         <LoadingSpinner />

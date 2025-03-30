@@ -3,7 +3,7 @@ import UserSidebar from "../../components/users/UserSidebar";
 import UserNavbar from "../../components/users/UserNavbar";
 
 const UserLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Changed to true by default
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
