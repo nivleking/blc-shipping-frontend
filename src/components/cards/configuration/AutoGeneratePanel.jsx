@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { BsLightning, BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { api } from "../../../axios/axios";
+import useToast from "../../../toast/useToast";
 
 const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, handlePortSelect, handleRevenueSelect, handleQuantitySelect, deckId, onGenerate }) => {
-  const [activeMarketIntelligence, setActiveMarketIntelligence] = useState(null);
+  const { showSuccess, showError } = useToast();
+  const [marketIntelligenceData, setMarketIntelligenceData] = useState(null);
   const [isLoadingMI, setIsLoadingMI] = useState(false);
   const [miPortCount, setMiPortCount] = useState(0);
 
@@ -19,51 +21,38 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
     10: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
   };
 
-  // Fetch active market intelligence data when component mounts or useMarketIntelligence changes
+  // Fetch market intelligence data when component mounts or useMarketIntelligence changes
   useEffect(() => {
     if (deckId && generateFormData.useMarketIntelligence) {
-      fetchActiveMarketIntelligence();
-    } else {
-      setActiveMarketIntelligence(null);
-      setMiPortCount(0);
+      fetchMarketIntelligenceData();
     }
   }, [deckId, generateFormData.useMarketIntelligence]);
 
-  const fetchActiveMarketIntelligence = async () => {
+  // Simplify fetch function to use the direct one-to-one relationship
+  const fetchMarketIntelligenceData = async () => {
+    if (!deckId) return;
+
     setIsLoadingMI(true);
     try {
-      const response = await api.get(`/decks/${deckId}/market-intelligence/active`);
-      setActiveMarketIntelligence(response.data);
+      const response = await api.get(`/market-intelligence/deck/${deckId}`);
+      setMarketIntelligenceData(response.data);
 
-      // Extract unique port count from price data
+      // Count unique ports in the market intelligence data
       if (response.data && response.data.price_data) {
         const portSet = new Set();
         Object.keys(response.data.price_data).forEach((key) => {
-          const parts = key.split("-");
-          if (parts.length >= 2) {
-            portSet.add(parts[0]); // Add origin
-            portSet.add(parts[1]); // Add destination
-          }
+          const [origin, destination] = key.split("-");
+          portSet.add(origin);
+          portSet.add(destination);
         });
-
-        const portCount = portSet.size;
-        setMiPortCount(portCount);
-
-        // Update the port count in the form data
-        if (portCount > 0) {
-          // Find closest valid port count (2, 4, 6, 8, 10)
-          const validPortCounts = [2, 4, 6, 8, 10];
-          const closestPortCount = validPortCounts.reduce((prev, curr) => {
-            return Math.abs(curr - portCount) < Math.abs(prev - portCount) ? curr : prev;
-          });
-
-          handlePortSelect(closestPortCount);
-        }
+        setMiPortCount(portSet.size);
       }
+
+      showSuccess("Market intelligence data loaded successfully");
     } catch (error) {
       console.error("Error fetching market intelligence:", error);
-      setActiveMarketIntelligence(null);
-      setMiPortCount(0);
+      setMarketIntelligenceData(null);
+      showError("Could not load market intelligence data");
     } finally {
       setIsLoadingMI(false);
     }
@@ -72,6 +61,7 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
   // Toggle handler updated to fetch market intelligence when enabled
   const handleMarketIntelligenceToggle = (e) => {
     const useMarketIntelligence = e.target.checked;
+
     handleGenerateChange({
       target: {
         name: "useMarketIntelligence",
@@ -79,8 +69,8 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
       },
     });
 
-    if (useMarketIntelligence && deckId) {
-      fetchActiveMarketIntelligence();
+    if (useMarketIntelligence) {
+      fetchMarketIntelligenceData();
     }
   };
 
@@ -111,11 +101,11 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
                   <div className="animate-spin h-4 w-4 border-2 border-yellow-500 rounded-full border-t-transparent"></div>
                   <span>Checking market intelligence data...</span>
                 </div>
-              ) : activeMarketIntelligence ? (
+              ) : marketIntelligenceData ? (
                 <div className="flex items-center gap-2 text-green-600">
                   <BsCloudCheck />
                   <span>
-                    Using <strong>{activeMarketIntelligence.name}</strong> ({Object.keys(activeMarketIntelligence.price_data || {}).length} price entries, {miPortCount} ports)
+                    Using <strong>{marketIntelligenceData.name}</strong> ({Object.keys(marketIntelligenceData.price_data || {}).length} price entries, {miPortCount} ports)
                   </span>
                 </div>
               ) : (

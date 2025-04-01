@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../../axios/axios";
 import { FaShip } from "react-icons/fa";
 import LoadingOverlay from "../../LoadingOverlay";
@@ -11,7 +11,7 @@ const validateId = (id) => {
 const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedPorts, setSelectedPorts] = useState(4);
+  const [selectedPorts, setSelectedPorts] = useState(5);
   const [manualCardForm, setManualCardForm] = useState({
     id: "",
     origin: "",
@@ -21,6 +21,11 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
     revenuePerContainer: 0,
     type: "dry",
   });
+  const [activeMarketIntelligence, setActiveMarketIntelligence] = useState(null);
+  const [isLoadingMI, setIsLoadingMI] = useState(false);
+  const [miPorts, setMiPorts] = useState([]);
+  const [usingMarketIntelligence, setUsingMarketIntelligence] = useState(false);
+  const [useMarketIntelligenceToggle, setUseMarketIntelligenceToggle] = useState(false);
 
   const availablePorts = {
     2: ["SBY", "MKS"],
@@ -52,7 +57,11 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
   };
 
   const getAvailableDestinations = () => {
-    return availablePorts[selectedPorts].filter((port) => port !== manualCardForm.origin);
+    if (usingMarketIntelligence && miPorts.length > 0) {
+      return miPorts.filter((port) => port !== manualCardForm.origin);
+    } else {
+      return availablePorts[selectedPorts].filter((port) => port !== manualCardForm.origin);
+    }
   };
 
   const handleManualCardSubmit = async (e) => {
@@ -111,6 +120,71 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
     }
   };
 
+  const fetchActiveMarketIntelligence = async () => {
+    if (!useMarketIntelligenceToggle) return;
+
+    setIsLoadingMI(true);
+    try {
+      const response = await api.get(`/market-intelligence/deck/${deckId}`);
+      const data = response.data;
+
+      if (data && data.price_data) {
+        setActiveMarketIntelligence(data);
+
+        const portSet = new Set();
+        Object.keys(data.price_data).forEach((key) => {
+          const [origin, destination] = key.split("-");
+          portSet.add(origin);
+          portSet.add(destination);
+        });
+
+        const ports = Array.from(portSet).sort();
+        setMiPorts(ports);
+
+        if (ports.length >= 2) {
+          setUsingMarketIntelligence(true);
+          setSelectedPorts(ports.length);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching market intelligence:", error);
+      setActiveMarketIntelligence(null);
+      setMiPorts([]);
+      setUsingMarketIntelligence(false);
+      setUseMarketIntelligenceToggle(false);
+      showError("No active market intelligence found");
+    } finally {
+      setIsLoadingMI(false);
+    }
+  };
+
+  const handleMarketIntelligenceToggle = (e) => {
+    const shouldUseMarketIntelligence = e.target.checked;
+    setUseMarketIntelligenceToggle(shouldUseMarketIntelligence);
+
+    if (shouldUseMarketIntelligence) {
+      if (activeMarketIntelligence) {
+        setUsingMarketIntelligence(true);
+      } else {
+        fetchActiveMarketIntelligence();
+      }
+    } else {
+      setUsingMarketIntelligence(false);
+      setSelectedPorts(4);
+      setManualCardForm((prev) => ({
+        ...prev,
+        origin: "",
+        destination: "",
+      }));
+    }
+  };
+
+  useEffect(() => {
+    if (useMarketIntelligenceToggle) {
+      fetchActiveMarketIntelligence();
+    }
+  }, [useMarketIntelligenceToggle]);
+
   return (
     <div className="">
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Creating Card" />}
@@ -128,15 +202,47 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
           <div className="p-6">
             {/* Card Details Section */}
             <div className="space-y-6">
-              {/* Container Type Selection Info */}
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="flex items-center text-sm text-blue-700">
-                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <span>Choose the container type and configure the card details</span>
+              <div className="p-4 bg-white rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-800">Use Market Intelligence</h4>
+                    <p className="text-sm text-gray-600">Apply market intelligence data to your manual card generation</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={useMarketIntelligenceToggle} onChange={handleMarketIntelligenceToggle} className="sr-only peer" />
+                    <div
+                      className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                    peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full 
+                    peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] 
+                    after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full 
+                    after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
+                    ></div>
+                  </label>
                 </div>
               </div>
+
+              {isLoadingMI ? (
+                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <div className="flex items-center text-sm text-yellow-700">
+                    <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Checking market intelligence data...</span>
+                  </div>
+                </div>
+              ) : usingMarketIntelligence && activeMarketIntelligence ? (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="flex items-center text-sm text-blue-700">
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    <span>
+                      Using market intelligence: <strong>{activeMarketIntelligence.name}</strong> ({miPorts.length} ports available)
+                    </span>
+                  </div>
+                </div>
+              ) : null}
 
               {/* Port Configuration Section */}
               <div className="space-y-4">
@@ -151,27 +257,34 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                           max="10"
                           value={selectedPorts}
                           onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if (value >= 2 && value <= 10) {
-                              setSelectedPorts(value);
-                              setManualCardForm((prev) => ({
-                                ...prev,
-                                origin: "",
-                                destination: "",
-                              }));
+                            if (!usingMarketIntelligence) {
+                              const value = parseInt(e.target.value);
+                              if (value >= 2 && value <= 10) {
+                                setSelectedPorts(value);
+                                setManualCardForm((prev) => ({
+                                  ...prev,
+                                  origin: "",
+                                  destination: "",
+                                }));
+                              }
                             }
                           }}
-                          className="w-full p-2.5 border-2 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                          className={`w-full p-2.5 border-2 rounded-lg focus:outline-none focus:border-blue-500 text-sm
+    ${usingMarketIntelligence ? "bg-gray-100 cursor-not-allowed" : ""}`}
                           placeholder="2-10"
+                          disabled={usingMarketIntelligence}
                         />
                       </div>
                       <p className="mt-1 text-xs text-gray-500">Enter a value between 2-10</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Available Ports</label>
-                      <div className="p-2.5 bg-white rounded-lg border border-blue-100 h-[38px] overflow-y-auto">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Available Ports
+                        {usingMarketIntelligence && <span className="ml-2 text-xs text-blue-600 font-normal">(from Market Intelligence)</span>}
+                      </label>
+                      <div className="p-2.5 bg-white rounded-lg border border-blue-100 min-h-[38px] max-h-[60px] overflow-y-auto">
                         <div className="flex flex-wrap gap-1">
-                          {availablePorts[selectedPorts]?.map((port) => (
+                          {(usingMarketIntelligence ? miPorts : availablePorts[selectedPorts])?.map((port) => (
                             <span key={port} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
                               {port}
                             </span>
@@ -196,7 +309,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                       onChange={handleManualCardChange}
                       pattern="^[1-9]\d{0,4}$"
                       required
-                      placeholder=""
+                      placeholder="Enter Card ID"
                       className="w-full p-3 bg-gray-50 border-2 rounded-lg 
                       focus:outline-none focus:border-blue-500 transition-colors"
                     />
@@ -246,10 +359,10 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                     onChange={handleManualCardChange}
                     required
                     className="w-full p-3 bg-gray-50 border-2 rounded-lg 
-                    focus:outline-none focus:border-blue-500 transition-colors"
+    focus:outline-none focus:border-blue-500 transition-colors"
                   >
                     <option value="">Select Origin Port</option>
-                    {availablePorts[selectedPorts]?.map((port) => (
+                    {(usingMarketIntelligence ? miPorts : availablePorts[selectedPorts])?.map((port) => (
                       <option key={port} value={port}>
                         {port}
                       </option>

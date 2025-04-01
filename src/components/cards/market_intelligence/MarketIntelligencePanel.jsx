@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../../../axios/axios";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import PriceTablePanel from "./PriceTablePanel";
 import ManualEntryPanel from "./ManualEntryPanel";
@@ -9,8 +10,7 @@ import useToast from "../../../toast/useToast";
 
 const MarketIntelligencePanel = ({ deckId }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [marketIntelligenceData, setMarketIntelligenceData] = useState(null);
+  const queryClient = useQueryClient();
   const [selectedPorts, setSelectedPorts] = useState(4);
   const [availablePorts, setAvailablePorts] = useState({
     2: ["SBY", "MKS"],
@@ -25,68 +25,82 @@ const MarketIntelligencePanel = ({ deckId }) => {
   });
   const [marketIntelligenceName, setMarketIntelligenceName] = useState("");
   const [priceData, setPriceData] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [marketIntelligenceList, setMarketIntelligenceList] = useState([]);
 
-  useEffect(() => {
-    if (deckId) {
-      loadMarketIntelligence();
-      fetchMarketIntelligenceList();
-    }
-  }, [deckId]);
+  // Fetch market intelligence data
+  const {
+    data: marketIntelligenceData,
+    isLoading,
+    error,
+    isError,
+  } = useQuery({
+    queryKey: ["marketIntelligence", deckId],
+    queryFn: async () => {
+      if (!deckId) return null;
+      try {
+        const response = await api.get(`/market-intelligence/deck/${deckId}`);
+        console.log("Market Intelligence API Response:", response.data);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching market intelligence:", error);
+        throw error;
+      }
+    },
+    enabled: !!deckId,
+    onSuccess: (data) => {
+      console.log("Market Intelligence Data Success:", data);
+      if (data) {
+        setMarketIntelligenceName(data.name);
+        setPriceData(data.price_data);
 
-  const fetchMarketIntelligenceList = async () => {
-    if (!deckId) return;
-
-    try {
-      const response = await api.get(`/decks/${deckId}/market-intelligence`);
-      setMarketIntelligenceList(response.data);
-      console.log("Market Intelligence List:", response.data);
-    } catch (error) {
-      console.error("Error loading market intelligence list:", error);
-    }
-  };
-
-  const loadMarketIntelligence = async () => {
-    if (!deckId) return;
-
-    setIsLoading(true);
-    try {
-      // First check if any market intelligence exists at all to avoid 404 errors
-      const listResponse = await api.get(`/decks/${deckId}/market-intelligence`);
-
-      if (listResponse.data && listResponse.data.length > 0) {
-        // If market intelligence data exists, get the active one
-        const response = await api.get(`/decks/${deckId}/market-intelligence/active`);
-
-        if (response.data) {
-          setMarketIntelligenceData(response.data);
-          setMarketIntelligenceName(response.data.name);
-          setPriceData(response.data.price_data);
-
-          // Determine number of ports based on data
-          const portSet = new Set();
-          Object.keys(response.data.price_data).forEach((key) => {
-            const [origin] = key.split("-");
-            portSet.add(origin);
-          });
-          setSelectedPorts(portSet.size);
-        }
+        const portSet = new Set();
+        Object.keys(data.price_data).forEach((key) => {
+          const [origin] = key.split("-");
+          portSet.add(origin);
+        });
+        setSelectedPorts(portSet.size);
       } else {
-        // No market intelligence exists yet
-        setMarketIntelligenceData(null);
         setMarketIntelligenceName("New Market Intelligence");
         setPriceData({});
       }
-    } catch (error) {
-      console.error("Error loading market intelligence:", error);
-      setMarketIntelligenceData(null);
-      setMarketIntelligenceName("New Market Intelligence");
-      setPriceData({});
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (payload) => {
+      return api.post(`/market-intelligence/deck/${deckId}`, payload);
+    },
+    onSuccess: (response) => {
+      showSuccess("Market intelligence saved successfully");
+      queryClient.invalidateQueries(["marketIntelligence", deckId]);
+    },
+    onError: (error) => {
+      console.error("Error saving market intelligence:", error);
+      showError("Failed to save market intelligence data");
+    },
+  });
+
+  // Generate default data mutation
+  const generateDefaultMutation = useMutation({
+    mutationFn: async () => {
+      return api.post(`/market-intelligence/deck/${deckId}/generate-default`);
+    },
+    onSuccess: (response) => {
+      showSuccess("Default market intelligence data generated");
+      setMarketIntelligenceName(response.data.name);
+      setPriceData(response.data.price_data);
+
+      // Invalidate and refetch
+      queryClient.invalidateQueries(["marketIntelligence", deckId]);
+    },
+    onError: (error) => {
+      console.error("Error generating default market intelligence:", error);
+
+      // Use our comprehensive price map as fallback
+      const priceMap = getDefaultBasePriceMap();
+      setPriceData(priceMap);
+      setMarketIntelligenceName("Default Market Intelligence");
+    },
+  });
 
   const handleUpload = (data) => {
     if (data.price_data) {
@@ -111,35 +125,20 @@ const MarketIntelligencePanel = ({ deckId }) => {
 
   const generateDefaultPriceData = async () => {
     if (!deckId) return;
-
-    try {
-      // Try to generate using backend endpoint
-      const response = await api.post(`/decks/${deckId}/market-intelligence/generate-default`);
-      setMarketIntelligenceData(response.data);
-      setMarketIntelligenceName(response.data.name);
-      setPriceData(response.data.price_data);
-    } catch (error) {
-      console.error("Error generating default market intelligence:", error);
-
-      // Use our comprehensive price map as fallback
-      const priceMap = getDefaultBasePriceMap();
-      setPriceData(priceMap);
-      setMarketIntelligenceName("Default Market Intelligence");
-    }
+    generateDefaultMutation.mutate();
   };
 
-  // Add this function to get the default base price map with exact values
   const getDefaultBasePriceMap = () => {
     return {
       // SBY routes
-      "SBY-MKS-Reefer": 30000000,
-      "SBY-MKS-Dry": 18000000,
-      "SBY-MDN-Reefer": 11000000,
-      "SBY-MDN-Dry": 6000000,
-      "SBY-JYP-Reefer": 24000000,
-      "SBY-JYP-Dry": 16200000,
-      "SBY-BPN-Reefer": 28000000,
-      "SBY-BPN-Dry": 17000000,
+      "SBY-MKS-Reefer": 27600000,
+      "SBY-MKS-Dry": 16800000,
+      "SBY-MDN-Reefer": 23000000,
+      "SBY-MDN-Dry": 14000000,
+      "SBY-JYP-Reefer": 32200000,
+      "SBY-JYP-Dry": 19600000,
+      "SBY-BPN-Reefer": 36800000,
+      "SBY-BPN-Dry": 22400000,
       "SBY-BKS-Reefer": 26000000,
       "SBY-BKS-Dry": 15000000,
       "SBY-BGR-Reefer": 25000000,
@@ -152,14 +151,14 @@ const MarketIntelligencePanel = ({ deckId }) => {
       "SBY-SMR-Dry": 17000000,
 
       // MDN routes
-      "MDN-SBY-Reefer": 22000000,
-      "MDN-SBY-Dry": 13000000,
-      "MDN-MKS-Reefer": 24000000,
+      "MDN-SBY-Reefer": 36800000,
+      "MDN-SBY-Dry": 22400000,
+      "MDN-MKS-Reefer": 23000000,
       "MDN-MKS-Dry": 14000000,
-      "MDN-JYP-Reefer": 22000000,
-      "MDN-JYP-Dry": 14000000,
-      "MDN-BPN-Reefer": 26000000,
-      "MDN-BPN-Dry": 15000000,
+      "MDN-JYP-Reefer": 27600000,
+      "MDN-JYP-Dry": 16800000,
+      "MDN-BPN-Reefer": 32200000,
+      "MDN-BPN-Dry": 19600000,
       "MDN-BKS-Reefer": 25000000,
       "MDN-BKS-Dry": 14000000,
       "MDN-BGR-Reefer": 24000000,
@@ -172,14 +171,14 @@ const MarketIntelligencePanel = ({ deckId }) => {
       "MDN-SMR-Dry": 16000000,
 
       // MKS routes
-      "MKS-SBY-Reefer": 18000000,
-      "MKS-SBY-Dry": 10000000,
-      "MKS-MDN-Reefer": 20000000,
-      "MKS-MDN-Dry": 12000000,
-      "MKS-JYP-Reefer": 24000000,
-      "MKS-JYP-Dry": 16000000,
-      "MKS-BPN-Reefer": 25000000,
-      "MKS-BPN-Dry": 15000000,
+      "MKS-SBY-Reefer": 32200000,
+      "MKS-SBY-Dry": 19600000,
+      "MKS-MDN-Reefer": 36800000,
+      "MKS-MDN-Dry": 22400000,
+      "MKS-JYP-Reefer": 23000000,
+      "MKS-JYP-Dry": 14000000,
+      "MKS-BPN-Reefer": 27600000,
+      "MKS-BPN-Dry": 16800000,
       "MKS-BKS-Reefer": 23000000,
       "MKS-BKS-Dry": 13000000,
       "MKS-BGR-Reefer": 22000000,
@@ -192,13 +191,13 @@ const MarketIntelligencePanel = ({ deckId }) => {
       "MKS-SMR-Dry": 16000000,
 
       // JYP routes
-      "JYP-SBY-Reefer": 19000000,
-      "JYP-SBY-Dry": 13000000,
-      "JYP-MKS-Reefer": 23000000,
-      "JYP-MKS-Dry": 13000000,
-      "JYP-MDN-Reefer": 17000000,
-      "JYP-MDN-Dry": 11000000,
-      "JYP-BPN-Reefer": 24000000,
+      "JYP-SBY-Reefer": 27600000,
+      "JYP-SBY-Dry": 16800000,
+      "JYP-MKS-Reefer": 36800000,
+      "JYP-MKS-Dry": 22400000,
+      "JYP-MDN-Reefer": 32200000,
+      "JYP-MDN-Dry": 19600000,
+      "JYP-BPN-Reefer": 23000000,
       "JYP-BPN-Dry": 14000000,
       "JYP-BKS-Reefer": 22000000,
       "JYP-BKS-Dry": 12000000,
@@ -212,14 +211,14 @@ const MarketIntelligencePanel = ({ deckId }) => {
       "JYP-SMR-Dry": 15000000,
 
       // BPN routes
-      "BPN-SBY-Reefer": 20000000,
-      "BPN-SBY-Dry": 12000000,
-      "BPN-MKS-Reefer": 22000000,
-      "BPN-MKS-Dry": 13000000,
-      "BPN-MDN-Reefer": 24000000,
-      "BPN-MDN-Dry": 14000000,
-      "BPN-JYP-Reefer": 21000000,
-      "BPN-JYP-Dry": 12000000,
+      "BPN-SBY-Reefer": 27600000,
+      "BPN-SBY-Dry": 16800000,
+      "BPN-MKS-Reefer": 36800000,
+      "BPN-MKS-Dry": 22400000,
+      "BPN-MDN-Reefer": 32200000,
+      "BPN-MDN-Dry": 19600000,
+      "BPN-JYP-Reefer": 23000000,
+      "BPN-JYP-Dry": 14000000,
       "BPN-BKS-Reefer": 23000000,
       "BPN-BKS-Dry": 13000000,
       "BPN-BGR-Reefer": 22000000,
@@ -369,83 +368,51 @@ const MarketIntelligencePanel = ({ deckId }) => {
   };
 
   const handleSave = async () => {
-    if (!deckId) {
-      showError("No deck selected");
-      return;
-    }
-
     if (!marketIntelligenceName.trim()) {
       showError("Please enter a name for the market intelligence");
       return;
     }
 
-    try {
-      setIsSubmitting(true);
+    const payload = {
+      name: marketIntelligenceName,
+      price_data: priceData,
+    };
 
-      const payload = {
-        name: marketIntelligenceName,
-        price_data: priceData,
-      };
-
-      // If we already have market intelligence data, update it
-      if (marketIntelligenceData?.id) {
-        await api.put(`/market-intelligence/${marketIntelligenceData.id}`, payload);
-        showSuccess("Market intelligence updated successfully");
-
-        // Update the local state with the new data to ensure UI reflects changes
-        setMarketIntelligenceData({
-          ...marketIntelligenceData,
-          name: marketIntelligenceName,
-          price_data: priceData,
-          updated_at: new Date().toISOString(),
-        });
-      } else {
-        // Otherwise, create new
-        const response = await api.post(`/decks/${deckId}/market-intelligence`, payload);
-        showSuccess("Market intelligence created successfully");
-
-        // Update the local state with the returned data
-        setMarketIntelligenceData(response.data);
-      }
-
-      await fetchMarketIntelligenceList();
-    } catch (error) {
-      console.error("Error saving market intelligence:", error);
-      showError("Failed to save market intelligence data");
-    } finally {
-      setIsSubmitting(false);
-    }
+    saveMutation.mutate(payload);
   };
 
-  const handleSelectExisting = async (id) => {
-    try {
-      setIsLoading(true);
-      const response = await api.get(`/market-intelligence/${id}`);
-      setMarketIntelligenceData(response.data);
-      setMarketIntelligenceName(response.data.name);
-      setPriceData(response.data.price_data);
-
-      // Determine number of ports based on data
-      const portSet = new Set();
-      Object.keys(response.data.price_data).forEach((key) => {
-        const [origin] = key.split("-");
-        portSet.add(origin);
-      });
-      setSelectedPorts(portSet.size);
-
-      showSuccess("Market intelligence data loaded");
-    } catch (error) {
-      console.error("Error loading market intelligence:", error);
-      showError("Failed to load market intelligence data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Loading state from React Query
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-10">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700"></div>
+      </div>
+    );
+  }
+
+  // Error state from React Query
+  if (isError) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 my-4">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm font-medium text-red-800">Error loading market intelligence data. Please try again.</p>
+          </div>
+          <div className="ml-auto pl-3">
+            <button onClick={() => queryClient.invalidateQueries(["marketIntelligence", deckId])} className="bg-red-100 hover:bg-red-200 text-red-800 px-2 py-1 rounded text-xs">
+              Retry
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -455,8 +422,8 @@ const MarketIntelligencePanel = ({ deckId }) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-800">Market Intelligence</h2>
         <div className="space-x-2">
-          <button onClick={handleSave} disabled={isSubmitting || !deckId} className={`px-4 py-2 rounded text-white ${isSubmitting || !deckId ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"}`}>
-            {isSubmitting ? "Saving..." : "Save Market Intelligence"}
+          <button onClick={handleSave} disabled={saveMutation.isPending || !deckId} className={`px-4 py-2 rounded text-white ${saveMutation.isPending || !deckId ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"}`}>
+            {saveMutation.isPending ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
@@ -497,7 +464,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
           <TabPanels>
             {/* Price Tables Panel */}
             <TabPanel>
-              <PriceTablePanel marketIntelligenceData={marketIntelligenceData} selectedPorts={selectedPorts} priceData={priceData} generateDefaultPriceData={generateDefaultPriceData} />
+              <PriceTablePanel marketIntelligenceData={marketIntelligenceData} selectedPorts={selectedPorts} priceData={priceData} generateDefaultPriceData={generateDefaultPriceData} isGenerating={generateDefaultMutation.isPending} />
             </TabPanel>
 
             {/* Manual Entry Panel */}
@@ -515,11 +482,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
 
             {/* Upload Data Panel */}
             <TabPanel>
-              <UploadDataPanel
-                handleUpload={handleUpload}
-                //marketIntelligenceList={marketIntelligenceList}
-                // handleSelectExisting={handleSelectExisting}
-              />
+              <UploadDataPanel handleUpload={handleUpload} />
             </TabPanel>
           </TabPanels>
         </TabGroup>
