@@ -40,7 +40,7 @@ const UserHome = () => {
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 4500));
+      await new Promise((resolve) => setTimeout(resolve, 4000));
 
       const response = await api.post(
         `rooms/${roomId}/join`,

@@ -4,7 +4,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { api } from "../../axios/axios";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 import { AppContext } from "../../context/AppContext";
-import ShipBay from "../../components/simulations/ShipBay";
+import ShipBay from "../../components/simulations/stowages/ShipBay";
 
 const PORT_COLORS = {
   SBY: "#EF4444", // red

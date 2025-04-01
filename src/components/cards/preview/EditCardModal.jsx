@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
 import { Fragment } from "react";
-import { api } from "../../axios/axios";
+import { api } from "../../../axios/axios";
 import { FaShip } from "react-icons/fa";
-import useToast from "../../toast/useToast";
+import useToast from "../../../toast/useToast";
 
 const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
   const { showSuccess, showError, showWarrning } = useToast();

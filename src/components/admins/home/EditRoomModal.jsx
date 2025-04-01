@@ -452,7 +452,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center">
                   <label className="text-gray-700 font-semibold">Assign Users</label>
-                  <Tooltip>Select group users who can join this room</Tooltip>
+                  <Tooltip>Select users who can join this room</Tooltip>
                 </div>
                 <span className={`text-sm ${editingRoom.assigned_users?.length > editingRoom.max_users ? "text-red-600 font-medium" : "text-gray-500"}`}>
                   {editingRoom.assigned_users?.length || 0}/{editingRoom.max_users} users
@@ -476,7 +476,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                         editingRoom.assigned_users?.length > editingRoom.max_users ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
                       } bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:ring-2`}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder={`Select up to ${editingRoom.max_users} group users...`}
+                      placeholder={`Select up to ${editingRoom.max_users} users...`}
                       displayValue={(selectedIds) =>
                         selectedIds
                           .map((id) => availableUsers.find((user) => user.id === id)?.name)
@@ -490,13 +490,13 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                   </div>
                   <ComboboxOptions className="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white py-2 text-base shadow-xl ring-1 ring-black/5 focus:outline-none sm:text-sm">
                     {availableUsers.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-gray-500">No group users available</div>
+                      <div className="px-4 py-3 text-sm text-gray-500">No users available</div>
                     ) : (
                       <>
                         <div className="px-4 py-2 border-b border-gray-100">
                           <div className="flex items-center justify-between">
                             <span className={`text-sm ${editingRoom.assigned_users?.length > editingRoom.max_users ? "text-red-600" : "text-gray-500"}`}>
-                              {editingRoom.assigned_users?.length || 0}/{editingRoom.max_users} group users selected
+                              {editingRoom.assigned_users?.length || 0}/{editingRoom.max_users} users selected
                             </span>
                             {editingRoom.assigned_users?.length > 0 && (
                               <button onClick={() => setEditingRoom({ ...editingRoom, assigned_users: [] })} className="text-xs text-red-500 hover:text-red-700" type="button">

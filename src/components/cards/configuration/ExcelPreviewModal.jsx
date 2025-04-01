@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { FiAlertTriangle, FiFilter } from "react-icons/fi";
-import { BsTable, BsInfoCircle, BsGraphUp, BsSearch } from "react-icons/bs";
-import { BiDetail } from "react-icons/bi";
+import { BsTable, BsGraphUp, BsSearch } from "react-icons/bs";
 import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 
 const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {

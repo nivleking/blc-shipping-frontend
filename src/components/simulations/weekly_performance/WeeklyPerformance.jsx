@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
-import { AppContext } from "../../context/AppContext";
+import { AppContext } from "../../../context/AppContext";
 import { useParams } from "react-router-dom";
-import { api } from "../../axios/axios";
+import { api } from "../../../axios/axios";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);

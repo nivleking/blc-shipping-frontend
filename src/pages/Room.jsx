@@ -233,16 +233,6 @@ const Room = () => {
       );
       setRoomStatus("active");
 
-      const deckResponse = await api.get(`/decks/${deckId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const cards = deckResponse.data.cards;
-
-      console.log("Cards", cards);
-      console.log("Users", users);
-
       const dockLayout = Array.from({ length: 3 }).map(() => Array(5).fill(null));
       const dockSize = { rows: 6, columns: 6 };
 
@@ -264,7 +254,6 @@ const Room = () => {
           }
         );
 
-        // Fetch ship bay for the current user
         const shipBayResponse = await api.get(`/ship-bays/${roomId}/${user.id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -276,34 +265,26 @@ const Room = () => {
         if (!userShipBay) continue;
 
         const userPort = userShipBay.port;
+
+        const deckResponse = await api.get(`/decks/${deckId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const cards = deckResponse.data.cards;
         const matchedCards = cards.filter((card) => card.origin === userPort);
 
-        // for (const matchedCard of matchedCards) {
-        //   await api.post(
-        //     `/rooms/${roomId}/create-card-temporary/${user.id}`,
-        //     { card_id: matchedCard.id },
-        //     {
-        //       headers: {
-        //         Authorization: `Bearer ${token}`,
-        //       },
-        //     }
-        //   );
-        // }
-
-        // If there are cards to create temporaries for
         if (matchedCards.length > 0) {
-          // Prepare data for batch creation
           const batchData = {
             room_id: roomId,
             user_id: user.id,
-            round: 1, // Starting round
+            round: 1,
             cards: matchedCards.map((card) => ({
               card_id: card.id,
               status: "selected",
             })),
           };
 
-          // Make a single API call to create all card temporaries
           await api.post(`/card-temporary/batch`, batchData, {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -598,7 +579,7 @@ const Room = () => {
           {/* Enhanced Users Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
-              <h3 className="text-xl font-semibold">{showRankings ? "Leaderboard" : `Group Users (${users.length})`}</h3>
+              <h3 className="text-xl font-semibold">{showRankings ? "Leaderboard" : `Users (${users.length})`}</h3>
               {roomStatus === "active" && (
                 <button
                   onClick={() => {
@@ -609,7 +590,7 @@ const Room = () => {
                   }}
                   className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-500 hover:bg-indigo-600"
                 >
-                  {showRankings ? "Show Group Users" : "Show Rankings"}
+                  {showRankings ? "Show Users" : "Show Rankings"}
                 </button>
               )}
             </div>
@@ -727,7 +708,7 @@ const Room = () => {
                   ) : (
                     <tr>
                       <td colSpan="4" className="px-6 py-4 text-center text-gray-500 italic">
-                        No group users in the room.
+                        No users in the room.
                       </td>
                     </tr>
                   )}

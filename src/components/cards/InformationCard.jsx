@@ -179,7 +179,7 @@ const InformationCard = () => {
               <h4 className="font-medium text-gray-800 mb-1">Card Properties</h4>
               <ul className="list-disc pl-4 text-sm text-gray-700 space-y-1">
                 <li>
-                  <strong>Card ID:</strong> Unique identifier (1-99999)
+                  <strong>Card ID:</strong> Unique identifier
                 </li>
                 <li>
                   <strong>Origin Port:</strong> Where containers are loaded
@@ -329,7 +329,7 @@ const InformationCard = () => {
               <h4 className="font-medium text-gray-800 mb-1">Required Columns</h4>
               <ul className="list-disc pl-4 text-sm text-gray-700 space-y-1">
                 <li>
-                  <strong>ID:</strong> Unique identifier (1-99999)
+                  <strong>ID:</strong> Unique identifier
                 </li>
                 <li>
                   <strong>Origin:</strong> Port code (SBY, MKS, etc.)

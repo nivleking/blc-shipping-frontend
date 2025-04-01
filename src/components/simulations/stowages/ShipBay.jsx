@@ -1,6 +1,6 @@
 import ContainerBay from "./ContainerBay";
 import DroppableCell from "./DroppableCell";
-import DraggableContainer from "./DraggableContainer";
+import DraggableContainer from "./DraggableContainer"
 
 const isValidPlacement = (droppedItems, baySize, cellId) => {
   const [type, bayIndex, cellIndex] = cellId.split("-");

@@ -30,9 +30,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
         <div className="flex-1 overflow-auto p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Layout Name <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Layout Name</label>
               <input
                 type="text"
                 value={formData.name}
@@ -43,9 +41,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <input
                 type="text"
                 value={formData.description}
@@ -56,9 +52,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bay Size <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bay Size</label>
               <div className="flex items-center gap-4">
                 <div>
                   <label className="text-xs text-gray-500">Rows (2-10)</label>
@@ -97,9 +91,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Number of Bays <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Number of Bays</label>
               <div>
                 <input
                   type="number"

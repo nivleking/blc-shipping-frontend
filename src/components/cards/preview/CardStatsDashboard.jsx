@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { FiChevronDown, FiChevronUp, FiInfo } from "react-icons/fi";
-import { FaShip, FaBoxOpen, FaDollarSign, FaMapMarkerAlt } from "react-icons/fa";
+import { FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { FaShip, FaBoxOpen, FaDollarSign } from "react-icons/fa";
 
 const CardStatsDashboard = ({ cards, containers, formatIDR }) => {
   const [isExpanded, setIsExpanded] = useState(false);

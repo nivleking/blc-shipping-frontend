@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { BsLightning, BsCloudCheck, BsCloudSlash, BsInfoCircle } from "react-icons/bs";
-import { api } from "../../axios/axios";
+import { BsLightning, BsCloudCheck, BsCloudSlash } from "react-icons/bs";
+import { api } from "../../../axios/axios";
 
 const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, handlePortSelect, handleRevenueSelect, handleQuantitySelect, deckId, onGenerate }) => {
   const [activeMarketIntelligence, setActiveMarketIntelligence] = useState(null);

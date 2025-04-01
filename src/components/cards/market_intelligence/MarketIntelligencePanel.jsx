@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { api } from "../../axios/axios";
+import { api } from "../../../axios/axios";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 
 import PriceTablePanel from "./PriceTablePanel";
 import ManualEntryPanel from "./ManualEntryPanel";
 import UploadDataPanel from "./UploadDataPanel";
-import useToast from "../../toast/useToast";
+import useToast from "../../../toast/useToast";
 
 const MarketIntelligencePanel = ({ deckId }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
@@ -41,6 +41,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
     try {
       const response = await api.get(`/decks/${deckId}/market-intelligence`);
       setMarketIntelligenceList(response.data);
+      console.log("Market Intelligence List:", response.data);
     } catch (error) {
       console.error("Error loading market intelligence list:", error);
     }

@@ -4,7 +4,7 @@ import DroppableCell from "./DroppableCell";
 import DraggableContainer from "./DraggableContainer";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { BiErrorCircle } from "react-icons/bi";
-import Tooltip from "../Tooltip";
+import Tooltip from "../../Tooltip";
 
 const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, draggingTargetContainer }) => {
   const [currentPage, setCurrentPage] = useState(0);

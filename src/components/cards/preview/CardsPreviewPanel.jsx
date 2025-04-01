@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { api } from "../../axios/axios";
+import { api } from "../../../axios/axios";
 import PortLegendCards from "./PortLegendCards";
 import EditCardModal from "./EditCardModal";
 import CardsTableView from "./CardsTableView";
 import CardsGridView from "./CardsGridView";
 import CardStatsDashboard from "./CardStatsDashboard";
-import ConfirmationModal from "../ConfirmationModal";
-import useToast from "../../toast/useToast";
+import ConfirmationModal from "../../ConfirmationModal";
+import useToast from "../../../toast/useToast";
 
 const CardsPreviewPanel = ({ cards, containers, formatIDR, onCardUpdated, deckId }) => {
   const { showSuccess, showError } = useToast();

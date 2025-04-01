@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import useToast from "../../toast/useToast";
+import useToast from "../../../toast/useToast";
 
 const MarketIntelligenceUpload = ({ onUpload }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();

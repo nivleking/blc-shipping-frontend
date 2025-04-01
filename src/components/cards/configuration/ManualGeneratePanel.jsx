@@ -1,15 +1,14 @@
 import { useState } from "react";
-import { api } from "../../axios/axios";
+import { api } from "../../../axios/axios";
 import { FaShip } from "react-icons/fa";
-import LoadingOverlay from "../LoadingOverlay";
-import useToast from "../../toast/useToast";
+import LoadingOverlay from "../../LoadingOverlay";
+import useToast from "../../../toast/useToast";
 
 const validateId = (id) => {
-  const num = parseInt(id);
-  return !isNaN(num) && num >= 1 && num <= 99999;
+  return id && !isNaN(parseInt(id)) && parseInt(id) >= 1;
 };
 
-const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainers }) => {
+const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPorts, setSelectedPorts] = useState(4);
@@ -68,7 +67,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
 
     try {
       if (!validateId(manualCardForm.id)) {
-        showError("Invalid ID. Must be a number between 1-99999");
+        showError("Invalid ID. Must be a number above 1");
         return;
       }
 
@@ -87,11 +86,8 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
         card_id: cardResponse.data.id,
       });
 
-      // Refresh the card list
-      await refreshCards();
-
-      // Refresh the container list
-      await refreshContainers();
+      // Refresh the card and containers
+      await refreshData();
 
       showSuccess("Sales call card created and added to deck!");
 
@@ -200,11 +196,10 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshCards, refreshContainer
                       onChange={handleManualCardChange}
                       pattern="^[1-9]\d{0,4}$"
                       required
-                      placeholder="1-99999"
+                      placeholder=""
                       className="w-full p-3 bg-gray-50 border-2 rounded-lg 
                       focus:outline-none focus:border-blue-500 transition-colors"
                     />
-                    {/* <p className="mt-1 text-xs text-gray-500">Enter a number between 1-99999</p> */}
                   </div>
                 </div>
 

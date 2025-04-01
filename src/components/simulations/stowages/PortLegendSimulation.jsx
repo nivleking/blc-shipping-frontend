@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { api, socket } from "../../axios/axios";
-import { AppContext } from "../../context/AppContext";
+import { api, socket } from "../../../axios/axios";
+import { AppContext } from "../../../context/AppContext";
 
 const PORT_COLORS = {
   SBY: "#EF4444", // red

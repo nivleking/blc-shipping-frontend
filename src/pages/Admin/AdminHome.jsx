@@ -46,7 +46,6 @@ const AdminHome = () => {
   const [roomToDelete, setRoomToDelete] = useState(null);
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
 
-  // Gunakan useQuery untuk menggantikan fetchRooms
   const { data, isLoading, error } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () => {
@@ -58,22 +57,19 @@ const AdminHome = () => {
       console.log("Rooms fetched:", response.data);
       return response.data;
     },
-    enabled: !!token, // Hanya jalankan jika token ada
+    enabled: !!token,
   });
 
-  // Ekstrak data dari hasil query
   const rooms = data?.rooms || [];
   const admins = data?.admins || {};
   const decks = data?.decks || [];
   const layouts = data?.layouts || [];
   const availableUsers = data?.availableUsers || [];
 
-  // Fungsi untuk refresh data secara manual
   const refreshRooms = () => {
     queryClient.invalidateQueries(["rooms"]);
   };
 
-  // Gunakan useMutation untuk delete room
   const deleteMutation = useMutation({
     mutationFn: async (roomId) => {
       const usersResponse = await api.get(`rooms/${roomId}/users`, {
@@ -93,7 +89,6 @@ const AdminHome = () => {
         .then(() => ({ roomId, userIds }));
     },
     onSuccess: ({ roomId, userIds }) => {
-      // Invalidate dan refetch
       queryClient.invalidateQueries(["rooms"]);
 
       showSuccess("Room deleted successfully!");
@@ -113,7 +108,6 @@ const AdminHome = () => {
     },
   });
 
-  // Gunakan useMutation untuk update room
   const updateMutation = useMutation({
     mutationFn: async (updatedFields) => {
       return api.put(`/rooms/${editingRoom.id}`, updatedFields, {

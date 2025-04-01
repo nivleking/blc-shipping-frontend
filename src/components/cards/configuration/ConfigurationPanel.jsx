@@ -4,20 +4,7 @@ import FileGeneratePanel from "./FileGeneratePanel";
 import ManualGeneratePanel from "./ManualGeneratePanel";
 import AutoGeneratePanel from "./AutoGeneratePanel";
 
-const ConfigurationPanel = ({
-  portStats,
-  formatIDR,
-  generateFormData,
-  handlePresetSelect,
-  handlePortSelect,
-  handleRevenueSelect,
-  handleQuantitySelect,
-  handleGenerateChange,
-  deckId,
-  refreshCards,
-  refreshContainers,
-  handleGenerateButtonClick,
-}) => {
+const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePresetSelect, handlePortSelect, handleRevenueSelect, handleQuantitySelect, handleGenerateChange, deckId, refreshData, handleGenerateButtonClick }) => {
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-4">
@@ -55,10 +42,14 @@ const ConfigurationPanel = ({
 
             <TabPanels className="mt-2">
               <TabPanel>
-                <ManualGeneratePanel formatIDR={formatIDR} deckId={deckId} refreshCards={refreshCards} refreshContainers={refreshContainers} />
+                <ManualGeneratePanel
+                  formatIDR={formatIDR}
+                  deckId={deckId}
+                  refreshData={refreshData}
+                />
               </TabPanel>
               <TabPanel>
-                <FileGeneratePanel deckId={deckId} refreshCards={refreshCards} refreshContainers={refreshContainers} />
+                <FileGeneratePanel deckId={deckId} refreshData={refreshData} />
               </TabPanel>
               <TabPanel>
                 <AutoGeneratePanel

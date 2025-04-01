@@ -1,5 +1,4 @@
 import React from "react";
-import { FaSortUp, FaSortDown } from "react-icons/fa";
 import { AiFillEye, AiFillEdit, AiFillDelete } from "react-icons/ai";
 
 const LayoutTableView = ({ layouts, currentPageData, setSelectedLayout, setShowPreviewModal, setFormData, setShowEditForm, confirmDelete }) => {

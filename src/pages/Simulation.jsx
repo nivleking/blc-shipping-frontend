@@ -5,10 +5,10 @@ import { AppContext } from "../context/AppContext";
 import HeaderCards from "../components/simulations/stowages/HeaderCards";
 import LoadingSpinner from "../components/simulations/LoadingSpinner";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import WeeklyPerformance from "../components/simulations/WeeklyPerformance";
-import MarketIntelligence from "../components/simulations/MarketIntelligence";
-import Stowage from "../components/simulations/Stowage";
-import CapacityUptake from "../components/simulations/CapacityUptake";
+import WeeklyPerformance from "../components/simulations/weekly_performance/WeeklyPerformance";
+import MarketIntelligence from "../components/simulations/market_intelligence/MarketIntelligence";
+import Stowage from "../components/simulations/stowages/Stowage";
+import CapacityUptake from "../components/simulations/capacity_uptake/CapacityUptake";
 import useToast from "../toast/useToast";
 
 const PORT_COLORS = {

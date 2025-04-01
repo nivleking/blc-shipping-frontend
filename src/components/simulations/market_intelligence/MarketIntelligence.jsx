@@ -1,15 +1,15 @@
 import { useState, useEffect, useContext } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { api } from "../../axios/axios";
-import { AppContext } from "../../context/AppContext";
+import { AppContext } from "../../../context/AppContext";
+import { api } from "../../../axios/axios";
 
 const MarketIntelligence = ({ port, roomId, deckId, moveCost }) => {
   const { token } = useContext(AppContext);
   const [isLoading, setIsLoading] = useState(true);
   const [priceData, setPriceData] = useState({});
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("matrix"); // 'matrix' or 'list'
-  const [filterType, setFilterType] = useState("all"); // 'all', 'dry', 'reefer'
+  const [viewMode, setViewMode] = useState("matrix");
+  const [filterType, setFilterType] = useState("all");
 
   useEffect(() => {
     if (deckId) {
@@ -22,7 +22,6 @@ const MarketIntelligence = ({ port, roomId, deckId, moveCost }) => {
     setError(null);
 
     try {
-      // Try to get active market intelligence for this deck
       const response = await api.get(`/decks/${deckId}/market-intelligence/active`, {
         headers: {
           Authorization: `Bearer ${token}`,

@@ -2,16 +2,16 @@ import { useState } from "react";
 import { BsCloudUpload, BsDownload } from "react-icons/bs";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { api } from "../../axios/axios";
-import LoadingOverlay from "../LoadingOverlay";
+import { api } from "../../../axios/axios";
+import LoadingOverlay from "../../LoadingOverlay";
 import ExcelPreviewModal from "./ExcelPreviewModal";
-import useToast from "../../toast/useToast";
+import useToast from "../../../toast/useToast";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
 };
 
-const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }) => {
+const FileGeneratePanel = ({ deckId, refreshData }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -229,8 +229,7 @@ const FileGeneratePanel = ({ onImport, deckId, refreshCards, refreshContainers }
       showSuccess(`${response.data.message}`);
 
       // Refresh data
-      await refreshCards();
-      await refreshContainers();
+      await refreshData();
 
       setSelectedFile(null);
       const fileInput = document.getElementById("file-upload-input");

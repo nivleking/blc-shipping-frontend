@@ -3,7 +3,7 @@ import ShipBay from "./ShipBay";
 import ShipDock from "./ShipDock";
 import SalesCallCard from "./SalesCallCard";
 import DraggableContainer from "./DraggableContainer";
-import PortLegendSimulation from "../cards/PortLegendSimulation";
+import PortLegendSimulation from "./PortLegendSimulation";
 import BayStatisticsTable from "./BayStatisticsTable";
 
 const Stowage = ({

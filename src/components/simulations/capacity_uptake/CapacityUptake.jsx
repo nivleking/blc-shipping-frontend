@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
-import { AppContext } from "../../context/AppContext";
-import { api } from "../../axios/axios";
+import { AppContext } from "../../../context/AppContext";
+import { api } from "../../../axios/axios";
 import { useParams } from "react-router-dom";
 import CapacityEstimation from "./CapacityEstimation";
 import OrderProcessing from "./OrderProcessing";

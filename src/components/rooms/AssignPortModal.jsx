@@ -45,7 +45,7 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">Assign Ports to Group Users</h2>
+          <h2 className="text-xl font-bold text-gray-800">Assign Ports to Users</h2>
         </div>
 
         <div className="p-6">

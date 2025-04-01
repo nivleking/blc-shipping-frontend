@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import MarketIntelligenceUpload from "../simulations/MarketIntelligenceUpload";
+import MarketIntelligenceUpload from "./MarketIntelligenceUpload";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { BsFiletypeXlsx } from "react-icons/bs";
 import MarketIntelligencePreviewModal from "./MarketIntelligencePreviewModal";
 import "./UploadDataPanel.css";
-import useToast from "../../toast/useToast";
+import useToast from "../../../toast/useToast";
 
 const UploadDataPanel = ({ handleUpload }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
