@@ -6,7 +6,7 @@ import HeaderCards from "../components/simulations/stowages/HeaderCards";
 import LoadingSpinner from "../components/simulations/LoadingSpinner";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import WeeklyPerformance from "../components/simulations/weekly_performance/WeeklyPerformance";
-import MarketIntelligence from "../components/simulations/market_intelligence/MarketIntelligence";
+import MarketIntelligenceSimulation from "../components/simulations/market_intelligence/MarketIntelligenceSimulation";
 import Stowage from "../components/simulations/stowages/Stowage";
 import CapacityUptake from "../components/simulations/capacity_uptake/CapacityUptake";
 import useToast from "../toast/useToast";
@@ -1810,7 +1810,7 @@ const Simulation = () => {
               {/* Market Intelligence Tab */}
               <TabPanel>
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                  <MarketIntelligence port={port} roomId={roomId} deckId={deckId} moveCost={moveCost} />
+                  <MarketIntelligenceSimulation port={port} roomId={roomId} deckId={deckId} moveCost={moveCost} />
                 </div>
               </TabPanel>
             </TabPanels>

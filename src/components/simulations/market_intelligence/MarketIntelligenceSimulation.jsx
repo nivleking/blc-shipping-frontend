@@ -3,7 +3,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { AppContext } from "../../../context/AppContext";
 import { api } from "../../../axios/axios";
 
-const MarketIntelligence = ({ port, roomId, deckId, moveCost }) => {
+const MarketIntelligenceSimulation = ({ port, roomId, deckId, moveCost }) => {
   const { token } = useContext(AppContext);
   const [isLoading, setIsLoading] = useState(true);
   const [priceData, setPriceData] = useState({});
@@ -22,11 +22,7 @@ const MarketIntelligence = ({ port, roomId, deckId, moveCost }) => {
     setError(null);
 
     try {
-      const response = await api.get(`/decks/${deckId}/market-intelligence/active`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get(`/market-intelligence/deck/${deckId}`);
 
       if (response.data && response.data.price_data) {
         setPriceData(response.data.price_data);
@@ -405,4 +401,4 @@ const MarketIntelligence = ({ port, roomId, deckId, moveCost }) => {
   );
 };
 
-export default MarketIntelligence;
+export default MarketIntelligenceSimulation;
