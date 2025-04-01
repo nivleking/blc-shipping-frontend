@@ -28,10 +28,10 @@ const AdminCreateCards = () => {
   const navigate = useNavigate();
 
   const [generateFormData, setGenerateFormData] = useState({
-    totalRevenueEachPort: 250_000_000,
-    totalContainerQuantityEachPort: 15,
-    salesCallCountEachPort: 8,
-    ports: 4,
+    totalRevenueEachPort: 500_000_000,
+    totalContainerQuantityEachPort: 40,
+    salesCallCountEachPort: 20,
+    ports: 5,
     quantityStandardDeviation: 1,
     revenueStandardDeviation: 500_000,
     useMarketIntelligence: false,
