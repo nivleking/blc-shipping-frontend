@@ -46,9 +46,14 @@ const Room = () => {
   const [missingUsersCount, setMissingUsersCount] = useState(0);
   const [room, setRoom] = useState({});
 
-  useEffect(() => {
-    fetchRoomDetails();
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [swapConfig, setSwapConfig] = useState({});
+  const [showSwapConfirmation, setShowSwapConfirmation] = useState(false);
+  const [showSwapConfigModal, setShowSwapConfigModal] = useState(false);
+  const [deckOrigins, setDeckOrigins] = useState([]);
+  const [currentSwapConfig, setCurrentSwapConfig] = useState(null);
 
+  useEffect(() => {
     socket.on("user_added", ({ roomId: receivedRoomId, newUser }) => {
       if (receivedRoomId === roomId) {
         setUsers((prevUsers) => [...prevUsers, newUser]);
@@ -101,15 +106,21 @@ const Room = () => {
       socket.off("port_updated");
       socket.off("rankings_updated");
     };
-  }, [roomId, token, user, navigate, roomStatus]);
+  }, [user, token, navigate, roomStatus]);
+
+  useEffect(() => {
+    if (token && roomId) {
+      fetchRoomDetails();
+    }
+  }, [user, roomId, token]);
 
   async function fetchRoomDetails() {
     try {
+      // Get room data
       const roomResponse = await api.get(`/rooms/${roomId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
+
       console.log("room res", roomResponse);
       const adminId = roomResponse.data.admin_id;
       const deckId = roomResponse.data.deck_id;
@@ -118,36 +129,35 @@ const Room = () => {
       setDeckId(deckId);
       setRoom(roomResponse.data);
 
-      // Fetch admin details
-      const adminResponse = await api.get(`/users/${adminId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // Fetch everything else in parallel for better performance
+      const [adminResponse, usersResponse, originsResponse, userPortsResponse] = await Promise.all([
+        // Admin details
+        api.get(`/users/${adminId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+
+        // Users list
+        api.get(`/rooms/${roomId}/users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+
+        // Deck origins
+        api.get(`/rooms/${roomId}/deck-origins`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+
+        // User ports
+        api.get(`/rooms/${roomId}/user-port2`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      // Set state with all received data
       setAdminName(adminResponse.data.name);
-
-      // Fetch users
-      const usersResponse = await api.get(`/rooms/${roomId}/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
       setUsers(usersResponse.data || []);
-
-      // Fetch origins
-      const originsResponse = await api.get(`/rooms/${roomId}/deck-origins`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
       setOrigins(originsResponse.data);
 
-      const userPortsResponse = await api.get(`/rooms/${roomId}/user-port2`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      // Process port assignments
       const portAssignments = {};
       userPortsResponse.data.forEach((shipBay) => {
         portAssignments[shipBay.user_id] = shipBay.port;
@@ -156,19 +166,29 @@ const Room = () => {
       setAssignedPorts(portAssignments);
       setPortsSet(Object.keys(portAssignments).length > 0);
 
-      // Get users array from room response
-      const usersArray = JSON.parse(roomResponse.data.users || "[]");
+      // Store deck origins for swap config
+      setDeckOrigins(originsResponse.data);
 
-      // Check if there are any users before trying to access
-      if (roomStatus === "active") {
+      // Set current swap config if it exists
+      if (roomResponse.data.swap_config) {
+        try {
+          const parsedConfig = typeof roomResponse.data.swap_config === "string" ? JSON.parse(roomResponse.data.swap_config) : roomResponse.data.swap_config;
+
+          setCurrentSwapConfig(parsedConfig);
+          setSwapConfig(parsedConfig);
+        } catch (e) {
+          console.error("Error parsing swap config:", e);
+        }
+      }
+
+      // Get current round from first user's ship bay if room is active
+      if (roomResponse.data.status === "active") {
+        const usersArray = JSON.parse(roomResponse.data.users || "[]");
         if (usersArray.length > 0) {
-          const firstUserId = usersArray[0]; // Get first user ID
+          const firstUserId = usersArray[0];
 
-          // Get current round from first user's ship bay
           const shipBayResponse = await api.get(`ship-bays/${roomId}/${firstUserId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           });
 
           setCurrentRound(shipBayResponse.data.current_round);
@@ -176,6 +196,7 @@ const Room = () => {
       }
     } catch (error) {
       console.error("There was an error fetching the room details!", error);
+      showError("Failed to load room data");
     }
   }
 
@@ -353,45 +374,6 @@ const Room = () => {
       showError("Failed to end simulation. Please try again.");
     }
   }
-
-  const [showSwapModal, setShowSwapModal] = useState(false);
-  const [swapConfig, setSwapConfig] = useState({});
-  const [showSwapConfirmation, setShowSwapConfirmation] = useState(false);
-  const [showSwapConfigModal, setShowSwapConfigModal] = useState(false);
-  const [deckOrigins, setDeckOrigins] = useState([]);
-  const [currentSwapConfig, setCurrentSwapConfig] = useState(null);
-
-  useEffect(() => {
-    if (roomId && token && room.deck_id) {
-      fetchDeckOrigins();
-    }
-  }, [roomId, token, room.deck_id]);
-
-  const fetchDeckOrigins = async () => {
-    try {
-      const response = await api.get(`/rooms/${roomId}/deck-origins`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const originsArray = Array.isArray(response.data) ? response.data : Object.values(response.data).filter((value) => typeof value === "string");
-
-      setDeckOrigins(originsArray);
-
-      if (room.swap_config) {
-        try {
-          const parsedConfig = typeof room.swap_config === "string" ? JSON.parse(room.swap_config) : room.swap_config;
-
-          setCurrentSwapConfig(parsedConfig);
-          setSwapConfig(parsedConfig);
-        } catch (e) {
-          console.error("Error parsing swap config:", e);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching deck origins:", error);
-      showError("Failed to fetch port information");
-    }
-  };
 
   const handleSwapConfigSave = async (newSwapConfig) => {
     if (currentRound > totalRounds) {
@@ -604,7 +586,7 @@ const Room = () => {
                       {showRankings ? "Rank" : "#"}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
-                      Player
+                      User
                     </th>
                     {showRankings && (
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
@@ -699,7 +681,7 @@ const Room = () => {
                               ${roomStatus === "active" || roomStatus === "finished" ? "bg-gray-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"}`}
                               disabled={roomStatus === "active" || roomStatus === "finished"}
                             >
-                              Kick Player
+                              Kick User
                             </button>
                           </td>
                         )}
@@ -728,6 +710,21 @@ const Room = () => {
               </svg>
               HOME
             </button>
+
+            {roomStatus === "active" && !user?.is_admin && (
+              <button
+                onClick={() => {
+                  navigate(`/simulation/${roomId}`);
+                }}
+                className="inline-flex items-center justify-center px-4 py-4 border-2 border-green-500 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors shadow-lg"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                REJOIN
+              </button>
+            )}
             {user && user.is_admin === true && roomStatus !== "active" && roomStatus !== "finished" && (
               <>
                 <button
@@ -746,7 +743,7 @@ const Room = () => {
     ${!portsSet || users.length < 1 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors`}
                   disabled={!portsSet || users.length < 1}
-                  title={!portsSet ? "Please set ports first" : users.length < 1 ? "Need at least one player" : ""}
+                  title={!portsSet ? "Please set ports first" : users.length < 1 ? "Need at least one user" : ""}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
