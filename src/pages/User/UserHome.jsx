@@ -55,7 +55,11 @@ const UserHome = () => {
       if (response.status === 200) {
         socket.emit("user_added", { roomId, newUser: user });
 
-        navigate(`/rooms/${roomId}`);
+        if (response.data.simulation_started) {
+          navigate(`/simulation/${roomId}`);
+        } else {
+          navigate(`/rooms/${roomId}`);
+        }
       }
     } catch (error) {
       console.error("Error joining room:", error);

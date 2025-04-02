@@ -50,13 +50,18 @@ const Stowage = ({
 
   return (
     <>
-      <PortLegendSimulation currentRound={currentRound} totalRounds={totalRounds} />
+      {/* <PortLegendSimulation /> */}
 
       {/* Section Header */}
       <div className="flex justify-between items-center mb-4 mt-4 bg-white rounded-xl shadow-sm p-4">
         <div className="flex flex-col md:flex-row md:items-center gap-2">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Section {section}: {section === 1 ? "Unload Port Containers" : "Handle Sales Calls"}
+          <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <span>
+              Section {section}: {section === 1 ? "Unload Port Containers" : "Handle Sales Calls"}
+            </span>
+            <span className="text-sm font-medium px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
+              Week {currentRound} of {totalRounds}
+            </span>
             {currentRound > totalRounds && section === 1 && <span className="ml-2 text-sm text-red-600 font-medium">(Final Unloading Phase)</span>}
           </h2>
         </div>
@@ -171,6 +176,7 @@ const Stowage = ({
                         mustProcessCards={mustProcessCards}
                         cardsLimit={cardsLimit}
                         onRefreshCards={onRefreshCards}
+                        port={port}
                       />
                     </div>
                   ) : (

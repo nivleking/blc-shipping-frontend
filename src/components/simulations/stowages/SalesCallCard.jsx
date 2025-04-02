@@ -1,3 +1,5 @@
+import PortLegendSimulation from "./PortLegendSimulation";
+
 const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR, handleAcceptCard, handleRejectCard, isProcessingCard, isCardVisible, processedCards, mustProcessCards, cardsLimit, isLimitExceeded, onRefreshCards }) => {
   // Cek apakah tidak ada kartu yang tersedia
   const noCardsAvailable = !salesCallCards.length || currentCardIndex >= salesCallCards.length;
@@ -49,6 +51,9 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
 
   return (
     <div key={currentCard.id} className="bg-white rounded-lg shadow-md p-4 w-full">
+      {/* Pass compact mode to PortLegendSimulation */}
+      <PortLegendSimulation compact={true} />
+
       {/* Progress Information */}
       <div className="mb-4 space-y-3">
         <div className="flex justify-between items-center">
