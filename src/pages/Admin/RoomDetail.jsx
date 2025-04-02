@@ -183,7 +183,7 @@ const RoomDetail = () => {
               ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
-              Player Stats
+              User Stats
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -213,7 +213,7 @@ const RoomDetail = () => {
                       fetchUserLogs(e.target.value);
                     }}
                   >
-                    <option value="">Select Player</option>
+                    <option value="">Select User</option>
                     {users.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.name} ({userPorts[user.id] || "Loading..."})
@@ -261,14 +261,14 @@ const RoomDetail = () => {
                       </div>
                     ))}
 
-                  {(!Array.isArray(simulationLogs) || simulationLogs.length === 0) && selectedUserId && <div className="text-center text-gray-500 py-8">No simulation logs found for this player</div>}
+                  {(!Array.isArray(simulationLogs) || simulationLogs.length === 0) && selectedUserId && <div className="text-center text-gray-500 py-8">No simulation logs found for this user</div>}
 
-                  {!selectedUserId && <div className="text-center text-gray-500 py-8">Select a player to view their simulation logs</div>}
+                  {!selectedUserId && <div className="text-center text-gray-500 py-8">Select a user to view their simulation logs</div>}
                 </div>
               </div>
             </TabPanel>
 
-            {/* Player Stats Panel */}
+            {/* User Stats Panel */}
             {/* <TabPanel>
               <PlayerStats
                 players={[

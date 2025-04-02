@@ -106,37 +106,42 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
   const handleDeckChange = async (e) => {
     const deckId = e.target.value;
+
+    if (!deckId) {
+      setSelectedDeck(null);
+      setFormData((prevData) => ({
+        ...prevData,
+        deck_id: "",
+        max_users: 0,
+      }));
+      setDeckOrigins([]);
+      return;
+    }
+
     setSelectedDeck(decks.find((deck) => deck.id === deckId));
     setFormData((prevData) => ({
       ...prevData,
       deck_id: deckId,
     }));
 
-    if (deckId) {
-      try {
-        const response = await api.get(`decks/${deckId}/origins`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const origins = response.data;
+    try {
+      const response = await api.get(`decks/${deckId}/origins`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const origins = response.data;
 
-        setFormData((prevData) => ({
-          ...prevData,
-          max_users: Object.keys(origins).length,
-        }));
-
-        setDeckOrigins(Object.values(origins));
-        console.log("Deck origins:", origins);
-      } catch (error) {
-        console.error("Error selecting deck:", error);
-        showError("Error selecting deck. Please try again.");
-      }
-    } else {
       setFormData((prevData) => ({
         ...prevData,
-        max_users: 0,
+        max_users: Object.keys(origins).length,
       }));
+
+      setDeckOrigins(Object.values(origins));
+      console.log("Deck origins:", origins);
+    } catch (error) {
+      console.error("Error selecting deck:", error);
+      showError("Error selecting deck. Please try again.");
     }
   };
 
@@ -373,12 +378,20 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           <Combobox
             value={selectedDeck}
             onChange={(deck) => {
-              setSelectedDeck(deck);
-              setFormData((prev) => ({
-                ...prev,
-                deck: deck.id,
-              }));
-              handleDeckChange({ target: { value: deck.id } });
+              if (deck) {
+                setSelectedDeck(deck);
+                setFormData((prev) => ({
+                  ...prev,
+                  deck: deck.id,
+                }));
+                handleDeckChange({ target: { value: deck.id } });
+              } else {
+                setSelectedDeck(null);
+                setFormData((prev) => ({
+                  ...prev,
+                  deck: "",
+                }));
+              }
             }}
           >
             <div className="relative">

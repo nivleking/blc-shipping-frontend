@@ -395,7 +395,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
             <div className="flex flex-col">
               <div className="flex items-center">
                 <label className="text-gray-700 font-semibold mb-2">Max Users</label>
-                <Tooltip>Maximum number of players who can join this room (determined by deck)</Tooltip>
+                <Tooltip>Maximum number of users who can join this room (determined by deck)</Tooltip>
               </div>
               <input type="number" disabled value={editingRoom.max_users || 0} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-gray-100 text-gray-600" />
             </div>

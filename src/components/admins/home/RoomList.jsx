@@ -158,12 +158,12 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
                     <div className="flex flex-col space-y-2">
                       <div className="flex items-center text-gray-600">
                         <GiShipBow className="w-4 h-4 text-indigo-500 mr-2" />
-                        <span className="font-medium">Max Players:</span>
+                        <span className="font-medium">Max Users:</span>
                         <span className="ml-2">{room.max_users}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <MdOutlineGridOn className="w-4 h-4 text-green-500 mr-2" />
-                        <span className="font-medium">Assigned Players:</span>
+                        <span className="font-medium">Assigned Users:</span>
                         <span className="ml-2">{room.assigned_users ? (typeof room.assigned_users === "string" ? JSON.parse(room.assigned_users).length : room.assigned_users.length) : 0}</span>
                       </div>
                     </div>
