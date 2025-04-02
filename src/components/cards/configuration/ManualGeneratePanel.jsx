@@ -120,7 +120,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
     }
   };
 
-  const fetchActiveMarketIntelligence = async () => {
+  const fetchMarketIntelligence = async () => {
     if (!useMarketIntelligenceToggle) return;
 
     setIsLoadingMI(true);
@@ -141,10 +141,8 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
         const ports = Array.from(portSet).sort();
         setMiPorts(ports);
 
-        if (ports.length >= 2) {
-          setUsingMarketIntelligence(true);
-          setSelectedPorts(ports.length);
-        }
+        setUsingMarketIntelligence(true);
+        setSelectedPorts(ports.length);
       }
     } catch (error) {
       console.error("Error fetching market intelligence:", error);
@@ -166,7 +164,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
       if (activeMarketIntelligence) {
         setUsingMarketIntelligence(true);
       } else {
-        fetchActiveMarketIntelligence();
+        fetchMarketIntelligence();
       }
     } else {
       setUsingMarketIntelligence(false);
@@ -181,7 +179,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
   useEffect(() => {
     if (useMarketIntelligenceToggle) {
-      fetchActiveMarketIntelligence();
+      fetchMarketIntelligence();
     }
   }, [useMarketIntelligenceToggle]);
 
@@ -307,7 +305,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                       name="id"
                       value={manualCardForm.id}
                       onChange={handleManualCardChange}
-                      pattern="^[1-9]\d{0,4}$"
+                      // pattern="^[1-9]\d{0,4}$"
                       required
                       placeholder="Enter Card ID"
                       className="w-full p-3 bg-gray-50 border-2 rounded-lg 

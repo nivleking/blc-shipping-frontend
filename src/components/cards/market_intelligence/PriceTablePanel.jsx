@@ -134,7 +134,7 @@ const PriceTablePanel = ({ marketIntelligenceData, selectedPorts, isGenerating, 
     <div>
       <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
         <div className="bg-blue-50 rounded-lg p-4 flex-grow">
-          <h3 className="text-lg font-semibold text-blue-800">Active Market Intelligence</h3>
+          <h3 className="text-lg font-semibold text-blue-800">Market Intelligence</h3>
           <p className="text-blue-700">
             <span className="font-medium">Name:</span> {marketIntelligenceData?.name || "Untitled"}
           </p>

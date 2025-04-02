@@ -46,6 +46,7 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
           portSet.add(destination);
         });
         setMiPortCount(portSet.size);
+        generateFormData.ports = portSet.size;
       }
 
       showSuccess("Market intelligence data loaded successfully");

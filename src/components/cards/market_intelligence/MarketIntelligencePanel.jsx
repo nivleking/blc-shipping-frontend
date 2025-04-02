@@ -11,7 +11,7 @@ import useToast from "../../../toast/useToast";
 const MarketIntelligencePanel = ({ deckId }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const queryClient = useQueryClient();
-  const [selectedPorts, setSelectedPorts] = useState(4);
+  const [selectedPorts, setSelectedPorts] = useState(5);
   const [availablePorts, setAvailablePorts] = useState({
     2: ["SBY", "MKS"],
     3: ["SBY", "MKS", "MDN"],
@@ -46,24 +46,25 @@ const MarketIntelligencePanel = ({ deckId }) => {
       }
     },
     enabled: !!deckId,
-    onSuccess: (data) => {
-      console.log("Market Intelligence Data Success:", data);
-      if (data) {
-        setMarketIntelligenceName(data.name);
-        setPriceData(data.price_data);
-
-        const portSet = new Set();
-        Object.keys(data.price_data).forEach((key) => {
-          const [origin] = key.split("-");
-          portSet.add(origin);
-        });
-        setSelectedPorts(portSet.size);
-      } else {
-        setMarketIntelligenceName("New Market Intelligence");
-        setPriceData({});
-      }
-    },
   });
+
+  useEffect(() => {
+    console.log("Market Intelligence Data Effect:", marketIntelligenceData);
+    if (marketIntelligenceData) {
+      setMarketIntelligenceName(marketIntelligenceData.name);
+      setPriceData(marketIntelligenceData.price_data);
+
+      const portSet = new Set();
+      Object.keys(marketIntelligenceData.price_data).forEach((key) => {
+        const [origin] = key.split("-");
+        portSet.add(origin);
+      });
+      setSelectedPorts(portSet.size);
+    } else if (!isLoading && deckId) {
+      setMarketIntelligenceName("New Market Intelligence");
+      setPriceData({});
+    }
+  }, [marketIntelligenceData, isLoading, deckId]);
 
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
