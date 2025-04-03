@@ -10,19 +10,7 @@ import MarketIntelligenceSimulation from "../components/simulations/market_intel
 import Stowage from "../components/simulations/stowages/Stowage";
 import CapacityUptake from "../components/simulations/capacity_uptake/CapacityUptake";
 import useToast from "../toast/useToast";
-
-const PORT_COLORS = {
-  SBY: "#EF4444", // red
-  MDN: "#10B981", // green
-  MKS: "#3B82F6", // blue
-  JYP: "#EAB308", // yellow
-  BPN: "#8B5CF6", // purple
-  BKS: "#F97316", // orange
-  BGR: "#EC4899", // pink
-  BTH: "#92400E", // brown
-  AMQ: "#06B6D4", // cyan
-  SMR: "#059669", // teal
-};
+import { PORT_COLORS, getPortColor } from "../assets/Colors";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
@@ -477,10 +465,7 @@ const Simulation = () => {
   };
 
   const getContainerColorByDestination = (destination) => {
-    if (!destination) return "#6B7280"; // Default gray
-
-    const prefix = destination.substring(0, 3).toUpperCase();
-    return PORT_COLORS[prefix] || "#6B7280";
+    return getPortColor(destination);
   };
 
   async function fetchArenaData() {
@@ -1675,29 +1660,32 @@ const Simulation = () => {
                 {swapInfo.allPorts && swapInfo.allPorts.length > 0 && (
                   <div className="mb-4 overflow-x-auto py-2">
                     <div className="flex items-center justify-center gap-1 min-w-max">
-                      {swapInfo.allPorts.slice().reverse().map((portName, index) => (
-                        <React.Fragment key={`port-${index}`}>
-                          {index > 0 && (
-                            <svg className="w-6 h-5 text-gray-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                          )}
+                      {swapInfo.allPorts
+                        .slice()
+                        .reverse()
+                        .map((portName, index) => (
+                          <React.Fragment key={`port-${index}`}>
+                            {index > 0 && (
+                              <svg className="w-6 h-5 text-gray-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                              </svg>
+                            )}
 
-                          <div className="flex flex-col items-center">
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs
+                            <div className="flex flex-col items-center">
+                              <div
+                                className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs
                         ${portName === port ? "w-10 h-10 border-3 border-yellow-400 shadow-md scale-110 z-10" : ""}`}
-                              style={{ backgroundColor: PORT_COLORS[portName?.substring(0, 3)?.toUpperCase()] || "#64748B" }}
-                            >
-                              {portName.substring(0, 1).toUpperCase()}
+                                style={{ backgroundColor: PORT_COLORS[portName?.substring(0, 3)?.toUpperCase()] || "#64748B" }}
+                              >
+                                {portName.substring(0, 1).toUpperCase()}
+                              </div>
+                              <span className={`text-xs mt-1 ${portName === port ? "font-bold" : ""}`}>
+                                {portName}
+                                {portName === port && <span className="block text-[10px] text-blue-700">(You)</span>}
+                              </span>
                             </div>
-                            <span className={`text-xs mt-1 ${portName === port ? "font-bold" : ""}`}>
-                              {portName}
-                              {portName === port && <span className="block text-[10px] text-blue-700">(You)</span>}
-                            </span>
-                          </div>
-                        </React.Fragment>
-                      ))}
+                          </React.Fragment>
+                        ))}
                     </div>
                   </div>
                 )}

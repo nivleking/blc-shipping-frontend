@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { FaShip, FaBoxOpen, FaDollarSign } from "react-icons/fa";
+import { PORT_COLORS, getPortColor } from "../../../assets/Colors";
 
 const CardStatsDashboard = ({ cards, containers, formatIDR }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -139,24 +140,6 @@ const CardStatsDashboard = ({ cards, containers, formatIDR }) => {
       )}
     </div>
   );
-};
-
-// Helper function to get color for port
-const getPortColor = (port) => {
-  const PORT_COLORS = {
-    SBY: "#EF4444", // red
-    MKS: "#3B82F6", // blue
-    MDN: "#10B981", // green
-    JYP: "#EAB308", // yellow
-    BPN: "#8B5CF6", // purple
-    BKS: "#F97316", // orange
-    BGR: "#EC4899", // pink
-    BTH: "#92400E", // brown
-    AMQ: "#06B6D4", // cyan
-    SMR: "#059669", // teal
-  };
-
-  return PORT_COLORS[port] || "#64748B"; // default slate color
 };
 
 export default CardStatsDashboard;

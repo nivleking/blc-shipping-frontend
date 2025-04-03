@@ -2,24 +2,13 @@ import React, { useState, useEffect } from "react";
 import { BsLightning, BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { api } from "../../../axios/axios";
 import useToast from "../../../toast/useToast";
+import { availablePorts } from "../../../assets/PortUtilities";
 
 const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, handlePortSelect, handleRevenueSelect, handleQuantitySelect, deckId, onGenerate }) => {
   const { showSuccess, showError } = useToast();
   const [marketIntelligenceData, setMarketIntelligenceData] = useState(null);
   const [isLoadingMI, setIsLoadingMI] = useState(false);
   const [miPortCount, setMiPortCount] = useState(0);
-
-  const availablePorts = {
-    2: ["SBY", "MDN"],
-    3: ["SBY", "MDN", "MKS"],
-    4: ["SBY", "MDN", "MKS", "JYP"],
-    5: ["SBY", "MDN", "MKS", "JYP", "BPN"],
-    6: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS"],
-    7: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR"],
-    8: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH"],
-    9: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
-    10: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
-  };
 
   // Fetch market intelligence data when component mounts or useMarketIntelligence changes
   useEffect(() => {

@@ -20,6 +20,8 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
         ? "#22C55E"
         : color === "red"
         ? "#EF4444"
+        : color === "black"
+        ? "#000000"
         : color === "purple"
         ? "#8B5CF6"
         : color === "pink"

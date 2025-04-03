@@ -8,7 +8,7 @@ import Tooltip from "../../Tooltip";
 
 const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, draggingTargetContainer }) => {
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 36; // 6x6 grid
+  const itemsPerPage = 48; // 6x6 grid
 
   // Count dock items
   const dockItems = allItems.filter((item) => item.area && item.area.startsWith("docks-"));

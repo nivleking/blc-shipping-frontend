@@ -5,19 +5,7 @@ import { api } from "../../axios/axios";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 import { AppContext } from "../../context/AppContext";
 import ShipBay from "../../components/simulations/stowages/ShipBay";
-
-const PORT_COLORS = {
-  SBY: "#EF4444", // red
-  MKS: "#3B82F6", // blue
-  MDN: "#10B981", // green
-  JYP: "#EAB308", // yellow
-  BPN: "#8B5CF6", // purple
-  BKS: "#F97316", // orange
-  BGR: "#EC4899", // pink
-  BTH: "#92400E", // brown
-  AMQ: "#06B6D4", // cyan
-  SMR: "#059669", // teal
-};
+import { PORT_COLORS, getPortColor } from "../../assets/Colors";
 
 const RoomDetail = () => {
   const { roomId } = useParams();

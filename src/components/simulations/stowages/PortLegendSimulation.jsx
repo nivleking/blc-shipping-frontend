@@ -2,19 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { api, socket } from "../../../axios/axios";
 import { AppContext } from "../../../context/AppContext";
-
-const PORT_COLORS = {
-  SBY: "#EF4444", // red
-  MKS: "#3B82F6", // blue
-  MDN: "#10B981", // green
-  JYP: "#EAB308", // yellow
-  BPN: "#8B5CF6", // purple
-  BKS: "#F97316", // orange
-  BGR: "#EC4899", // pink
-  BTH: "#92400E", // brown
-  AMQ: "#06B6D4", // cyan
-  SMR: "#059669", // teal
-};
+import { PORT_COLORS, getPortColor } from "../../../assets/Colors";
 
 const PortLegendSimulation = ({ compact = false }) => {
   const { roomId } = useParams();
@@ -121,12 +109,6 @@ const PortLegendSimulation = ({ compact = false }) => {
     };
   }, [user, token, roomId]);
 
-  const getPortColor = (port) => {
-    // Extract port code (first 3 letters)
-    const portCode = port?.substring(0, 3)?.toUpperCase();
-    return PORT_COLORS[portCode] || "#64748B"; // Default gray if port not found
-  };
-
   if (isLoading) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-4 animate-pulse">
@@ -140,7 +122,36 @@ const PortLegendSimulation = ({ compact = false }) => {
     return (
       <div className="bg-white rounded-lg shadow-sm p-2 mb-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-gray-700">Your Port:</span>
+          {/* Active ports with correct ordering */}
+          <div className="flex flex-wrap gap-1 mt-2">
+            {(() => {
+              const activePorts = new Set();
+
+              portInfo.allPorts.forEach((port) => {
+                activePorts.add(port);
+              });
+
+              const orderedPorts = Array.from(activePorts);
+
+              return orderedPorts.map((port) => (
+                <span
+                  key={port}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px]
+          ${port === portInfo.userPort ? "border border-yellow-400" : ""}
+        `}
+                  style={{
+                    backgroundColor: `${getPortColor(port)}20`,
+                    color: getPortColor(port),
+                  }}
+                >
+                  <span className="w-3 h-3 rounded-full flex items-center justify-center" style={{ backgroundColor: getPortColor(port) }}>
+                    {port === portInfo.userPort && <span className="text-white text-[8px]">★</span>}
+                  </span>
+                  {port}
+                </span>
+              ));
+            })()}
+          </div>
           <button onClick={() => setIsExpanded(!isExpanded)} className="text-xs text-blue-600 hover:underline flex items-center">
             {isExpanded ? "Hide details" : "Show more"}
             <svg className="w-3 h-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -149,12 +160,43 @@ const PortLegendSimulation = ({ compact = false }) => {
           </button>
         </div>
 
-        {/* Simplified port display */}
-        <div className="flex items-center space-x-2 mb-1">
-          <div className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: getPortColor(portInfo.userPort) }}>
-            {portInfo.userPort?.substring(0, 1).toUpperCase()}
+        {/* Simplified port display - Single row format with improved spacing */}
+        <div className="p-3 bg-gray-50 rounded-md mb-1.5">
+          <div className="flex items-center justify-center gap-3 text-xs">
+            {/* Receives from port */}
+            <div className="flex items-center bg-gray-100 px-2 py-1 rounded-md">
+              <div className="w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-[10px] mr-1.5" style={{ backgroundColor: getPortColor(portInfo.receivesFrom) }}>
+                {portInfo.receivesFrom?.substring(0, 1).toUpperCase()}
+              </div>
+              <span className="text-gray-700">{portInfo.receivesFrom}</span>
+            </div>
+
+            {/* Arrow to user port */}
+            <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+
+            {/* User's port (highlighted) */}
+            <div className="flex items-center bg-white px-3 py-1.5 rounded-md border-2 border-yellow-400 shadow-sm">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs mr-1.5" style={{ backgroundColor: getPortColor(portInfo.userPort) }}>
+                {portInfo.userPort?.substring(0, 1).toUpperCase()}
+              </div>
+              <span className="font-medium text-gray-900">{portInfo.userPort}</span>
+            </div>
+
+            {/* Arrow to sends port */}
+            <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+
+            {/* Sends to port */}
+            <div className="flex items-center bg-gray-100 px-2 py-1 rounded-md">
+              <div className="w-4 h-4 rounded-full flex items-center justify-center text-white font-bold text-[10px] mr-1.5" style={{ backgroundColor: getPortColor(portInfo.sendsTo) }}>
+                {portInfo.sendsTo?.substring(0, 1).toUpperCase()}
+              </div>
+              <span className="text-gray-700">{portInfo.sendsTo}</span>
+            </div>
           </div>
-          <span className="font-medium text-sm">{portInfo.userPort}</span>
         </div>
 
         {/* Expandable section */}
@@ -178,44 +220,6 @@ const PortLegendSimulation = ({ compact = false }) => {
                   </div>
                 </React.Fragment>
               ))}
-            </div>
-
-            <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700 flex items-start">
-              <svg className="w-5 h-5 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              <div>
-                Receive containers from <span className="font-medium">{portInfo.receivesFrom}</span> | Send containers to <span className="font-medium">{portInfo.sendsTo}</span>
-              </div>
-            </div>
-
-            {/* Active ports */}
-            <div className="flex flex-wrap gap-1 mt-1">
-              {(() => {
-                // Get only active ports from the current simulation
-                const activePorts = new Set();
-
-                // Add user's port and directly connected ports
-                if (portInfo.userPort) activePorts.add(portInfo.userPort);
-                if (portInfo.receivesFrom) activePorts.add(portInfo.receivesFrom);
-                if (portInfo.sendsTo) activePorts.add(portInfo.sendsTo);
-
-                // Add all ports in the route
-                portInfo.allPorts.forEach((port) => {
-                  activePorts.add(port);
-                });
-
-                // Convert to array and sort
-                const arrayPorts = Array.from(activePorts);
-
-                // Return mapped JSX
-                return arrayPorts.map((port) => (
-                  <span key={port} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px]" style={{ backgroundColor: `${getPortColor(port)}25`, color: getPortColor(port) }}>
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getPortColor(port) }}></span>
-                    {port}
-                  </span>
-                ));
-              })()}
             </div>
           </div>
         )}

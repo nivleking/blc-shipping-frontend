@@ -3,6 +3,7 @@ import { api } from "../../../axios/axios";
 import { FaShip } from "react-icons/fa";
 import LoadingOverlay from "../../LoadingOverlay";
 import useToast from "../../../toast/useToast";
+import { availablePorts } from "../../../assets/PortUtilities";
 
 const validateId = (id) => {
   return id && !isNaN(parseInt(id)) && parseInt(id) >= 1;
@@ -26,18 +27,6 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
   const [miPorts, setMiPorts] = useState([]);
   const [usingMarketIntelligence, setUsingMarketIntelligence] = useState(false);
   const [useMarketIntelligenceToggle, setUseMarketIntelligenceToggle] = useState(false);
-
-  const availablePorts = {
-    2: ["SBY", "MDN"],
-    3: ["SBY", "MDN", "MKS"],
-    4: ["SBY", "MDN", "MKS", "JYP"],
-    5: ["SBY", "MDN", "MKS", "JYP", "BPN"],
-    6: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS"],
-    7: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR"],
-    8: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH"],
-    9: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
-    10: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
-  };
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);

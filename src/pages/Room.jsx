@@ -6,19 +6,7 @@ import AssignPortModal from "../components/rooms/AssignPortModal";
 import SwapConfigModal from "../components/rooms/SwapConfigModal";
 import useToast from "../toast/useToast";
 import ConfirmationModal from "../components/ConfirmationModal";
-
-const PORT_COLORS = {
-  SBY: "#EF4444", // red
-  MKS: "#3B82F6", // blue
-  MDN: "#10B981", // green
-  JYP: "#EAB308", // yellow
-  BPN: "#8B5CF6", // purple
-  BKS: "#F97316", // orange
-  BGR: "#EC4899", // pink
-  BTH: "#92400E", // brown
-  AMQ: "#06B6D4", // cyan
-  SMR: "#059669", // teal
-};
+import { PORT_COLORS, getPortColor } from "../assets/Colors";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
@@ -273,7 +261,7 @@ const Room = () => {
       setRoomStatus("active");
 
       const dockLayout = Array.from({ length: 3 }).map(() => Array(5).fill(null));
-      const dockSize = { rows: 6, columns: 6 };
+      const dockSize = { rows: 8, columns: 6 };
 
       for (let i = 0; i < users.length; i++) {
         const user = users[i];
