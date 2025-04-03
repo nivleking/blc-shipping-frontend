@@ -51,8 +51,6 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
 
   return (
     <div key={currentCard.id} className="bg-white rounded-lg shadow-md p-4 w-full">
-      {/* Pass compact mode to PortLegendSimulation */}
-      <PortLegendSimulation compact={true} />
 
       {/* Progress Information */}
       <div className="mb-4 space-y-3">

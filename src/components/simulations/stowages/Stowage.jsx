@@ -158,6 +158,10 @@ const Stowage = ({
                       Refresh Sales Cards
                     </button> */}
                   </div>
+                  <div>
+                    <PortLegendSimulation compact={true} />
+                  </div>
+
                   {isLimitExceeded ? (
                     <div className="text-center p-8 bg-gray-50 rounded-lg">
                       <p className="text-gray-600">You have reached the maximum number of cards for this round.</p>
