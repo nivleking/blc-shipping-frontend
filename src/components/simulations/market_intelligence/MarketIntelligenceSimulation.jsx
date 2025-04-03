@@ -3,7 +3,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { AppContext } from "../../../context/AppContext";
 import { api } from "../../../axios/axios";
 
-const MarketIntelligenceSimulation = ({ port, roomId, deckId, moveCost }) => {
+const MarketIntelligenceSimulation = ({ port, roomId, moveCost }) => {
   const { token } = useContext(AppContext);
   const [isLoading, setIsLoading] = useState(true);
   const [priceData, setPriceData] = useState({});
@@ -12,12 +12,30 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId, moveCost }) => {
   const [filterType, setFilterType] = useState("all");
 
   useEffect(() => {
-    if (deckId) {
-      fetchMarketData();
-    }
-  }, [deckId, token, roomId]);
+    const loadDeckId = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.get(`/rooms/${roomId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.data.deck_id) {
+          console.log("MarketIntelligence fetched its own deckId:", response.data.deck_id);
+          fetchMarketData(response.data.deck_id);
+        } else {
+          setError("Unable to retrieve deck information");
+        }
+      } catch (error) {
+        console.error("Error fetching deck ID in Market Intelligence:", error);
+        setError("Error loading market data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const fetchMarketData = async () => {
+    loadDeckId();
+  }, [token, roomId]);
+
+  const fetchMarketData = async (deckId) => {
     setIsLoading(true);
     setError(null);
 

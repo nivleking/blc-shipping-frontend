@@ -1849,7 +1849,7 @@ const Simulation = () => {
               {/* Market Intelligence Tab */}
               <TabPanel>
                 <div className="bg-white rounded-xl shadow-lg p-6">
-                  <MarketIntelligenceSimulation port={port} roomId={roomId} deckId={deckId} moveCost={moveCost} />
+                  <MarketIntelligenceSimulation port={port} roomId={roomId} moveCost={moveCost} />
                 </div>
               </TabPanel>
             </TabPanels>
