@@ -5,6 +5,8 @@ const ContainerDock = ({ id, rows, columns, children, capacityStatus = "normal" 
         return "bg-gradient-to-b from-amber-50 to-gray-100";
       case "critical":
         return "bg-gradient-to-b from-red-50 to-gray-100";
+      case "new":
+        return "bg-gradient-to-b from-green-50 to-gray-100";
       default:
         return "bg-gray-100";
     }

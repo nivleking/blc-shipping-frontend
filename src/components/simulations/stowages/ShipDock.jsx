@@ -8,7 +8,8 @@ import Tooltip from "../../Tooltip";
 
 const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, draggingTargetContainer }) => {
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 48; // 6x6 grid
+  const [temporaryNextPage, setTemporaryNextPage] = useState(null);
+  const itemsPerPage = dockSize.rows * dockSize.columns;
 
   // Count dock items
   const dockItems = allItems.filter((item) => item.area && item.area.startsWith("docks-"));
@@ -31,26 +32,6 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
   // Check if we have containers on pages beyond page 0
   const hasContainersOnLaterPages = containerPositions.some((pos) => pos >= itemsPerPage);
 
-  // Get visible items for current page
-  const getVisibleItems = () => {
-    const startIndex = currentPage * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-
-    return allItems.filter((item) => {
-      if (!item.area || !item.area.startsWith("docks-")) return false;
-
-      // Extract the cell index more safely
-      const cellIndexMatch = item.area.match(/docks-(\d+)/);
-      if (!cellIndexMatch) return false;
-
-      const cellIndex = parseInt(cellIndexMatch[1]);
-      return cellIndex >= startIndex && cellIndex < endIndex;
-    });
-  };
-
-  const visibleItems = getVisibleItems();
-  const hasContainersOnPage = visibleItems.length > 0;
-
   // Calculate container counts per page
   const containersByPage = useMemo(() => {
     const pages = {};
@@ -67,6 +48,46 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
     return pages;
   }, [dockItems, itemsPerPage]);
 
+  const displayPage = temporaryNextPage !== null ? temporaryNextPage : currentPage;
+
+  // Get visible items for current page
+  const getVisibleItems = () => {
+    const startIndex = displayPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    return allItems.filter((item) => {
+      if (!item.area || !item.area.startsWith("docks-")) return false;
+
+      // Extract the cell index more safely
+      const cellIndexMatch = item.area.match(/docks-(\d+)/);
+      if (!cellIndexMatch) return false;
+
+      const cellIndex = parseInt(cellIndexMatch[1]);
+      return cellIndex >= startIndex && cellIndex < endIndex;
+    });
+  };
+
+  const visibleItems = getVisibleItems();
+  const hasContainersOnPage = visibleItems.length > 0 || temporaryNextPage !== null;
+
+  const visibleSize = {
+    rows: 8,
+    columns: 6,
+  };
+
+  // Calculate current page capacity stats (for UI feedback only)
+  const currentPageItems = visibleItems.length;
+  const currentPageCapacity = itemsPerPage;
+  const currentPagePercentage = (currentPageItems / currentPageCapacity) * 100;
+
+  // Define thresholds for current page only
+  const isCurrentPageNearCapacity = currentPagePercentage >= 70;
+  const isCurrentPageFull = currentPagePercentage >= 100;
+
+  // Total stats for informational purposes
+  const totalContainers = dockItems.length;
+  const visibleGridCapacity = visibleSize.rows * visibleSize.columns;
+
   // Auto-navigate to first page with containers if current page is empty
   useEffect(() => {
     if (currentPage > 0 && !hasContainersOnPage && dockItems.length > 0) {
@@ -82,24 +103,18 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
     }
   }, [allItems, currentPage, hasContainersOnPage, dockItems.length, containersByPage]);
 
-  // Visible dimensions always 6x6
-  const visibleSize = {
-    rows: 6,
-    columns: 6,
-  };
+  useEffect(() => {
+    // If dragging from ship bay (draggingItem exists but not in docks)
+    const isDraggingFromBay = draggingItem && !dockItems.some((item) => item.id === draggingItem) && containers.some((c) => c.id === draggingItem);
 
-  // Calculate current page capacity stats (for UI feedback only)
-  const currentPageItems = visibleItems.length;
-  const currentPageCapacity = itemsPerPage;
-  const currentPagePercentage = (currentPageItems / currentPageCapacity) * 100;
-
-  // Define thresholds for current page only
-  const isCurrentPageNearCapacity = currentPagePercentage >= 70;
-  const isCurrentPageFull = currentPagePercentage >= 90;
-
-  // Total stats for informational purposes
-  const totalContainers = dockItems.length;
-  const visibleGridCapacity = visibleSize.rows * visibleSize.columns;
+    // Auto-create next page when current is full and dragging from bay
+    if (isDraggingFromBay && isCurrentPageFull) {
+      setTemporaryNextPage(currentPage + 1);
+    } else if (!draggingItem) {
+      // Reset temporary page when drag ends
+      setTemporaryNextPage(null);
+    }
+  }, [draggingItem, isCurrentPageFull, dockItems, currentPage, containers]);
 
   // Determine if we should show pagination controls
   // Show if we have multiple pages OR if we have containers on later pages
@@ -124,7 +139,8 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm text-gray-500">
           <span className="font-medium">
-            Page {currentPage + 1} of {totalPages}
+            Page {displayPage + 1} of {totalPages}
+            {temporaryNextPage !== null && <span className="ml-2 text-blue-600">(New page)</span>}
           </span>
           <span className="ml-2 text-gray-400">({hasContainersOnPage ? `${visibleItems.length} containers` : `No containers`})</span>
         </div>
@@ -184,9 +200,9 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
       {/* Container Grid */}
       <div className={`relative ${!hasContainersOnPage && totalContainers > 0 ? "min-h-[300px] flex items-center justify-center" : ""}`}>
         <div className={`rounded-xl overflow-hidden transition-all duration-300 ${isCurrentPageFull ? "ring-4 ring-blue-400 shadow-lg shadow-blue-200" : isCurrentPageNearCapacity ? "ring-4 ring-amber-400 shadow-lg shadow-amber-200" : ""}`}>
-          <ContainerDock id="docks" rows={visibleSize.rows} columns={visibleSize.columns} capacityStatus={isCurrentPageFull ? "critical" : isCurrentPageNearCapacity ? "warning" : "normal"}>
+          <ContainerDock id="docks" rows={visibleSize.rows} columns={visibleSize.columns} capacityStatus={temporaryNextPage !== null ? "new" : isCurrentPageFull ? "critical" : isCurrentPageNearCapacity ? "warning" : "normal"}>
             {Array.from({ length: itemsPerPage }).map((_, index) => {
-              const cellIndex = currentPage * itemsPerPage + index;
+              const cellIndex = displayPage * itemsPerPage + index;
               const cellId = `docks-${cellIndex}`;
               const rowIndex = Math.floor(index / visibleSize.columns);
               const colIndex = index % visibleSize.columns;
@@ -194,24 +210,17 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
 
               const item = allItems.find((item) => item.area === cellId);
               const isDropTarget = section === 1 && draggingTargetContainer && !item;
+              const isTemporaryNewCell = temporaryNextPage !== null && displayPage !== currentPage;
 
               return (
-                <DroppableCell
-                  key={cellId}
-                  id={cellId}
-                  coordinates={coordinates}
-                  isValid={true} // Always allow dropping - we're not limited by grid size anymore
-                  isDropTarget={isDropTarget}
-                >
+                <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={true} isDropTarget={isDropTarget} isNewPage={isTemporaryNewCell}>
                   {item && <DraggableContainer id={item.id} text={item.id} isDragging={draggingItem === item.id} color={item.color} type={containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry"} />}
                 </DroppableCell>
               );
             })}
           </ContainerDock>
         </div>
-
-        {/* Empty state message */}
-        {!hasContainersOnPage && totalContainers > 0 && (
+        {!hasContainersOnPage && totalContainers > 0 && temporaryNextPage === null && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl">
             <div className="text-center p-6">
               <BiErrorCircle className="mx-auto h-12 w-12 text-gray-400" />
