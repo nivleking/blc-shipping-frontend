@@ -1,59 +1,53 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { AppContext } from "../../../context/AppContext";
 import { api } from "../../../axios/axios";
+import { useQuery } from "@tanstack/react-query";
 
-const MarketIntelligenceSimulation = ({ port, roomId, moveCost }) => {
+const MarketIntelligenceSimulation = ({ port, roomId, deckId, moveCost }) => {
   const { token } = useContext(AppContext);
-  const [isLoading, setIsLoading] = useState(true);
-  const [priceData, setPriceData] = useState({});
-  const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState("matrix");
   const [filterType, setFilterType] = useState("all");
 
-  useEffect(() => {
-    const loadDeckId = async () => {
-      try {
-        setIsLoading(true);
-        const response = await api.get(`/rooms/${roomId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (response.data.deck_id) {
-          console.log("MarketIntelligence fetched its own deckId:", response.data.deck_id);
-          fetchMarketData(response.data.deck_id);
-        } else {
-          setError("Unable to retrieve deck information");
-        }
-      } catch (error) {
-        console.error("Error fetching deck ID in Market Intelligence:", error);
-        setError("Error loading market data");
-      } finally {
-        setIsLoading(false);
+  // Query to fetch the deck ID if not provided directly
+  const deckQuery = useQuery({
+    queryKey: ["room", roomId],
+    queryFn: async () => {
+      console.log("Fetching deck ID for room:", roomId);
+      const response = await api.get(`/rooms/${roomId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.data?.deck_id) {
+        throw new Error("No deck ID found for this room");
       }
-    };
 
-    loadDeckId();
-  }, [token, roomId]);
+      console.log("Deck ID fetched:", response.data.deck_id);
+      return response.data.deck_id;
+    },
+    enabled: !!roomId && !deckId, // Only run if roomId exists and deckId is not provided
+    staleTime: 5 * 60 * 1000, // 5 minutes - consider the data fresh for 5 minutes
+  });
 
-  const fetchMarketData = async (deckId) => {
-    setIsLoading(true);
-    setError(null);
+  // The effective deck ID to use (either from props or query)
+  const effectiveDeckId = deckId || deckQuery.data;
 
-    try {
-      const response = await api.get(`/market-intelligence/deck/${deckId}`);
+  // Query to fetch market intelligence data
+  const marketQuery = useQuery({
+    queryKey: ["marketIntelligence", effectiveDeckId],
+    queryFn: async () => {
+      console.log(`Fetching market intelligence for deck ID: ${effectiveDeckId}`);
+      const response = await api.get(`/market-intelligence/deck/${effectiveDeckId}`);
 
-      if (response.data && response.data.price_data) {
-        setPriceData(response.data.price_data);
-      } else {
-        setError("No market intelligence data available for this simulation");
+      if (!response.data?.price_data) {
+        throw new Error("Invalid market intelligence data format");
       }
-    } catch (error) {
-      console.error("Error fetching market intelligence data:", error);
-      setError("Failed to load market intelligence data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+      return response.data.price_data;
+    },
+    enabled: !!effectiveDeckId, // Only run if we have a deck ID
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Format currency function
   const formatCurrency = (value) => {
@@ -93,9 +87,9 @@ const MarketIntelligenceSimulation = ({ port, roomId, moveCost }) => {
   const getPorts = () => {
     const portsSet = new Set();
 
-    if (!priceData) return [];
+    if (!marketQuery.data) return [];
 
-    Object.keys(priceData).forEach((key) => {
+    Object.keys(marketQuery.data).forEach((key) => {
       const parts = key.split("-");
       if (parts.length === 3) {
         portsSet.add(parts[0]); // Origin
@@ -117,14 +111,14 @@ const MarketIntelligenceSimulation = ({ port, roomId, moveCost }) => {
 
   // Filter data based on type selection
   const getFilteredPriceData = () => {
-    if (!priceData) return {};
+    if (!marketQuery.data) return {};
 
     if (filterType === "all") {
-      return priceData;
+      return marketQuery.data;
     }
 
     const filtered = {};
-    Object.entries(priceData).forEach(([key, value]) => {
+    Object.entries(marketQuery.data).forEach(([key, value]) => {
       if (key.toLowerCase().endsWith(filterType.toLowerCase())) {
         filtered[key] = value;
       }
@@ -226,7 +220,6 @@ const MarketIntelligenceSimulation = ({ port, roomId, moveCost }) => {
           <div key={origin} className={`bg-white rounded-lg shadow-md p-4 ${origin === port ? "ring-2 ring-blue-400" : ""}`}>
             <div className={`text-lg font-semibold mb-3 ${origin === port ? "text-blue-700" : "text-gray-800"}`}>{origin === port ? `${origin} (Your Port)` : origin}</div>
             <table className="min-w-full divide-y divide-gray-200">
-              {/* Existing table code remains the same */}
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Destination</th>
@@ -250,20 +243,26 @@ const MarketIntelligenceSimulation = ({ port, roomId, moveCost }) => {
     );
   };
 
+  // Handle loading states for both queries
+  const isLoading = deckQuery.isLoading || marketQuery.isLoading || (!deckId && deckQuery.isInitialLoading) || (effectiveDeckId && marketQuery.isInitialLoading);
+
   if (isLoading) {
     return (
-      <div className="py-12 flex justify-center items-center">
+      <div className="py-12 flex flex-col justify-center items-center space-y-3">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <p className="text-blue-600 font-medium">{!effectiveDeckId ? "Loading deck information..." : "Loading market intelligence data..."}</p>
       </div>
     );
   }
 
+  // Handle error states
+  const error = deckQuery.error || marketQuery.error;
   if (error) {
     return (
       <div className="py-8 px-4">
         <div className="bg-red-50 border border-red-200 rounded-md p-4 text-center">
-          <p className="text-red-600">{error}</p>
-          <button onClick={fetchMarketData} className="mt-3 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+          <p className="text-red-600">{error.message || "Failed to load market data"}</p>
+          <button onClick={() => (effectiveDeckId ? marketQuery.refetch() : deckQuery.refetch())} className="mt-3 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
             Retry
           </button>
         </div>
@@ -343,7 +342,7 @@ const MarketIntelligenceSimulation = ({ port, roomId, moveCost }) => {
           <Tab
             className={({ selected }) =>
               `w-full rounded-lg py-2.5 text-sm font-medium leading-5
-            ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+              ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
             }
           >
             Price Tables
@@ -351,7 +350,7 @@ const MarketIntelligenceSimulation = ({ port, roomId, moveCost }) => {
           <Tab
             className={({ selected }) =>
               `w-full rounded-lg py-2.5 text-sm font-medium leading-5
-            ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+              ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
             }
           >
             Penalties
