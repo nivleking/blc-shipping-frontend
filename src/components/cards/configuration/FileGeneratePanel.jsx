@@ -45,7 +45,7 @@ const FileGeneratePanel = ({ deckId, refreshData }) => {
     const headers = [
       ["Sales Call Cards Template"],
       ["Instructions:"],
-      ["1. Valid Ports: SBY, MKS, MDN, JYP, BPN, BKS, BGR, BTH"],
+      ["1. Valid Ports: SBY, MDN, MKS, JYP, BPN, BKS, BGR, BTH"],
       ["2. Priority Options: Committed, Non-Committed"],
       ["3. Container Types: Dry, Reefer"],
       ["4. Quantity must be greater than 0"],

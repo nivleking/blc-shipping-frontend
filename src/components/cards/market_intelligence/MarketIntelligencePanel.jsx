@@ -13,15 +13,15 @@ const MarketIntelligencePanel = ({ deckId }) => {
   const queryClient = useQueryClient();
   const [selectedPorts, setSelectedPorts] = useState(5);
   const [availablePorts, setAvailablePorts] = useState({
-    2: ["SBY", "MKS"],
-    3: ["SBY", "MKS", "MDN"],
-    4: ["SBY", "MKS", "MDN", "JYP"],
-    5: ["SBY", "MKS", "MDN", "JYP", "BPN"],
-    6: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS"],
-    7: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR"],
-    8: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH"],
-    9: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
-    10: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
+    2: ["SBY", "MDN"],
+    3: ["SBY", "MDN", "MKS"],
+    4: ["SBY", "MDN", "MKS", "JYP"],
+    5: ["SBY", "MDN", "MKS", "JYP", "BPN"],
+    6: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS"],
+    7: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR"],
+    8: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH"],
+    9: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
+    10: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
   });
   const [marketIntelligenceName, setMarketIntelligenceName] = useState("");
   const [priceData, setPriceData] = useState({});

@@ -13,8 +13,8 @@ import useToast from "../toast/useToast";
 
 const PORT_COLORS = {
   SBY: "#EF4444", // red
-  MKS: "#3B82F6", // blue
   MDN: "#10B981", // green
+  MKS: "#3B82F6", // blue
   JYP: "#EAB308", // yellow
   BPN: "#8B5CF6", // purple
   BKS: "#F97316", // orange
@@ -1225,7 +1225,6 @@ const Simulation = () => {
       destinationBayIndex = parseInt(over.id.split("-")[1]);
     }
 
-    // Special handling for Section 1: Remove containers destined for current port
     if (section === 1) {
       // Check if this is a move from bay to dock
       const isFromBay = activeItem?.area?.startsWith("bay-");
@@ -1582,57 +1581,51 @@ const Simulation = () => {
   };
 
   useEffect(() => {
-    const fetchTargetContainers = async () => {
-      if (section !== 1) return;
+    if (!droppedItems.length || !port || Object.keys(containerDestinationsCache).length === 0) {
+      return;
+    }
 
-      const bayContainerIds = droppedItems.filter((item) => item.area.startsWith("bay-")).map((item) => item.id);
+    // Filter containers whose destination matches the current port
+    const containersToUnload = droppedItems.filter((item) => {
+      const destination = containerDestinationsCache[item.id];
 
-      if (bayContainerIds.length === 0) {
-        setTargetContainers([]);
-        return;
-      }
+      // Debug individual container check
+      // console.log(`Container ${item.id} destination: ${destination}, match with ${port}: ${destination === port}`);
 
-      // Find containers we don't have destination data for yet
-      const containersToFetch = bayContainerIds.filter((id) => !containerDestinationsCache.hasOwnProperty(id));
+      // Case-insensitive comparison to be safe
+      return destination && destination.trim().toUpperCase() === port.trim().toUpperCase();
+    });
 
-      // If we have containers that need destination data, fetch them in batch
-      if (containersToFetch.length > 0) {
-        try {
-          const response = await api.post(
-            "/containers/destinations",
-            {
-              containerIds: containersToFetch,
-            },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+    console.log("Containers to unload at this port:", containersToUnload);
 
-          // Update our cache with new destination data
-          setContainerDestinationsCache((prev) => ({
-            ...prev,
-            ...response.data,
-          }));
-        } catch (error) {
-          console.error("Error fetching container destinations:", error);
-        }
-      }
+    // Update the target containers state
+    setTargetContainers(containersToUnload);
+  }, [droppedItems, containerDestinationsCache, port, section]);
 
-      // Now we can identify target containers using our local cache
-      const targets = droppedItems.filter((item) => {
-        const isInBay = item.area.startsWith("bay-");
-        if (!isInBay) return false;
+  async function fetchContainerDestinations() {
+    try {
+      // Get IDs of all containers in the bay
+      const containerIds = droppedItems.map((item) => item.id);
 
-        const destination = containerDestinationsCache[item.id];
-        return destination === port;
-      });
+      if (containerIds.length === 0) return;
 
-      console.log("Target Bay Containers:", targets);
-      setTargetContainers(targets);
-    };
+      const response = await api.post("/containers/destinations", { containerIds }, { headers: { Authorization: `Bearer ${token}` } });
 
-    fetchTargetContainers();
-  }, [droppedItems, containerDestinationsCache, port, section, token]);
+      console.log("Fetched container destinations:", response.data);
+
+      // Update the cache
+      setContainerDestinationsCache(response.data);
+    } catch (error) {
+      console.error("Error fetching container destinations:", error);
+      showError("Failed to get container destination information");
+    }
+  }
+
+  useEffect(() => {
+    if (droppedItems.length > 0 && token) {
+      fetchContainerDestinations();
+    }
+  }, [droppedItems, token]);
 
   const canProceedToSectionTwo = () => {
     return targetContainers.length === 0;
@@ -1682,7 +1675,7 @@ const Simulation = () => {
                 {swapInfo.allPorts && swapInfo.allPorts.length > 0 && (
                   <div className="mb-4 overflow-x-auto py-2">
                     <div className="flex items-center justify-center gap-1 min-w-max">
-                      {swapInfo.allPorts.map((portName, index) => (
+                      {swapInfo.allPorts.slice().reverse().map((portName, index) => (
                         <React.Fragment key={`port-${index}`}>
                           {index > 0 && (
                             <svg className="w-6 h-5 text-gray-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

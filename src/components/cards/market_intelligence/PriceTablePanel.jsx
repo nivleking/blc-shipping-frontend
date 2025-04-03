@@ -40,7 +40,7 @@ const PenaltyTable = () => (
 );
 
 // Define the standard port order to match ManualEntryPanel
-const PORT_ORDER = ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
+const PORT_ORDER = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
 
 const PriceTablePanel = ({ marketIntelligenceData, selectedPorts, isGenerating, priceData, generateDefaultPriceData }) => {
   const [currentPriceData, setCurrentPriceData] = useState({});

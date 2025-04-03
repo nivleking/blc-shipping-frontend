@@ -94,7 +94,7 @@ const MarketIntelligenceUpload = ({ onUpload }) => {
             }
 
             // Validate port codes
-            const validPorts = ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
+            const validPorts = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
             if (!validPorts.includes(origin.toUpperCase()) || !validPorts.includes(destination.toUpperCase())) {
               invalidCount++;
               return;

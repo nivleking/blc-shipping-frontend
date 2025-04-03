@@ -133,7 +133,7 @@ const InformationCard = () => {
               <li>Total Cards: 32 (8 per port)</li>
               <li>Total Containers: 60 (15 per port)</li>
               <li>Total Revenue: Rp 1,000,000,000 (250M per port)</li>
-              <li>Ports: SBY, MKS, MDN, JYP</li>
+              <li>Ports: SBY, MDN, MKS, JYP</li>
             </ul>
           </div>
           <div className="bg-blue-50 p-3 rounded">
@@ -142,7 +142,7 @@ const InformationCard = () => {
               <li>Total Cards: 64 (8 per port)</li>
               <li>Total Containers: 120 (15 per port)</li>
               <li>Total Revenue: Rp 2,000,000,000 (250M per port)</li>
-              <li>Ports: SBY, MKS, MDN, JYP, BPN, BKS, BGR, BTH</li>
+              <li>Ports: SBY, MDN, MKS, JYP, BPN, BKS, BGR, BTH</li>
             </ul>
           </div>
         </div>
@@ -357,7 +357,7 @@ const InformationCard = () => {
                 <li>Keep the header row intact</li>
                 <li>Don't modify the column structure</li>
                 <li>Add as many rows as needed</li>
-                <li>Valid port codes: SBY, MKS, MDN, JYP, BPN, BKS, BGR, BTH, AMQ, SMR</li>
+                <li>Valid port codes: SBY, MDN, MKS, JYP, BPN, BKS, BGR, BTH, AMQ, SMR</li>
                 <li>Total Revenue is calculated automatically</li>
                 <li>Save the file as .xlsx or .xls</li>
               </ul>

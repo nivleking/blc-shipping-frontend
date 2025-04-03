@@ -35,7 +35,7 @@ const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
 
   const fetchAvailablePorts = async () => {
     try {
-      const validPorts = ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH"];
+      const validPorts = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH"];
       setAvailablePorts(validPorts);
     } catch (error) {
       console.error("Error fetching ports:", error);

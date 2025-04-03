@@ -109,7 +109,7 @@ const ManualEntryPanel = ({ marketIntelligenceName, setMarketIntelligenceName, s
   };
 
   // Define the standard port order
-  const PORT_ORDER = ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
+  const PORT_ORDER = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
 
   // Sort ports according to the standard order
   const ports = [...availablePorts[selectedPorts]].sort((a, b) => {

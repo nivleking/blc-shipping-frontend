@@ -44,8 +44,8 @@ const UploadDataPanel = ({ handleUpload }) => {
         [""],
         ["Example:"],
         ["Origin", "Destination", "Type", "Price"],
-        ["SBY", "MKS", "Reefer", "30000000"],
-        ["SBY", "MKS", "Dry", "18000000"],
+        ["SBY", "MDN", "Reefer", "30000000"],
+        ["SBY", "MDN", "Dry", "18000000"],
       ]);
 
       XLSX.utils.book_append_sheet(wb, infoSheet, "Instructions");

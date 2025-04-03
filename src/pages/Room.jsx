@@ -5,6 +5,7 @@ import { AppContext } from "../context/AppContext";
 import AssignPortModal from "../components/rooms/AssignPortModal";
 import SwapConfigModal from "../components/rooms/SwapConfigModal";
 import useToast from "../toast/useToast";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 const PORT_COLORS = {
   SBY: "#EF4444", // red
@@ -52,6 +53,8 @@ const Room = () => {
   const [showSwapConfigModal, setShowSwapConfigModal] = useState(false);
   const [deckOrigins, setDeckOrigins] = useState([]);
   const [currentSwapConfig, setCurrentSwapConfig] = useState(null);
+  const [showKickConfirmation, setShowKickConfirmation] = useState(false);
+  const [userToKick, setUserToKick] = useState(null);
 
   useEffect(() => {
     socket.on("user_added", ({ roomId: receivedRoomId, newUser }) => {
@@ -166,8 +169,10 @@ const Room = () => {
       setAssignedPorts(portAssignments);
       setPortsSet(Object.keys(portAssignments).length > 0);
 
+      const originsArray = Array.isArray(originsResponse.data) ? originsResponse.data : Object.values(originsResponse.data).filter((value) => typeof value === "string");
+
       // Store deck origins for swap config
-      setDeckOrigins(originsResponse.data);
+      setDeckOrigins(originsArray);
 
       // Set current swap config if it exists
       if (roomResponse.data.swap_config) {
@@ -200,18 +205,31 @@ const Room = () => {
     }
   }
 
-  const handleKickUser = (userId) => {
+  const handleKickUserClick = (userId) => {
+    setUserToKick(userId);
+    setShowKickConfirmation(true);
+  };
+
+  const confirmKickUser = () => {
+    if (!userToKick) return;
+
     api
-      .delete(`rooms/${roomId}/kick/${userId}`, {
+      .delete(`rooms/${roomId}/kick/${userToKick}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
       .then(() => {
-        socket.emit("user_kicked", { roomId, userId });
+        socket.emit("user_kicked", { roomId, userId: userToKick });
+        setShowKickConfirmation(false);
+        setUserToKick(null);
+        showSuccess("User kicked successfully");
       })
       .catch((error) => {
         console.error("There was an error kicking the user!", error);
+        showError("Failed to kick user");
+        setShowKickConfirmation(false);
+        setUserToKick(null);
       });
   };
 
@@ -323,8 +341,8 @@ const Room = () => {
   }
 
   const handleStartClick = () => {
-    if (users.length < 1) {
-      showError("You need at least one user to start the simulation");
+    if (users.length < 2) {
+      showError("You need at least two users to start the simulation");
       return;
     }
 
@@ -407,10 +425,10 @@ const Room = () => {
   };
 
   const handleSwapBays = async () => {
-    if (currentRound > totalRounds) {
-      showError("Bay swapping is disabled during final unloading phase");
-      return;
-    }
+    // if (currentRound > totalRounds) {
+    //   showError("Bay swapping is disabled during final unloading phase");
+    //   return;
+    // }
 
     if (!currentSwapConfig || Object.keys(currentSwapConfig).length === 0) {
       setShowSwapConfigModal(true);
@@ -676,7 +694,7 @@ const Room = () => {
                         {user && user.is_admin === true && (
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <button
-                              onClick={() => handleKickUser(singleUser.id)}
+                              onClick={() => handleKickUserClick(singleUser.id)}
                               className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white 
                               ${roomStatus === "active" || roomStatus === "finished" ? "bg-gray-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"}`}
                               disabled={roomStatus === "active" || roomStatus === "finished"}
@@ -736,14 +754,13 @@ const Room = () => {
                   </svg>
                   ASSIGN PORTS
                 </button>
-
                 <button
                   onClick={handleStartClick}
                   className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
-    ${!portsSet || users.length < 1 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
+    ${!portsSet || users.length < 2 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors`}
-                  disabled={!portsSet || users.length < 1}
-                  title={!portsSet ? "Please set ports first" : users.length < 1 ? "Need at least one user" : ""}
+                  disabled={!portsSet || users.length < 2}
+                  title={!portsSet ? "Please set ports first" : users.length < 2 ? "Need at least one user" : ""}
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -778,7 +795,7 @@ const Room = () => {
                 {/* Swap Bays Button */}
                 <button
                   onClick={handleSwapBays}
-                  disabled={currentRound > totalRounds}
+                  // disabled={currentRound > totalRounds}
                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"} 
     shadow-md`}
@@ -859,19 +876,17 @@ const Room = () => {
                   <div className="grid gap-3">
                     {Object.entries(swapConfig).map(([from, to], index) => {
                       // Get port colors or use default colors
-                      const fromPortCode = from.substring(0, 3).toUpperCase();
-                      const toPortCode = to.substring(0, 3).toUpperCase();
-                      const fromColor = PORT_COLORS[fromPortCode] || "#64748B"; // Default gray
-                      const toColor = PORT_COLORS[toPortCode] || "#64748B"; // Default gray
+                      const fromColor = PORT_COLORS[from] || "#64748B"; // Default gray
+                      const toColor = PORT_COLORS[to] || "#64748B"; // Default gray
 
                       return (
                         <div key={from} className="flex items-center border rounded-md p-3 hover:bg-gray-50">
-                          {/* To Port (Destination) */}
+                          {/* From Port (Origin) */}
                           <div className="flex items-center w-24">
-                            <span className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm mr-2" style={{ backgroundColor: toColor }}>
-                              {to.substring(0, 1).toUpperCase()}
+                            <span className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm mr-2" style={{ backgroundColor: fromColor }}>
+                              {from.substring(0, 1).toUpperCase()}
                             </span>
-                            <span className="font-medium text-sm">{to}</span>
+                            <span className="font-medium text-sm">{from}</span>
                           </div>
 
                           {/* Arrow indicating "sends to" */}
@@ -884,12 +899,12 @@ const Room = () => {
                             </div>
                           </div>
 
-                          {/* From Port (Origin) */}
+                          {/* To Port (Destination) */}
                           <div className="flex items-center w-24">
-                            <span className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm mr-2" style={{ backgroundColor: fromColor }}>
-                              {from.substring(0, 1).toUpperCase()}
+                            <span className="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm mr-2" style={{ backgroundColor: toColor }}>
+                              {to.substring(0, 1).toUpperCase()}
                             </span>
-                            <span className="font-medium text-sm">{from}</span>
+                            <span className="font-medium text-sm">{to}</span>
                           </div>
                         </div>
                       );
@@ -957,6 +972,14 @@ const Room = () => {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={showKickConfirmation}
+        onClose={() => setShowKickConfirmation(false)}
+        onConfirm={confirmKickUser}
+        title="Confirm User Removal"
+        message={`Are you sure you want to remove this user from the room? They will need to rejoin to participate again.`}
+      />
     </div>
   );
 };

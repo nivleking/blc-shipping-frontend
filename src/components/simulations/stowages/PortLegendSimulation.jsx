@@ -26,7 +26,7 @@ const PortLegendSimulation = ({ compact = false }) => {
     allPorts: [],
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const fetchPortConfiguration = async () => {
     try {
@@ -91,8 +91,7 @@ const PortLegendSimulation = ({ compact = false }) => {
         }
       }
 
-      allPorts.reverse();
-
+      // No need to reverse allPorts as we're now building it in the correct order
       setPortInfo({
         userPort,
         receivesFrom,
@@ -156,8 +155,6 @@ const PortLegendSimulation = ({ compact = false }) => {
             {portInfo.userPort?.substring(0, 1).toUpperCase()}
           </div>
           <span className="font-medium text-sm">{portInfo.userPort}</span>
-
-          
         </div>
 
         {/* Expandable section */}
@@ -174,13 +171,22 @@ const PortLegendSimulation = ({ compact = false }) => {
                   )}
                   <div
                     className={`w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold
-                    ${port === portInfo.userPort ? "ring-1 ring-yellow-400" : ""}`}
+            ${port === portInfo.userPort ? "ring-1 ring-yellow-400" : ""}`}
                     style={{ backgroundColor: getPortColor(port) }}
                   >
                     {port.substring(0, 1).toUpperCase()}
                   </div>
                 </React.Fragment>
               ))}
+            </div>
+
+            <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700 flex items-start">
+              <svg className="w-5 h-5 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <div>
+                Receive containers from <span className="font-medium">{portInfo.receivesFrom}</span> | Send containers to <span className="font-medium">{portInfo.sendsTo}</span>
+              </div>
             </div>
 
             {/* Active ports */}
@@ -200,10 +206,10 @@ const PortLegendSimulation = ({ compact = false }) => {
                 });
 
                 // Convert to array and sort
-                const sortedPorts = Array.from(activePorts).sort();
+                const arrayPorts = Array.from(activePorts);
 
                 // Return mapped JSX
-                return sortedPorts.map((port) => (
+                return arrayPorts.map((port) => (
                   <span key={port} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px]" style={{ backgroundColor: `${getPortColor(port)}25`, color: getPortColor(port) }}>
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getPortColor(port) }}></span>
                     {port}
