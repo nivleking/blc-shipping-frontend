@@ -55,7 +55,7 @@ const AdminCreateCards = () => {
       const response = await api.get(`/decks/${deckId}`, {
         params: { include_containers: true },
         headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
+          Authorization: `Bearer ${token}`,
         },
       });
       return response.data;
@@ -111,7 +111,7 @@ const AdminCreateCards = () => {
   // Mutation for generating new cards
   const generateCardsMutation = useMutation({
     mutationFn: async (formData) => {
-      return api.post(`/generate-cards/${deckId}`, formData, {
+      return api.post(`/decks/${deckId}/generate-cards`, formData, {
         headers: {
           Authorization: token ? `Bearer ${token}` : undefined,
         },

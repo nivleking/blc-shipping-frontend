@@ -71,17 +71,13 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
       const cardResponse = await api.post("/cards", {
         id: manualCardForm.id,
+        deck_id: deckId,
         priority: manualCardForm.priority,
         origin: manualCardForm.origin,
         destination: manualCardForm.destination,
         quantity: parseInt(manualCardForm.quantity),
         revenue: calculateTotalRevenue(),
         type: manualCardForm.type,
-      });
-
-      // Then attach the card to the deck
-      await api.post(`/decks/${deckId}/add-card`, {
-        card_id: cardResponse.data.id,
       });
 
       // Refresh the card and containers

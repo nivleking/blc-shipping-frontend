@@ -31,9 +31,11 @@ const CardsPreviewPanel = ({ cards, containers, formatIDR, onCardUpdated, deckId
 
   const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/decks/${deckId}/remove-card/${cardToDelete.id}`);
+      await api.delete(`/cards/${cardToDelete.id}`, {
+        data: { deck_id: cardToDelete.deck_id },
+      });
       showSuccess(`Card ${cardToDelete.id} deleted successfully`);
-      onCardUpdated(); // Refresh the cards list
+      onCardUpdated();
       setDeleteModalOpen(false);
     } catch (error) {
       console.error("Error deleting card:", error);

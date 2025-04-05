@@ -15,6 +15,7 @@ const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
     destination: "",
     quantity: 1,
     revenue: 0,
+    deck_id: "",
   });
   const [availablePorts, setAvailablePorts] = useState([]);
 
@@ -27,6 +28,7 @@ const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
         destination: card.destination || "",
         quantity: card.quantity || 1,
         revenue: card.revenue || 0,
+        deck_id: card.deck_id || "",
       });
 
       fetchAvailablePorts();
@@ -73,7 +75,7 @@ const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
 
     try {
       // Send update request to API
-      await api.put(`/cards/${card.id}`, formData);
+      await api.put(`/cards/${card.id}`, { ...formData, deck_id: card.deck_id });
 
       showSuccess("Card updated successfully");
 

@@ -218,7 +218,8 @@ const FileGeneratePanel = ({ deckId, refreshData }) => {
 
     const formData = new FormData();
     formData.append("file", selectedFile);
-
+    formData.append("deck_id", deckId);
+    
     try {
       const response = await api.post(`/decks/${deckId}/import-cards`, formData, {
         headers: {

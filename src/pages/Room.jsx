@@ -308,6 +308,7 @@ const Room = () => {
             round: 1,
             cards: matchedCards.map((card) => ({
               card_id: card.id,
+              deck_id: deckId,
               status: "selected",
             })),
           };
