@@ -11,6 +11,27 @@ import SwapConfigModal from "../../rooms/SwapConfigModal";
 import DeckPreviewModal from "./DeckPreviewModal";
 import useToast from "../../../toast/useToast";
 
+// THIS IS FOR LOCAL
+// const initialFormState = {
+//   id: "001",
+//   name: "123",
+//   description: "123",
+//   deck: 1,
+//   ship_layout: 1,
+//   max_users: 0,
+//   bay_size: null,
+//   bay_count: 0,
+//   bay_types: [],
+//   total_rounds: 2,
+//   cards_limit_per_round: 10,
+//   cards_must_process_per_round: 8,
+//   move_cost: 100000,
+//   extra_moves_cost: 50000,
+//   backlog_penalty_per_container_cost: 50000,
+//   ideal_crane_split: 2,
+//   swap_config: { SBY: "BPN", MDN: "MKS", MKS: "JYP", JYP: "MDN", BPN: "SBY" },
+// };
+
 const initialFormState = {
   id: "",
   name: "",
@@ -185,6 +206,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       move_cost: formData.move_cost,
       extra_moves_cost: formData.extra_moves_cost,
       ideal_crane_split: formData.ideal_crane_split,
+      backlog_penalty_per_container_cost: formData.backlog_penalty_per_container_cost,
       cards_must_process_per_round: formData.cards_must_process_per_round,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
@@ -365,6 +387,34 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             <Tooltip>Number of cranes to be used as a ideal value for splitting</Tooltip>
           </div>
           <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        </div>
+
+        {/* Backlog Container Cost Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
+              Backlog Container Cost (Rp)
+            </label>
+            <Tooltip>Cost per container that is not unloaded on time (in weeks)</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="backlog_penalty_per_container_cost"
+              id="backlog_penalty_per_container_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="50000"
+              min="1"
+              value={formData.backlog_penalty_per_container_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
         </div>
 
         {/* Deck Selection */}

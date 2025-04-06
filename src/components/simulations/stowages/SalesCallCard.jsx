@@ -46,12 +46,13 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
 
   // Jika ada kartu untuk ditampilkan
   const currentCard = salesCallCards[currentCardIndex];
+  const isBacklog = currentCard?.is_backlog;
+  const originalRound = currentCard?.original_round;
   const isCommitted = currentCard?.priority?.toLowerCase() === "committed";
   const processPercentage = (processedCards / mustProcessCards) * 100;
 
   return (
     <div key={currentCard.id} className="bg-white rounded-lg shadow-md p-4 w-full">
-
       {/* Progress Information */}
       <div className="mb-4 space-y-3">
         <div className="flex justify-between items-center">
@@ -78,6 +79,18 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
           <div className="text-sm text-blue-600">Need to process {mustProcessCards - processedCards} more required cards</div>
         )}
       </div>
+
+      {/* Indicator if this is a backlog committed card */}
+      {isBacklog && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm font-medium text-amber-700">Committed Backlog from Week {originalRound}</p>
+          </div>
+        </div>
+      )}
 
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <tbody>

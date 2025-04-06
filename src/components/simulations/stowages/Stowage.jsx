@@ -45,6 +45,7 @@ const Stowage = ({
   showHistorical,
   setShowHistorical,
   onRefreshCards,
+  backlogContainers = [],
 }) => {
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
@@ -107,7 +108,7 @@ const Stowage = ({
                 {section === 1 && targetContainers.length > 0 && draggingTargetContainer && <span className="ml-4 text-sm text-yellow-600 font-semibold">Drop container here</span>}
               </h3>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 overflow-auto">
-                <ShipDock dockSize={dockSize} allItems={droppedItems} draggingItem={draggingItem} containers={containers} section={section} draggingTargetContainer={draggingTargetContainer} />
+                <ShipDock dockSize={dockSize} allItems={droppedItems} draggingItem={draggingItem} containers={containers} section={section} backlogContainers={backlogContainers} draggingTargetContainer={draggingTargetContainer} />
               </div>
             </div>
 

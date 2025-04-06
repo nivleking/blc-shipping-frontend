@@ -30,6 +30,7 @@ const Simulation = () => {
   // Market Intelligence states
   const [moveCost, setMoveCost] = useState(0);
   const [extraMovesCost, setExtraMovesCost] = useState(0);
+  const [backlogPenaltyPerContainerCost, setBacklogPenaltyPerContainerCost] = useState(0);
 
   // const fetchRankings = async () => {
   //   try {
@@ -64,6 +65,7 @@ const Simulation = () => {
   const [isSwapping, setIsSwapping] = useState(false);
   const [showSwapAlert, setShowSwapAlert] = useState(false);
   const [section, setSection] = useState(1);
+  const [backlogContainers, setBacklogContainers] = useState([]);
 
   const [targetContainers, setTargetContainers] = useState([]);
   const [containerDestinationsCache, setContainerDestinationsCache] = useState({});
@@ -78,6 +80,7 @@ const Simulation = () => {
     rejectedCards: 0,
     loadPenalty: 0,
     dischargePenalty: 0,
+    backlogPenalty: 0,
   });
   const [swapInfo, setSwapInfo] = useState({
     receivesFrom: "",
@@ -107,10 +110,12 @@ const Simulation = () => {
       });
 
       const data = response.data;
+      // console.log("Bay Statistics:", data);
       setBayMoves(data.bay_moves || {});
       setBayPairs(data.bay_pairs || []);
       setLongCraneMoves(data.long_crane_moves || 0);
       setExtraMovesOnLongCrane(data.extra_moves_on_long_crane || 0);
+      setBacklogContainers(data.backlog_containers || []);
     } catch (error) {
       console.error("Error fetching bay statistics:", error);
     }
@@ -189,6 +194,7 @@ const Simulation = () => {
       const loadData = async () => {
         setIsLoading(true);
         try {
+          await fetchStats();
           await fetchArenaData();
           await fetchDockData();
         } catch (error) {
@@ -261,43 +267,32 @@ const Simulation = () => {
         },
       });
 
-      const cardTemporaries = cardTemporaryResponse.data;
+      const cardTemporaries = cardTemporaryResponse.data.cards;
 
-      // Filter cards by origin
-      const allPortCards = deckResponse.data.cards.filter((card) => {
-        return card.origin === userPort;
+      // These cards already have the proper card data via eager loading
+      console.log("Card Temporaries:", cardTemporaries);
+      const availableCards = cardTemporaries.map((cardTemp) => {
+        // Combine card temporary data with its related card data
+        return {
+          ...cardTemp.card,
+          is_backlog: cardTemp.is_backlog,
+          original_round: cardTemp.original_round,
+          round: cardTemp.round,
+          status: cardTemp.status,
+          card_temporary_id: cardTemp.id,
+        };
       });
 
-      // Sort cards by ID numerically to ensure sequential ordering
-      allPortCards.sort((a, b) => {
-        const idA = parseInt(a.id);
-        const idB = parseInt(b.id);
-        return idA - idB;
+      const sortedByCardId = [...availableCards].sort((a, b) => {
+        return parseInt(a.id) - parseInt(b.id);
       });
 
-      console.log(`Found ${allPortCards.length} cards for port ${userPort}`);
+      console.log("Sorted cards by ID:", sortedByCardId);
 
-      // Calculate which cards should be shown in the current round
-      // based on sequential distribution of cards_limit_per_round per week
-      const cardsPerRound = roomResponse.data.cards_limit_per_round;
-      const startIndex = (currentRound - 1) * cardsPerRound;
-      const endIndex = startIndex + cardsPerRound;
-
-      console.log(`Round ${currentRound}: Showing cards from index ${startIndex} to ${endIndex - 1}`);
-
-      // Get cards for the current round
-      const roundCards = allPortCards.slice(startIndex, endIndex);
-
-      // Filter out cards that have already been processed
-      const availableCards = roundCards.filter((card) => {
-        const cardTemp = cardTemporaries.find((ct) => ct.card_id === card.id);
-        return !cardTemp || cardTemp.status === "selected";
-      });
-
-      console.log(`${availableCards.length} available cards for this round after filtering processed cards`);
+      console.log(`${availableCards.length} available cards for this round`);
 
       if (availableCards.length > 0) {
-        setSalesCallCards(availableCards);
+        setSalesCallCards(sortedByCardId);
         setCurrentCardIndex(0);
         console.log("Updated Sales Call Cards:", availableCards);
       } else {
@@ -398,6 +393,7 @@ const Simulation = () => {
           rejectedCards: stats.rejected_cards || 0,
           loadPenalty: stats.load_penalty || 0,
           dischargePenalty: stats.discharge_penalty || 0,
+          backlogPenalty: stats.backlog_penalty || 0,
         });
         setPenalties(stats.penalty || 0);
         setRank(stats.rank || 1);
@@ -480,7 +476,17 @@ const Simulation = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+      const deckId = roomResponse.data.deck_id;
+      setDeckId(deckId);
+      setMoveCost(roomResponse.data.move_cost);
+      setExtraMovesCost(roomResponse.data.extra_moves_cost);
+      setBacklogPenaltyPerContainerCost(roomResponse.data.backlog_penalty_per_container_cost);
+      setIdealCraneSplit(roomResponse.data.ideal_crane_split);
+
+      setMustProcessCards(roomResponse.data.cards_must_process_per_round);
+      setCardsLimit(roomResponse.data.cards_limit_per_round);
       setTotalRounds(roomResponse.data.total_rounds);
+
       console.log("Total Rounds:", roomResponse.data.total_rounds);
 
       const response = await api.get(`ship-bays/${roomId}/${user.id}`, {
@@ -489,6 +495,7 @@ const Simulation = () => {
         },
       });
       setCurrentRound(response.data.current_round);
+      setProcessedCards(response.data.processed_cards);
       console.log("Current Round:", response.data.current_round);
 
       const configRes = await api.get(`/rooms/${roomId}/config`, {
@@ -522,7 +529,7 @@ const Simulation = () => {
 
           // Create a unique cell identifier
           const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
-          console.log("Cell ID:", cellId);
+          // console.log("Cell ID:", cellId);
 
           // Update the bayData structure
           if (initialBayData[bayIndex] && initialBayData[bayIndex][rowIndex]) {
@@ -794,11 +801,13 @@ const Simulation = () => {
       const cardRevenue = parseFloat(currentCard.revenue) || 0;
       const newRevenue = parseFloat(revenue) + cardRevenue;
 
+      console.log("Current Round:", currentRound);
       await api.post(
         "/card-temporary/accept",
         {
           room_id: roomId,
           card_temporary_id: cardId,
+          round: currentRound,
         },
         {
           headers: {
@@ -1006,6 +1015,7 @@ const Simulation = () => {
         {
           room_id: roomId,
           card_temporary_id: cardId,
+          round: currentRound,
         },
         {
           headers: {
@@ -1525,6 +1535,8 @@ const Simulation = () => {
 
       const stats = shipBayResponse.data;
 
+      console.log("Fetched stats:", stats);
+
       setMoveStats({
         loadMoves: stats.load_moves || 0,
         dischargeMoves: stats.discharge_moves || 0,
@@ -1532,6 +1544,7 @@ const Simulation = () => {
         rejectedCards: stats.rejected_cards || 0,
         loadPenalty: stats.load_penalty || 0,
         dischargePenalty: stats.discharge_penalty || 0,
+        backlogPenalty: stats.backlog_penalty || 0,
       });
 
       setProcessedCards(stats.processed_cards || 0);
@@ -1589,16 +1602,22 @@ const Simulation = () => {
 
   async function fetchContainerDestinations() {
     try {
-      // Get IDs of all containers in the bay
       const containerIds = droppedItems.map((item) => item.id);
 
       if (containerIds.length === 0) return;
 
-      const response = await api.post("/containers/destinations", { containerIds }, { headers: { Authorization: `Bearer ${token}` } });
+      const roomResponse = await api.get(`/rooms/${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      console.log("Fetched container destinations:", response.data);
+      // console.log("Fetching container destinations for IDs:", containerIds);
+      // console.log("Deck ID:", roomResponse.data.deck_id);
 
-      // Update the cache
+      const response = await api.post("/containers/destinations", { containerIds, deckId: roomResponse.data.deck_id }, { headers: { Authorization: `Bearer ${token}` } });
+
+      // console.log("Fetched container destinations:", response.data);
       setContainerDestinationsCache(response.data);
     } catch (error) {
       console.error("Error fetching container destinations:", error);
@@ -1714,6 +1733,7 @@ const Simulation = () => {
             totalRounds={totalRounds}
             moveCost={moveCost}
             extraMovesCost={extraMovesCost}
+            backlogPenaltyPerContainerCost={backlogPenaltyPerContainerCost}
           />
 
           <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
@@ -1825,6 +1845,7 @@ const Simulation = () => {
                   showHistorical={showHistorical}
                   setShowHistorical={setShowHistorical}
                   onRefreshCards={handleRefreshCards}
+                  backlogContainers={backlogContainers}
                 />
               </TabPanel>
 

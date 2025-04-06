@@ -28,7 +28,7 @@ const ConfigurationPanel = ({ portStats, formatIDR, generateFormData, handlePres
       ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
                 }
               >
-                File Generate
+                Import File
               </Tab>
               <Tab
                 className={({ selected }) =>

@@ -611,6 +611,9 @@ const Room = () => {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
                           Extra Moves
                         </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
+                          Backlog Containers
+                        </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                           Moves
                         </th>
@@ -647,7 +650,10 @@ const Room = () => {
                             <div className="text-sm text-red-600">{formatIDR(rank.penalty)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-red-600">{formatIDR(rank.extra_moves_penalty || 0)}</div>
+                            <div className="text-sm text-red-600">{formatIDR(rank.extra_moves_penalty)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-red-600">{formatIDR(rank.backlog_penalty)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex flex-col text-sm text-gray-500">

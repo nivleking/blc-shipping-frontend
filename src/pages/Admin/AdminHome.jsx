@@ -168,6 +168,7 @@ const AdminHome = () => {
       move_cost: editingRoom.move_cost,
       extra_moves_cost: editingRoom.extra_moves_cost,
       ideal_crane_split: editingRoom.ideal_crane_split,
+      backlog_penalty_per_container_cost: editingRoom.backlog_penalty_per_container_cost,
       swap_config: editingRoom.swap_config,
       assigned_users: editingRoom.assigned_users,
       deck: editingRoom.deck,

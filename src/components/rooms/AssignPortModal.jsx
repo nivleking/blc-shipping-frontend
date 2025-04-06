@@ -7,7 +7,7 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
 
   const handleRandomAssignment = () => {
     const availablePorts = [...Object.values(origins)];
-    const newPorts = {};
+    var newPorts = {};
 
     // Shuffle array of ports
     for (let i = availablePorts.length - 1; i > 0; i--) {
@@ -21,6 +21,15 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
         newPorts[user.id] = availablePorts[index];
       }
     });
+
+    // THIS IS FOR LOCAL
+    // newPorts = {
+    //   1: "BPN",
+    //   2: "SBY",
+    //   3: "MDN",
+    //   4: "JYP",
+    //   5: "MKS",
+    // }
 
     setPorts(newPorts);
     showSuccess("Ports assigned randomly!");

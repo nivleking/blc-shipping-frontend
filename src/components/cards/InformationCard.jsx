@@ -298,7 +298,7 @@ const InformationCard = () => {
         <p className="text-purple-700 mb-2">Start with the provided template to ensure your import works correctly:</p>
         <div className="bg-white p-3 rounded border border-purple-200">
           <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
-            <li>Go to the Cards tab and select "File Generate"</li>
+            <li>Go to the Cards tab and select "Import File"</li>
             <li>Click the "Download Template" button</li>
             <li>Save the template to your computer</li>
             <li>
@@ -375,7 +375,7 @@ const InformationCard = () => {
         <p className="text-purple-700 mb-2">Upload and review your file:</p>
         <div className="bg-white p-3 rounded border border-purple-200">
           <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
-            <li>Return to the File Generate tab in the Cards section</li>
+            <li>Return to the Import File tab in the Cards section</li>
             <li>Click "Upload Excel File" or drag and drop your file</li>
             <li>A preview will appear showing the parsed data</li>
             <li>Review the data for any errors</li>
@@ -495,7 +495,7 @@ const InformationCard = () => {
             >
               <div className="flex items-center justify-center space-x-1">
                 <BsFileEarmarkSpreadsheet />
-                <span>File Generate</span>
+                <span>Import File</span>
               </div>
             </Tab>
           </Tab.List>

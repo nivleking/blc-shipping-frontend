@@ -274,6 +274,35 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
               {errors.ideal_crane_split && <p className="text-red-500 mt-1 text-sm">{errors.ideal_crane_split}</p>}
             </div>
 
+            {/* Backlog Container Cost */}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <label htmlFor="backlog_penalty_per_container_cost" className="text-gray-700 font-semibold mb-2">
+                  Backlog Container Cost (IDR)
+                </label>
+                <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="backlog_penalty_per_container_cost"
+                  id="backlog_penalty_per_container_cost"
+                  className={`w-full p-3 pl-10 pr-12 border ${errors.backlog_penalty_per_container_cost ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:border-blue-500`}
+                  placeholder="50000"
+                  min="1"
+                  value={editingRoom.backlog_penalty_per_container_cost || 50000}
+                  onChange={handleChange}
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per move</span>
+                </div>
+              </div>
+              {errors.backlog_penalty_per_container_cost && <p className="text-red-500 mt-1 text-sm">{errors.backlog_penalty_per_container_cost}</p>}
+            </div>
+
             {/* Deck Selection */}
             <div className="flex flex-col">
               <div className="flex items-center">

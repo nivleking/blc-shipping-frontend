@@ -10,7 +10,7 @@ import useToast from "../../toast/useToast";
 const UserHome = () => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const { user, token } = useContext(AppContext);
-  const [roomId, setRoomId] = useState("");
+  const [roomId, setRoomId] = useState("001");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);

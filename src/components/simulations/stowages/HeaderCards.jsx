@@ -1,8 +1,9 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { AppContext } from "../../../context/AppContext";
 
-const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatIDR, moves = {}, currentRound = 1, totalRounds = 1, moveCost, extraMovesCost }) => {
+const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatIDR, moves = {}, currentRound = 1, totalRounds = 1, moveCost, extraMovesCost, backlogPenaltyPerContainerCost }) => {
   const { user } = useContext(AppContext);
+  const [showExpenses, setShowExpenses] = useState(false);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -37,29 +38,44 @@ const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatID
       </div>
 
       {/* Penalties Card */}
-      <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-4 shadow-xl">
+      <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-4 shadow-xl relative">
         <div className="flex items-center justify-between">
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Expenses</p>
             <h3 className="text-2xl font-bold">{formatIDR(penalties)}</h3>
-            <div className="flex gap-4 mt-1">
-              <div>
-                <p className="text-xs opacity-80">Move Cost</p>
-                <p className="text-sm font-bold">{formatIDR(moveCost) || 0}</p>
-              </div>
 
-              <div>
-                <p className="text-xs opacity-80">Extra Cost</p>
-                <p className="text-sm font-bold">{formatIDR(extraMovesCost) || 0}</p>
-              </div>
-            </div>
+            {/* Toggle untuk detail expenses */}
+            <button onClick={() => setShowExpenses(!showExpenses)} className="text-xs font-bold underline mt-1 text-white/80 hover:text-white">
+              {showExpenses ? "Hide details" : "Show details"}
+            </button>
           </div>
+
           <div className="p-2 bg-white/20 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
         </div>
+
+        {/* Dropdown detail */}
+        {showExpenses && (
+          <div className="absolute left-0 right-0 top-full mt-1 bg-red-700 z-10 p-3 rounded-lg shadow-lg animate-fadeIn">
+            <div className="grid grid-cols-1 gap-2">
+              <div className="flex justify-between">
+                <span className="text-white text-xs">Move Cost:</span>
+                <span className="text-white text-xs font-bold">{formatIDR(moveCost)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white text-xs">Extra Moves:</span>
+                <span className="text-white text-xs font-bold">{formatIDR(extraMovesCost)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white text-xs">Backlog Penalty:</span>
+                <span className="text-white text-xs font-bold">{formatIDR(backlogPenaltyPerContainerCost)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Rank Card */}
@@ -93,7 +109,7 @@ const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatID
         <div className="flex items-center justify-between">
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Section</p>
-            <h3 className="text-2xl font-bold">Section {section}</h3>
+            <h3 className="text-2xl font-bold">Section {section === 1 ? "Unload" : "Sales Call"}</h3>
             <p className="text-sm font-medium">
               Week {currentRound} of {totalRounds}
             </p>

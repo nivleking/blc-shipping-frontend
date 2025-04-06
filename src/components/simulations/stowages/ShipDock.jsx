@@ -6,7 +6,7 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { BiErrorCircle } from "react-icons/bi";
 import Tooltip from "../../Tooltip";
 
-const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, draggingTargetContainer }) => {
+const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, backlogContainers = [], draggingTargetContainer }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [temporaryNextPage, setTemporaryNextPage] = useState(null);
   const itemsPerPage = dockSize.rows * dockSize.columns;
@@ -120,6 +120,12 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
   // Show if we have multiple pages OR if we have containers on later pages
   const showPaginationControls = totalPages > 1 || hasContainersOnLaterPages;
 
+  const getBacklogInfo = (containerId) => {
+    if (!backlogContainers || !backlogContainers.length) return null;
+
+    return backlogContainers.find((container) => container.container_id === containerId);
+  };
+
   return (
     <div className="flex flex-col w-full">
       {/* Summary information */}
@@ -212,9 +218,22 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dragg
               const isDropTarget = section === 1 && draggingTargetContainer && !item;
               const isTemporaryNewCell = temporaryNextPage !== null && displayPage !== currentPage;
 
+              const backlogInfo = item ? getBacklogInfo(item.id) : null;
+              const isBacklogged = !!backlogInfo;
+
               return (
                 <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={true} isDropTarget={isDropTarget} isNewPage={isTemporaryNewCell}>
-                  {item && <DraggableContainer id={item.id} text={item.id} isDragging={draggingItem === item.id} color={item.color} type={containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry"} />}
+                  {item && (
+                    <DraggableContainer
+                      id={item.id}
+                      text={item.id}
+                      isDragging={draggingItem === item.id}
+                      color={item.color}
+                      type={containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry"}
+                      isBacklogged={isBacklogged}
+                      backlogWeeks={backlogInfo ? backlogInfo.weeks_pending : 0}
+                    />
+                  )}
                 </DroppableCell>
               );
             })}

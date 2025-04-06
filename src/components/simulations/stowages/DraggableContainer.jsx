@@ -2,7 +2,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import "./DraggableContainer.css";
 
-const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView, isTarget, isOptionalTarget }) => {
+const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView, isTarget, isOptionalTarget, isBacklogged, backlogWeeks }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
     disabled: isHistoryView,
@@ -52,6 +52,7 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
     ${isTarget ? "ring-4 ring-yellow-400" : ""}
     ${isOptionalTarget ? "ring-3 ring-green-400 border-dashed" : ""}
     w-full h-full max-w-[80px] max-h-[60px] mx-auto
+    ${isBacklogged ? "border-2 border-red-500" : ""}
   `;
 
   return (
@@ -73,6 +74,11 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
 
         {/* Make optional indicator more eye-catching */}
         {isOptionalTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">OPTIONAL</div>}
+
+        {/* Backlog badge */}
+        {isBacklogged && (
+          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-rose-950 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">LATE {backlogWeeks}w</div>
+        )}
 
         {/* Pattern Overlay */}
         <div className="absolute inset-0 opacity-20">

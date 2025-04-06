@@ -277,7 +277,7 @@ const FileGeneratePanel = ({ deckId, refreshData }) => {
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-800">File Generate</h3>
+          <h3 className="text-lg font-semibold text-gray-800">Import File</h3>
           <button onClick={downloadTemplate} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
             <BsDownload /> Download Template
           </button>
