@@ -34,6 +34,45 @@ const CardsTableView = ({ cards, formatIDR, uniqueOrigins, onEditCard, onDeleteC
     return sortDirection === "asc" ? <FaSortUp className="text-blue-600" /> : <FaSortDown className="text-blue-600" />;
   };
 
+  // Helper function to compare values with proper handling for strings vs numbers
+  const compareValues = (a, b, field, direction) => {
+    // Special handling for ID field to sort by first digit first
+    if (field === "id") {
+      // Extract first digits for comparison
+      const aFirstDigit = a.id.toString().charAt(0);
+      const bFirstDigit = b.id.toString().charAt(0);
+
+      // Compare first digits
+      if (aFirstDigit !== bFirstDigit) {
+        return direction === "asc" ? aFirstDigit.localeCompare(bFirstDigit) : bFirstDigit.localeCompare(aFirstDigit);
+      }
+
+      // If first digits are equal, compare the rest of the ID numerically
+      const aRest = parseInt(a.id.toString().substring(1), 10);
+      const bRest = parseInt(b.id.toString().substring(1), 10);
+
+      // Handle NaN cases
+      if (isNaN(aRest)) return direction === "asc" ? -1 : 1;
+      if (isNaN(bRest)) return direction === "asc" ? 1 : -1;
+
+      return direction === "asc" ? aRest - bRest : bRest - aRest;
+    }
+
+    // Original logic for other fields
+    let valueA = a[field];
+    let valueB = b[field];
+
+    // For string fields, convert to lowercase
+    if (typeof valueA === "string" && typeof valueB === "string") {
+      valueA = valueA.toLowerCase();
+      valueB = valueB.toLowerCase();
+    }
+
+    if (valueA < valueB) return direction === "asc" ? -1 : 1;
+    if (valueA > valueB) return direction === "asc" ? 1 : -1;
+    return 0;
+  };
+
   // Filter and sort cards when dependencies change
   useEffect(() => {
     let result = [...cards];
@@ -59,20 +98,12 @@ const CardsTableView = ({ cards, formatIDR, uniqueOrigins, onEditCard, onDeleteC
       result = result.filter((card) => card.origin === originFilter);
     }
 
-    // Apply sorting
+    // Apply two-level sorting
     result.sort((a, b) => {
-      let valueA = a[sortField];
-      let valueB = b[sortField];
+      // Primary sort
+      let comparison = compareValues(a, b, sortField, sortDirection);
 
-      // Handle string vs number comparison
-      if (typeof valueA === "string" && typeof valueB === "string") {
-        valueA = valueA.toLowerCase();
-        valueB = valueB.toLowerCase();
-      }
-
-      if (valueA < valueB) return sortDirection === "asc" ? -1 : 1;
-      if (valueA > valueB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
+      return comparison;
     });
 
     setFilteredCards(result);
@@ -191,14 +222,14 @@ const CardsTableView = ({ cards, formatIDR, uniqueOrigins, onEditCard, onDeleteC
                   {getSortIcon("quantity")}
                 </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("revenue")}>
-                <div className="flex items-center space-x-1">
-                  <span>Revenue</span>
-                  {getSortIcon("revenue")}
-                </div>
-              </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <span>Revenue/Container</span>
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("revenue")}>
+                <div className="flex items-center space-x-1">
+                  <span>Total</span>
+                  {getSortIcon("revenue")}
+                </div>
               </th>
               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -214,9 +245,9 @@ const CardsTableView = ({ cards, formatIDR, uniqueOrigins, onEditCard, onDeleteC
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${card.type === "reefer" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}
+                      ${card.type === "reefer" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-gray-800"}`}
                   >
-                    {card.type}
+                    {card.type.toUpperCase()}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -236,8 +267,8 @@ const CardsTableView = ({ cards, formatIDR, uniqueOrigins, onEditCard, onDeleteC
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{card.quantity}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIDR(card.revenue)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIDR(card.revenue / card.quantity)}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatIDR(card.revenue)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end space-x-2">
                     <button onClick={() => onEditCard(card)} className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50" title="Edit card">

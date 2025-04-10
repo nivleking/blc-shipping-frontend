@@ -15,7 +15,7 @@ const CardsGridView = ({ cards, containers, formatIDR, onEditCard, onDeleteCard 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredCards, setFilteredCards] = useState([]);
-  const cardsPerPage = 6;
+  const cardsPerPage = 10;
 
   // Get unique origins for filter options
   const uniqueOrigins = [...new Set(cards.map((card) => card.origin))].sort();
@@ -24,19 +24,36 @@ const CardsGridView = ({ cards, containers, formatIDR, onEditCard, onDeleteCard 
   useEffect(() => {
     let filtered = [...cards];
 
-    // Apply type filter
+    // Apply type filter if not "all"
     if (filterType !== "all") {
-      filtered = filtered.filter((card) => card.priority === (filterType === "committed" ? "Committed" : "Non-Committed"));
+      filtered = filtered.filter((card) => card.type === filterType);
     }
 
-    // Apply origin filter
+    // Apply origin filter if not "all"
     if (filterOrigin !== "all") {
       filtered = filtered.filter((card) => card.origin === filterOrigin);
     }
 
+    // Sort by first digit of ID, then by the rest of the ID numerically
+    filtered.sort((a, b) => {
+      // Extract first digits
+      const aFirstDigit = a.id.toString().charAt(0);
+      const bFirstDigit = b.id.toString().charAt(0);
+
+      // Compare first digits
+      if (aFirstDigit !== bFirstDigit) {
+        return aFirstDigit.localeCompare(bFirstDigit);
+      }
+
+      // If first digits are equal, compare the rest numerically
+      const aRest = parseInt(a.id.toString().substring(1), 10);
+      const bRest = parseInt(b.id.toString().substring(1), 10);
+
+      return aRest - bRest;
+    });
+
     setFilteredCards(filtered);
-    // Reset to first page when filters change
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [cards, filterType, filterOrigin]);
 
   // Calculate pagination values
@@ -104,7 +121,7 @@ const CardsGridView = ({ cards, containers, formatIDR, onEditCard, onDeleteCard 
       {/* Cards Grid or Empty State */}
       <div className="p-4 overflow-y-auto h-[calc(100vh-18rem)]">
         {currentCards.length > 0 ? (
-          <div className="grid grid-cols-3 grid-rows-2 gap-4">
+          <div className="grid grid-cols-5 grid-rows-2 gap-6">
             {currentCards.map((card, index) => (
               <motion.div
                 key={card.id}
@@ -118,7 +135,7 @@ const CardsGridView = ({ cards, containers, formatIDR, onEditCard, onDeleteCard 
                 {/* Card Header with Edit Button */}
                 <div className="p-4">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-semibold text-base">
+                    <span className="font-semibold text-[11px]">
                       ({card.id}) {card.origin} → {card.destination}
                     </span>
                     <div className="flex items-center space-x-2">
@@ -129,18 +146,18 @@ const CardsGridView = ({ cards, containers, formatIDR, onEditCard, onDeleteCard 
                         <FiTrash2 className="text-red-600" />
                       </button>
                       <span
-                        className={`px-3 py-1 rounded-full text-sm
+                        className={`px-3 py-1 rounded-full text-[11px]
                                  ${card.priority === "Committed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
                       >
-                        {card.priority}
+                        {card.priority === "Committed" ? "C" : "NC"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4 text-[11px]">
                     <div>
                       <span className="text-gray-500">Type</span>
-                      <p className="font-medium mt-1">{card.type}</p>
+                      <p className="font-medium mt-1">{card.type.toUpperCase()}</p>
                     </div>
                     <div>
                       <span className="text-gray-500">Quantity</span>
@@ -158,13 +175,13 @@ const CardsGridView = ({ cards, containers, formatIDR, onEditCard, onDeleteCard 
 
                   {/* Container Preview */}
                   <div className="mt-4">
-                    <h4 className="text-sm text-gray-500 mb-2">Containers</h4>
-                    <div className="grid grid-cols-5 gap-2">
+                    <h4 className="text-[11px] text-gray-500 mb-2">Containers</h4>
+                    <div className="grid grid-cols-6 gap-2">
                       {containers
                         ?.filter((c) => c.card_id === card.id)
                         .map((container) => (
                           <div key={container.id} style={{ backgroundColor: container.color }} className="h-6 rounded" title={`Container ${container.id}`}>
-                            <p className={`text-center text-sm ${container.color === "yellow" ? "text-black" : "text-white"} leading-6`}>{container.id}</p>
+                            <p className={`text-center text-[8px] ${container.color === "yellow" ? "text-black" : "text-white"} leading-6`}>{container.id}</p>
                           </div>
                         ))}
                     </div>

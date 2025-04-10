@@ -5,6 +5,20 @@ import LoadingOverlay from "../../LoadingOverlay";
 import useToast from "../../../toast/useToast";
 import { availablePorts } from "../../../assets/PortUtilities";
 
+// Port to number mapping
+const PORT_TO_NUMBER = {
+  SBY: 1,
+  MDN: 2,
+  MKS: 3,
+  JYP: 4,
+  BPN: 5,
+  BKS: 6,
+  BGR: 7,
+  BTH: 8,
+  AMQ: 9,
+  SMR: 10,
+};
+
 const validateId = (id) => {
   return id && !isNaN(parseInt(id)) && parseInt(id) >= 1;
 };
@@ -22,6 +36,13 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
     revenuePerContainer: 0,
     type: "dry",
   });
+
+  // New fields for structured ID
+  const [cardIdComponents, setCardIdComponents] = useState({
+    week: "",
+    cardNumber: "",
+  });
+
   const [activeMarketIntelligence, setActiveMarketIntelligence] = useState(null);
   const [isLoadingMI, setIsLoadingMI] = useState(false);
   const [miPorts, setMiPorts] = useState([]);
@@ -33,6 +54,18 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
   const loadingMessages = ["Creating your sales call card..."];
 
+  // Generate card ID from components whenever they change
+  useEffect(() => {
+    if (manualCardForm.origin && cardIdComponents.week && cardIdComponents.cardNumber) {
+      const portNumber = PORT_TO_NUMBER[manualCardForm.origin] || "";
+      const week = cardIdComponents.week;
+      const cardNum = cardIdComponents.cardNumber.padStart(2, "0");
+
+      const generatedId = `${portNumber}${week}${cardNum}`;
+      setManualCardForm((prev) => ({ ...prev, id: generatedId }));
+    }
+  }, [manualCardForm.origin, cardIdComponents.week, cardIdComponents.cardNumber]);
+
   const calculateTotalRevenue = () => {
     return manualCardForm.quantity * manualCardForm.revenuePerContainer;
   };
@@ -40,6 +73,28 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
   const handleManualCardChange = (e) => {
     const { name, value } = e.target;
     setManualCardForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handler for card ID component changes
+  const handleCardIdChange = (e) => {
+    const { name, value } = e.target;
+
+    // Validate week (positive numbers only)
+    if (name === "week" && value !== "") {
+      const numValue = parseInt(value, 10);
+      if (isNaN(numValue) || numValue <= 0) return;
+    }
+
+    // Validate card number (1-99 only)
+    if (name === "cardNumber" && value !== "") {
+      const numValue = parseInt(value, 10);
+      if (isNaN(numValue) || numValue <= 0 || numValue > 99) return;
+    }
+
+    setCardIdComponents((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -65,7 +120,10 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
     try {
       if (!validateId(manualCardForm.id)) {
-        showError("Invalid ID. Must be a number above 1");
+        showError("Invalid ID. Please complete all ID fields correctly.");
+        setIsSubmitting(false);
+        setIsLoading(false);
+        clearInterval(messageInterval);
         return;
       }
 
@@ -94,6 +152,11 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
         quantity: 1,
         revenuePerContainer: 0,
         type: "dry",
+      });
+
+      setCardIdComponents({
+        week: "",
+        cardNumber: "",
       });
     } catch (error) {
       console.error("Error creating card:", error);
@@ -167,6 +230,13 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
       fetchMarketIntelligence();
     }
   }, [useMarketIntelligenceToggle]);
+
+  // Reset card ID components when origin changes
+  useEffect(() => {
+    if (manualCardForm.origin === "") {
+      setManualCardForm((prev) => ({ ...prev, id: "" }));
+    }
+  }, [manualCardForm.origin]);
 
   return (
     <div className="">
@@ -279,26 +349,86 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                 </div>
               </div>
 
-              {/* ID, Type, and Priority Group */}
-              <div className="grid grid-cols-3 gap-4">
-                {/* Card ID */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Card ID</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="id"
-                      value={manualCardForm.id}
+              {/* Card ID Builder Section */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Origin Port Selection */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Origin Port</label>
+                    <select
+                      name="origin"
+                      value={manualCardForm.origin}
                       onChange={handleManualCardChange}
-                      // pattern="^[1-9]\d{0,4}$"
                       required
-                      placeholder="Enter Card ID"
                       className="w-full p-3 bg-gray-50 border-2 rounded-lg 
                       focus:outline-none focus:border-blue-500 transition-colors"
+                    >
+                      <option value="">Select Origin Port</option>
+                      {(usingMarketIntelligence ? miPorts : availablePorts[selectedPorts])?.map((port) => (
+                        <option key={port} value={port}>
+                          {port} ({PORT_TO_NUMBER[port]})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500">Port number: {PORT_TO_NUMBER[manualCardForm.origin] || "-"}</p>
+                  </div>
+
+                  {/* Week Number */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Week/Round</label>
+                    <input
+                      type="number"
+                      name="week"
+                      placeholder="Enter week (e.g., 1, 2, 3...)"
+                      value={cardIdComponents.week}
+                      onChange={handleCardIdChange}
+                      min="1"
+                      required
+                      className={`w-full p-3 bg-gray-50 border-2 rounded-lg 
+                      focus:outline-none focus:border-blue-500 transition-colors
+                      ${!manualCardForm.origin ? "opacity-50 cursor-not-allowed" : ""}`}
+                      disabled={!manualCardForm.origin}
                     />
+                  </div>
+
+                  {/* Card Number */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Card Number (01-99)</label>
+                    <input
+                      type="number"
+                      name="cardNumber"
+                      placeholder="01-99"
+                      value={cardIdComponents.cardNumber}
+                      onChange={handleCardIdChange}
+                      min="1"
+                      max="99"
+                      required
+                      className={`w-full p-3 bg-gray-50 border-2 rounded-lg 
+                      focus:outline-none focus:border-blue-500 transition-colors
+                      ${!manualCardForm.origin || !cardIdComponents.week ? "opacity-50 cursor-not-allowed" : ""}`}
+                      disabled={!manualCardForm.origin || !cardIdComponents.week}
+                    />
+                    <p className="text-xs text-gray-500">Will be formatted as two digits: {cardIdComponents.cardNumber ? cardIdComponents.cardNumber.padStart(2, "0") : "XX"}</p>
                   </div>
                 </div>
 
+                {/* Generated Card ID */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700">Generated Card ID:</label>
+                      <p className="text-lg font-bold text-blue-700">{manualCardForm.id || "___"}</p>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      <p>Format: [Port Number] + [Week] + [Card Number]</p>
+                      <p>Example: 21506 = MDN (2) + Week 15 + Card 06</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Container Type and Priority */}
+              <div className="grid grid-cols-2 gap-4">
                 {/* Container Type - NEW SELECT INPUT */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Container Type</label>
@@ -332,27 +462,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
               </div>
 
               {/* Ports Section */}
-              <div className="grid grid-cols-2 gap-6">
-                {/* Origin Port */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Origin Port</label>
-                  <select
-                    name="origin"
-                    value={manualCardForm.origin}
-                    onChange={handleManualCardChange}
-                    required
-                    className="w-full p-3 bg-gray-50 border-2 rounded-lg 
-    focus:outline-none focus:border-blue-500 transition-colors"
-                  >
-                    <option value="">Select Origin Port</option>
-                    {(usingMarketIntelligence ? miPorts : availablePorts[selectedPorts])?.map((port) => (
-                      <option key={port} value={port}>
-                        {port}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
+              <div className="grid grid-cols-1 gap-6">
                 {/* Destination Port */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Destination Port</label>

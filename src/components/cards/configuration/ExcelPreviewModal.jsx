@@ -6,7 +6,7 @@ import { FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
   const [currentTab, setCurrentTab] = useState("preview");
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Sorting and filtering states
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,54 +26,57 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
     byPriority: { committed: 0, nonCommitted: 0 },
   });
 
-  // Filter, sort, and search handler
   useEffect(() => {
-    if (!data || !data.length) {
-      setFilteredData([]);
-      return;
-    }
-
-    let filtered = [...data];
+    let result = [...data];
 
     // Apply search filter
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter((row) => row.id.toString().toLowerCase().includes(search) || row.origin.toLowerCase().includes(search) || row.destination.toLowerCase().includes(search) || row.priority.toLowerCase().includes(search));
+      result = result.filter((item) => item.id?.toString().toLowerCase().includes(search) || item.origin?.toLowerCase().includes(search) || item.destination?.toLowerCase().includes(search));
     }
 
     // Apply priority filter
     if (priorityFilter !== "all") {
-      filtered = filtered.filter((row) => {
-        if (priorityFilter === "committed") {
-          return row.priority?.toLowerCase().includes("committed") && !row.priority?.toLowerCase().includes("non");
-        } else if (priorityFilter === "non-committed") {
-          return row.priority?.toLowerCase().includes("non");
-        }
-        return true;
-      });
+      result = result.filter((item) => item.priority === priorityFilter);
     }
 
-    // Apply container type filter
+    // Apply type filter
     if (typeFilter !== "all") {
-      filtered = filtered.filter((row) => row.container_type?.toLowerCase() === typeFilter.toLowerCase());
+      result = result.filter((item) => item.type === typeFilter);
     }
 
     // Apply sorting
-    filtered.sort((a, b) => {
+    result.sort((a, b) => {
+      // Extract first digit for primary sorting
+      const aFirstDigit = a.id?.toString().charAt(0) || "0";
+      const bFirstDigit = b.id?.toString().charAt(0) || "0";
+
+      // Compare first digits
+      if (aFirstDigit !== bFirstDigit) {
+        return sortDirection === "asc" ? aFirstDigit.localeCompare(bFirstDigit) : bFirstDigit.localeCompare(aFirstDigit);
+      }
+
+      // If first digits are the same, sort by the rest of the ID numerically
+      if (sortField === "id") {
+        const aRest = parseInt(a.id?.toString().substring(1) || "0", 10);
+        const bRest = parseInt(b.id?.toString().substring(1) || "0", 10);
+        return sortDirection === "asc" ? aRest - bRest : bRest - aRest;
+      }
+
+      // Sort by other fields if needed
       let valueA = a[sortField];
       let valueB = b[sortField];
 
-      // Ensure we're comparing strings properly
-      if (typeof valueA === "string") valueA = valueA.toLowerCase();
-      if (typeof valueB === "string") valueB = valueB.toLowerCase();
+      // Handle string comparison
+      if (typeof valueA === "string" && typeof valueB === "string") {
+        return sortDirection === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+      }
 
-      if (valueA < valueB) return sortDirection === "asc" ? -1 : 1;
-      if (valueA > valueB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
+      // Handle number comparison
+      return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
     });
 
-    setFilteredData(filtered);
-    setCurrentPage(1); // Reset to first page when search changes
+    setFilteredData(result);
   }, [data, searchTerm, sortField, sortDirection, priorityFilter, typeFilter]);
 
   // Calculate statistics when data changes
@@ -297,7 +300,7 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
                             className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                               ${row.container_type === "reefer" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}
                           >
-                            {row.container_type}
+                            {row.container_type.toUpperCase()}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">{row.quantity}</td>
