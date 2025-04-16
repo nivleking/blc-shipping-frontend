@@ -19,6 +19,7 @@ import AdminCreateLayouts from "./pages/Admin/AdminCreateLayouts";
 import NotFound from "./pages/NotFound";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
+import PreviousSimulations from "./components/users/PreviousSimulations";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -59,6 +60,19 @@ const App = () => {
               user ? (
                 <UserLayout>
                   <UserHome />
+                </UserLayout>
+              ) : (
+                <Login />
+              )
+            }
+          />
+
+          <Route
+            path="/previous-simulations"
+            element={
+              user ? (
+                <UserLayout>
+                  <PreviousSimulations />
                 </UserLayout>
               ) : (
                 <Login />
