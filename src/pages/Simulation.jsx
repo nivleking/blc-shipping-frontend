@@ -103,6 +103,11 @@ const Simulation = () => {
 
   const [extraMovesOnLongCrane, setExtraMovesOnLongCrane] = useState(0);
 
+  const [portSequence, setPortSequence] = useState([]);
+  const [restowageContainers, setRestowageContainers] = useState([]);
+  const [restowagePenalty, setRestowagePenalty] = useState(0);
+  const [restowageMoves, setRestowageMoves] = useState(0);
+
   const fetchBayStatistics = async () => {
     try {
       const response = await api.get(`/ship-bays/${roomId}/${user.id}/statistics`, {
@@ -268,6 +273,7 @@ const Simulation = () => {
       });
 
       const cardTemporaries = cardTemporaryResponse.data.cards;
+      // console.log("Card temp", cardTemporaries);
 
       // These cards already have the proper card data via eager loading
       console.log("Card Temporaries:", cardTemporaries);
@@ -607,6 +613,7 @@ const Simulation = () => {
                   id: container.id,
                   area: `docks-${container.position}`,
                   color: containerInfo.color,
+                  is_restowed: container.is_restowed || false,
                 };
               }
               return null;
@@ -624,6 +631,7 @@ const Simulation = () => {
                     id: item,
                     area: `docks-${index}`,
                     color: container.color,
+                    is_restowed: container.is_restowed || false,
                   };
                 }
               }
@@ -636,6 +644,20 @@ const Simulation = () => {
       }
 
       setDroppedItems([...dockItems, ...newDroppedItems]);
+
+      const [restowageResponse, portSequenceResponse] = await Promise.all([
+        api.get(`/rooms/${roomId}/restowage-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        api.get(`/rooms/${roomId}/port-sequence/${response.data.port}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      setRestowageContainers(restowageResponse.data.restowage_containers || []);
+      setPortSequence(portSequenceResponse.data.recommended_stacking_order || []);
+      setRestowagePenalty(restowageResponse.data.restowage_penalty || 0);
+      setRestowageMoves(restowageResponse.data.restowage_moves || 0);
 
       const currentSection = response.data.section;
       if (currentSection) {
@@ -1455,6 +1477,20 @@ const Simulation = () => {
       });
       console.log("API call successful for docks", resDock.data);
 
+      const [restowageResponse, portSequenceResponse] = await Promise.all([
+        api.get(`/rooms/${roomId}/restowage-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        api.get(`/rooms/${roomId}/port-sequence/${resBay.data.port}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      setRestowageContainers(restowageResponse.data.restowage_containers || []);
+      setPortSequence(portSequenceResponse.data.recommended_stacking_order || []);
+      setRestowagePenalty(restowageResponse.data.restowage_penalty || 0);
+      setRestowageMoves(restowageResponse.data.restowage_moves || 0);
+
       // Request updated stats after move
       socket.emit("stats_requested", {
         roomId,
@@ -1846,6 +1882,11 @@ const Simulation = () => {
                   setShowHistorical={setShowHistorical}
                   onRefreshCards={handleRefreshCards}
                   backlogContainers={backlogContainers}
+                  portSequence={portSequence}
+                  restowageContainers={restowageContainers}
+                  restowagePenalty={restowagePenalty}
+                  restowageMoves={restowageMoves}
+                  containerDestinationsCache={containerDestinationsCache}
                 />
               </TabPanel>
 

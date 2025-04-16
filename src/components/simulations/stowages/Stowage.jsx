@@ -5,6 +5,9 @@ import SalesCallCard from "./SalesCallCard";
 import DraggableContainer from "./DraggableContainer";
 import PortLegendSimulation from "./PortLegendSimulation";
 import BayStatisticsTable from "./BayStatisticsTable";
+import RestowageAlert from "./RestowageAlert";
+import PortOrderAlert from "./PortOrderAlert";
+import ContainerLegend from "./ContainerLegend";
 
 const Stowage = ({
   bayCount,
@@ -33,6 +36,10 @@ const Stowage = ({
   mustProcessCards,
   cardsLimit,
   port,
+  portSequence = [],
+  restowageContainers = [],
+  restowagePenalty = 0,
+  restowageMoves = 0,
   bayMoves = {},
   bayPairs = [],
   totalMoves = 0,
@@ -46,9 +53,11 @@ const Stowage = ({
   setShowHistorical,
   onRefreshCards,
   backlogContainers = [],
+  containerDestinationsCache,
 }) => {
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
+  // console.log(containerDestinationsCache);
   return (
     <>
       {/* <PortLegendSimulation /> */}
@@ -91,8 +100,35 @@ const Stowage = ({
               Ship Bay
               {section === 1 && targetContainers.length > 0 && <span className="ml-4 text-sm text-yellow-600 font-semibold animate-pulse">{targetContainers.length} containers need unloading</span>}
             </h3>
+
+            {/* Alert container - flex row to place alerts side by side */}
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
+              {/* Port Order Alert - takes half width on medium screens and up */}
+              <div className="w-full md:w-1/2">
+                <PortOrderAlert currentPort={port} portSequence={portSequence} />
+              </div>
+
+              {/* Restowage Alert - takes half width on medium screens and up */}
+              <div className="w-full md:w-1/2">
+                <RestowageAlert restowageContainers={restowageContainers} restowagePenalty={restowagePenalty} restowageMoves={restowageMoves} formatIDR={formatIDR} />
+              </div>
+            </div>
+
+            {/* <ContainerLegend /> */}
+
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <ShipBay bayCount={bayCount} baySize={baySize} bayTypes={bayTypes} droppedItems={droppedItems} draggingItem={draggingItem} containers={containers} targetContainers={targetContainers} currentPort={port} />
+              <ShipBay
+                bayCount={bayCount}
+                baySize={baySize}
+                bayTypes={bayTypes}
+                droppedItems={droppedItems}
+                draggingItem={draggingItem}
+                containers={containers}
+                targetContainers={targetContainers}
+                currentPort={port}
+                restowageContainers={restowageContainers}
+                containerDestinationsCache={containerDestinationsCache}
+              />
             </div>
           </div>
 
@@ -108,7 +144,16 @@ const Stowage = ({
                 {section === 1 && targetContainers.length > 0 && draggingTargetContainer && <span className="ml-4 text-sm text-yellow-600 font-semibold">Drop container here</span>}
               </h3>
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 overflow-auto">
-                <ShipDock dockSize={dockSize} allItems={droppedItems} draggingItem={draggingItem} containers={containers} section={section} backlogContainers={backlogContainers} draggingTargetContainer={draggingTargetContainer} />
+                <ShipDock
+                  dockSize={dockSize}
+                  allItems={droppedItems}
+                  draggingItem={draggingItem}
+                  containers={containers}
+                  section={section}
+                  backlogContainers={backlogContainers}
+                  draggingTargetContainer={draggingTargetContainer}
+                  containerDestinationsCache={containerDestinationsCache}
+                />
               </div>
             </div>
 
@@ -138,6 +183,8 @@ const Stowage = ({
                     showHistorical={showHistorical}
                     setShowHistorical={setShowHistorical}
                     onRefreshCards={onRefreshCards}
+                    restowageMoves={restowageMoves}
+                    restowagePenalty={restowagePenalty}
                   />
                 </div>
               </div>
@@ -227,6 +274,7 @@ const Stowage = ({
                   opacity: 0.9,
                 }}
                 type={containers.find((c) => c.id === draggingItem)?.type?.toLowerCase() || "dry"}
+                destination={containerDestinationsCache[draggingItem] || ""}
               />
             </div>
           )}

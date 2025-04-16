@@ -12,6 +12,8 @@ const BayStatisticsTable = ({
   historicalStats,
   showHistorical,
   setShowHistorical,
+  restowageMoves = 0,
+  restowagePenalty = 0,
 }) => {
   const getBayNumber = (index) => {
     return index + 1;
@@ -31,6 +33,8 @@ const BayStatisticsTable = ({
     totalMoves: historicalStats && typeof historicalStats.discharge_moves === "number" && typeof historicalStats.load_moves === "number" ? Number(historicalStats.discharge_moves) + Number(historicalStats.load_moves) : totalMoves,
     longCraneMoves: historicalStats?.long_crane_moves !== undefined ? Number(historicalStats.long_crane_moves) : longCraneMoves,
     extraMovesOnLongCrane: historicalStats?.extra_moves_on_long_crane !== undefined ? Number(historicalStats.extra_moves_on_long_crane) : extraMovesOnLongCrane,
+    restowageMoves: historicalStats?.restowage_moves !== undefined ? Number(historicalStats.restowage_moves) : restowageMoves,
+    restowagePenalty: historicalStats?.restowage_penalty !== undefined ? Number(historicalStats.restowage_penalty) : restowagePenalty,
   };
 
   // Safely calculate ideal average moves per crane
@@ -134,8 +138,8 @@ const BayStatisticsTable = ({
               <tr>
                 <td className="px-1.5 py-1 font-medium border border-gray-200 sticky left-0 bg-white z-10">Restow Boxes</td>
                 {bayNumbers.map((_, index) => (
-                  <td key={`restowage-boxes-${index}`} className="px-1.5 py-1 text-center border border-gray-200 bg-black">
-                    0
+                  <td key={`restowage-penalty-${index}`} className="px-1.5 py-1 text-center border border-gray-200">
+                    {displayData.bayMoves[index]?.restowage_penalty || 0}
                   </td>
                 ))}
               </tr>
@@ -144,8 +148,8 @@ const BayStatisticsTable = ({
               <tr>
                 <td className="px-1.5 py-1 font-medium border border-gray-200 sticky left-0 bg-white z-10">Restow Moves</td>
                 {bayNumbers.map((_, index) => (
-                  <td key={`restowage-moves-${index}`} className="px-1.5 py-1 text-center border border-gray-200 bg-black">
-                    0
+                  <td key={`restowage-moves-${index}`} className="px-1.5 py-1 text-center border border-gray-200">
+                    {displayData.bayMoves[index]?.restowage_moves || 0}
                   </td>
                 ))}
               </tr>

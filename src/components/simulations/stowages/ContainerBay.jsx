@@ -1,6 +1,11 @@
-const ContainerBay = ({ id, rows, columns, children }) => {
+const ContainerBay = ({ id, rows, columns, children, hasRestowageIssue = false }) => {
   return (
-    <div className="bg-gray-100 p-4 rounded-xl shadow-inner">
+    <div
+      className={`
+      p-4 rounded-xl shadow-inner
+      ${hasRestowageIssue ? "bg-red-50" : "bg-gray-100"}
+    `}
+    >
       <div
         className="grid gap-2"
         style={{

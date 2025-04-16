@@ -1,12 +1,15 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import "./DraggableContainer.css";
+import { useState } from "react";
 
-const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView, isTarget, isOptionalTarget, isBacklogged, backlogWeeks }) => {
+const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView, isTarget, isOptionalTarget, isBacklogged, backlogWeeks, isRestowageProblem, isBlocking, isRestowed, tooltipContent, destination }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
     disabled: isHistoryView,
   });
+
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const defaultStyle = {
     transform: CSS.Transform.toString(transform),
@@ -50,34 +53,76 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
     relative transition-all
     ${isDragging && !isHistoryView ? "scale-105 shadow-xl" : "shadow-md"}
     ${isTarget ? "ring-4 ring-yellow-400" : ""}
-    ${isOptionalTarget ? "ring-3 ring-green-400 border-dashed" : ""}
-    w-full h-full max-w-[80px] max-h-[60px] mx-auto
+    ${isOptionalTarget ? "ring-1 ring-green-400 border-dashed" : ""}
+    ${isRestowageProblem && isBlocking ? "ring-2 ring-red-500" : ""}
+    ${isRestowageProblem && !isBlocking ? "ring-2 ring-orange-400" : ""}
     ${isBacklogged ? "border-2 border-red-500" : ""}
+    w-full h-full max-w-[80px] max-h-[60px] mx-auto
+    ${isRestowed ? "border-2 border-red-500 border-dashed" : ""}
+    w-full h-full max-w-[80px] max-h-[60px] mx-auto
   `;
 
+  // console.log("Destination", destination);
+
   return (
-    <div ref={setNodeRef} {...(isHistoryView ? {} : { ...listeners, ...attributes })} style={{ ...defaultStyle, ...style }} className={containerClasses}>
+    <div
+      ref={setNodeRef}
+      {...(isHistoryView ? {} : { ...listeners, ...attributes })}
+      style={{ ...defaultStyle, ...style }}
+      className={containerClasses}
+      onMouseEnter={() => tooltipContent && setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
       <div className="relative w-full h-full p-2">
         <span className="absolute top-1 left-1 text-[10px] sm:text-xs font-medium text-white drop-shadow-md">#{text}</span>
 
         <div
           className={`
-          absolute -top-3 -right-3 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold
+          absolute -top-3 -right-3 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[8px] font-bold
           ${type.toLowerCase() === "reefer" ? "bg-blue-500 text-white ring-1 sm:ring-2 ring-blue-200" : "bg-gray-600 text-white"}
         `}
         >
-          {type}
+          {type.toUpperCase()}
         </div>
+
+        {/* Add destination display */}
+        {destination && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+            <span className="text-xs font-bold bg-black bg-opacity-50 text-white px-2 py-0.5 rounded whitespace-nowrap">{destination}</span>
+          </div>
+        )}
+
+        {/* Restowage indicator */}
+        {isRestowageProblem && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            <div className="w-6 h-6 flex items-center justify-center bg-red-900 text-white text-xs font-bold rounded-full shadow-md animate-pulse">⚠️</div>
+          </div>
+        )}
+
+        {/* Restowed container indicator */}
+        {isRestowed && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            <div className="w-6 h-6 flex items-center justify-center bg-red-900 text-white text-xs font-bold rounded-full shadow-md">↓</div>
+          </div>
+        )}
 
         {/* Add unload indicator for target containers */}
         {isTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">UNLOAD</div>}
 
         {/* Make optional indicator more eye-catching */}
-        {isOptionalTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">OPTIONAL</div>}
+        {/* {isOptionalTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-700 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">OPTIONAL</div>} */}
 
         {/* Backlog badge */}
         {isBacklogged && (
           <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-rose-950 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">LATE {backlogWeeks}w</div>
+        )}
+
+        {/* Update tooltip to show restowed info */}
+        {showTooltip && tooltipContent && (
+          <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded py-1 px-2 z-50 w-max max-w-[180px]">
+            {isRestowed ? `Restowed: ${tooltipContent}` : tooltipContent}
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900"></div>
+          </div>
         )}
 
         {/* Pattern Overlay */}

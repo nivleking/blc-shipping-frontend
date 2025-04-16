@@ -6,7 +6,7 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { BiErrorCircle } from "react-icons/bi";
 import Tooltip from "../../Tooltip";
 
-const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, backlogContainers = [], draggingTargetContainer }) => {
+const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, backlogContainers = [], draggingTargetContainer, containerDestinationsCache }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [temporaryNextPage, setTemporaryNextPage] = useState(null);
   const itemsPerPage = dockSize.rows * dockSize.columns;
@@ -126,6 +126,12 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, backl
     return backlogContainers.find((container) => container.container_id === containerId);
   };
 
+  // Add function to get restowed status
+  const isRestowedContainer = (containerId) => {
+    const item = dockItems.find((item) => item.id === containerId);
+    return item && item.is_restowed === true;
+  };
+
   return (
     <div className="flex flex-col w-full">
       {/* Summary information */}
@@ -232,6 +238,9 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, backl
                       type={containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry"}
                       isBacklogged={isBacklogged}
                       backlogWeeks={backlogInfo ? backlogInfo.weeks_pending : 0}
+                      isRestowed={isRestowedContainer(item.id)}
+                      tooltipContent={isRestowedContainer(item.id) ? "Container moved due to restowage issue" : ""}
+                      destination={containerDestinationsCache[item.id]}
                     />
                   )}
                 </DroppableCell>
