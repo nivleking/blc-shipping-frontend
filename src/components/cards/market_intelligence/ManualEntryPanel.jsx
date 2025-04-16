@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { PORT_ORDER } from "../../../assets/PortUtilities";
 
 // Format number as IDR currency
 const formatToIDR = (value) => {
@@ -58,36 +59,79 @@ const PriceTable = ({ origin, prices, onPriceChange }) => (
   </div>
 );
 
-const PenaltyTable = () => (
-  <div className="bg-red-50 rounded-lg shadow-sm p-4">
-    <h3 className="text-lg font-semibold text-red-800 mb-3">Penalties per Container</h3>
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-red-200">
-        <thead className="bg-red-100">
-          <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-red-700 uppercase">Type</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-red-700 uppercase">Committed</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-red-700 uppercase">Non-Committed</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-red-200">
-          <tr className="hover:bg-red-50">
-            <td className="px-4 py-3 text-sm text-red-900">Dry</td>
-            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">0</td>
-            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">0</td>
-          </tr>
-          <tr className="hover:bg-red-50">
-            <td className="px-4 py-3 text-sm text-red-900">Reefer</td>
-            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">0</td>
-            <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">0</td>
-          </tr>
-        </tbody>
-      </table>
+const PenaltyTable = ({ penalties = {}, onPenaltyChange }) => {
+  const safePenalties = penalties || {};
+  return (
+    <div className="bg-red-50 rounded-lg shadow-sm p-4 mb-4">
+      <h3 className="text-lg font-semibold text-red-800 mb-3">Unrolled Container Penalties</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-red-200">
+          <thead className="bg-red-100">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-red-700 uppercase">Type</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-red-700 uppercase">Committed</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-red-700 uppercase">Non-Committed</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-red-200">
+            <tr className="hover:bg-red-50">
+              <td className="px-4 py-3 text-sm text-red-900">Dry</td>
+              <td className="px-4 py-3 text-sm text-right">
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">IDR</span>
+                  <input
+                    type="text"
+                    value={formatToIDR(safePenalties.dry_committed || 0).replace("Rp", "")}
+                    onChange={(e) => onPenaltyChange("dry_committed", parseFromIDR(e.target.value))}
+                    className="w-full pl-12 p-2 border border-red-300 rounded text-red-600 font-medium text-right"
+                  />
+                </div>
+              </td>
+              <td className="px-4 py-3 text-sm text-right">
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">IDR</span>
+                  <input
+                    type="text"
+                    value={formatToIDR(safePenalties.dry_non_committed || 0).replace("Rp", "")}
+                    onChange={(e) => onPenaltyChange("dry_non_committed", parseFromIDR(e.target.value))}
+                    className="w-full pl-12 p-2 border border-red-300 rounded text-red-600 font-medium text-right"
+                  />
+                </div>
+              </td>
+            </tr>
+            <tr className="hover:bg-red-50">
+              <td className="px-4 py-3 text-sm text-red-900">Reefer</td>
+              <td className="px-4 py-3 text-sm text-right">
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">IDR</span>
+                  <input
+                    type="text"
+                    value={formatToIDR(safePenalties.reefer_committed || 0).replace("Rp", "")}
+                    onChange={(e) => onPenaltyChange("reefer_committed", parseFromIDR(e.target.value))}
+                    className="w-full pl-12 p-2 border border-red-300 rounded text-red-600 font-medium text-right"
+                  />
+                </div>
+              </td>
+              <td className="px-4 py-3 text-sm text-right">
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">IDR</span>
+                  <input
+                    type="text"
+                    value={formatToIDR(safePenalties.reefer_non_committed || 0).replace("Rp", "")}
+                    onChange={(e) => onPenaltyChange("reefer_non_committed", parseFromIDR(e.target.value))}
+                    className="w-full pl-12 p-2 border border-red-300 rounded text-red-600 font-medium text-right"
+                  />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-const ManualEntryPanel = ({ marketIntelligenceName, setMarketIntelligenceName, selectedPorts, availablePorts, handlePortCountChange, priceData, handlePriceChange }) => {
+const ManualEntryPanel = ({ marketIntelligenceName, setMarketIntelligenceName, selectedPorts, availablePorts, handlePortCountChange, priceData, handlePriceChange, penalties, handlePenaltyChange }) => {
   const [hoveredCell, setHoveredCell] = useState(null); // Track hovered cell for highlighting
   const [displayedPriceData, setDisplayedPriceData] = useState({});
 
@@ -107,9 +151,6 @@ const ManualEntryPanel = ({ marketIntelligenceName, setMarketIntelligenceName, s
   const clearHighlight = () => {
     setHoveredCell(null);
   };
-
-  // Define the standard port order
-  const PORT_ORDER = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
 
   // Sort ports according to the standard order
   const ports = [...availablePorts[selectedPorts]].sort((a, b) => {
@@ -229,7 +270,7 @@ const ManualEntryPanel = ({ marketIntelligenceName, setMarketIntelligenceName, s
         </table>
       </div>
 
-      <PenaltyTable />
+      <PenaltyTable penalties={penalties} onPenaltyChange={handlePenaltyChange} />
     </div>
   );
 };

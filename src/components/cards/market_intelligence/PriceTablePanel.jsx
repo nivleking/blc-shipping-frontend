@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BsExclamationTriangle } from "react-icons/bs";
+import { PORT_ORDER } from "../../../assets/PortUtilities";
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat("id-ID", {
@@ -10,9 +11,9 @@ const formatPrice = (price) => {
   }).format(price);
 };
 
-const PenaltyTable = () => (
+const PenaltyTable = ({ penalties = {} }) => (
   <div className="bg-red-50 rounded-lg shadow-sm p-3 mb-4 w-full lg:max-w-md ml-auto">
-    <h3 className="text-sm font-semibold text-red-800 mb-2">Penalties per Container</h3>
+    <h3 className="text-sm font-semibold text-red-800 mb-2">Unrolled Container Penalties</h3>
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-red-200">
         <thead className="bg-red-100">
@@ -25,13 +26,13 @@ const PenaltyTable = () => (
         <tbody className="bg-white divide-y divide-red-200">
           <tr className="hover:bg-red-50">
             <td className="px-3 py-2 text-xs text-red-900">Dry</td>
-            <td className="px-3 py-2 text-xs text-right text-red-600 font-medium">0</td>
-            <td className="px-3 py-2 text-xs text-right text-red-600 font-medium">0</td>
+            <td className="px-3 py-2 text-xs text-right text-red-600 font-medium">{formatPrice(penalties.dry_committed || 0)}</td>
+            <td className="px-3 py-2 text-xs text-right text-red-600 font-medium">{formatPrice(penalties.dry_non_committed || 0)}</td>
           </tr>
           <tr className="hover:bg-red-50">
             <td className="px-3 py-2 text-xs text-red-900">Reefer</td>
-            <td className="px-3 py-2 text-xs text-right text-red-600 font-medium">0</td>
-            <td className="px-3 py-2 text-xs text-right text-red-600 font-medium">0</td>
+            <td className="px-3 py-2 text-xs text-right text-red-600 font-medium">{formatPrice(penalties.reefer_committed || 0)}</td>
+            <td className="px-3 py-2 text-xs text-right text-red-600 font-medium">{formatPrice(penalties.reefer_non_committed || 0)}</td>
           </tr>
         </tbody>
       </table>
@@ -39,10 +40,7 @@ const PenaltyTable = () => (
   </div>
 );
 
-// Define the standard port order to match ManualEntryPanel
-const PORT_ORDER = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
-
-const PriceTablePanel = ({ marketIntelligenceData, selectedPorts, isGenerating, priceData, generateDefaultPriceData }) => {
+const PriceTablePanel = ({ marketIntelligenceData, selectedPorts, isGenerating, priceData, penalties, generateDefaultPriceData }) => {
   const [currentPriceData, setCurrentPriceData] = useState({});
   const [hoveredCell, setHoveredCell] = useState(null);
 
@@ -146,7 +144,7 @@ const PriceTablePanel = ({ marketIntelligenceData, selectedPorts, isGenerating, 
           </p>
         </div>
 
-        <PenaltyTable />
+        <PenaltyTable penalties={penalties} />
       </div>
 
       <div className="mb-6">

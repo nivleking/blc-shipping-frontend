@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { api } from "../../../axios/axios";
 import { FaShip } from "react-icons/fa";
 import useToast from "../../../toast/useToast";
+import { VALID_PORTS } from "../../../assets/PortUtilities";
 
 const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
   const { showSuccess, showError, showWarrning } = useToast();
@@ -37,8 +38,7 @@ const EditCardModal = ({ isOpen, onClose, card, formatIDR, onCardUpdated }) => {
 
   const fetchAvailablePorts = async () => {
     try {
-      const validPorts = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH"];
-      setAvailablePorts(validPorts);
+      setAvailablePorts(VALID_PORTS);
     } catch (error) {
       console.error("Error fetching ports:", error);
       showError("Failed to fetch available ports");

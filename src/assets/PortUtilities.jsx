@@ -1,3 +1,7 @@
+export const PORT_ORDER = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
+
+export const VALID_PORTS = ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"];
+
 export const availablePorts = {
   2: ["SBY", "MDN"],
   3: ["SBY", "MDN", "MKS"],
@@ -8,6 +12,19 @@ export const availablePorts = {
   8: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH"],
   9: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
   10: ["SBY", "MDN", "MKS", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
+};
+
+export const getUnrolledPenalties = () => {
+  return {
+    // Committed dry containers
+    dry_committed: 16000000,
+    // Non-committed dry containers
+    dry_non_committed: 8000000,
+    // Committed reefer containers
+    reefer_committed: 24000000,
+    // Non-committed reefer containers
+    reefer_non_committed: 16000000,
+  };
 };
 
 export const getDefaultBasePriceMap = () => {

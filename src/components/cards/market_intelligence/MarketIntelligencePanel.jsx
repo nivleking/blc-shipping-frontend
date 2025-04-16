@@ -6,7 +6,7 @@ import PriceTablePanel from "./PriceTablePanel";
 import ManualEntryPanel from "./ManualEntryPanel";
 import UploadDataPanel from "./UploadDataPanel";
 import useToast from "../../../toast/useToast";
-import { getDefaultBasePriceMap, availablePorts } from "../../../assets/PortUtilities";
+import { getUnrolledPenalties, getDefaultBasePriceMap, availablePorts } from "../../../assets/PortUtilities";
 
 const MarketIntelligencePanel = ({ deckId }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
@@ -14,6 +14,12 @@ const MarketIntelligencePanel = ({ deckId }) => {
   const [selectedPorts, setSelectedPorts] = useState(5);
   const [marketIntelligenceName, setMarketIntelligenceName] = useState("");
   const [priceData, setPriceData] = useState({});
+  const [penalties, setPenalties] = useState({
+    dry_committed: 0,
+    dry_non_committed: 0,
+    reefer_committed: 0,
+    reefer_non_committed: 0,
+  });
 
   // Fetch market intelligence data
   const {
@@ -43,6 +49,10 @@ const MarketIntelligencePanel = ({ deckId }) => {
       setMarketIntelligenceName(marketIntelligenceData.name);
       setPriceData(marketIntelligenceData.price_data);
 
+      if (marketIntelligenceData.penalties) {
+        setPenalties(marketIntelligenceData.penalties);
+      }
+
       const portSet = new Set();
       Object.keys(marketIntelligenceData.price_data).forEach((key) => {
         const [origin] = key.split("-");
@@ -52,8 +62,16 @@ const MarketIntelligencePanel = ({ deckId }) => {
     } else if (!isLoading && deckId) {
       setMarketIntelligenceName("New Market Intelligence");
       setPriceData({});
+      setPenalties({});
     }
   }, [marketIntelligenceData, isLoading, deckId]);
+
+  const handlePenaltyChange = (key, value) => {
+    setPenalties((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
@@ -78,6 +96,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
       showSuccess("Default market intelligence data generated");
       setMarketIntelligenceName(response.data.name);
       setPriceData(response.data.price_data);
+      setPenalties(response.data.penalties);
 
       // Invalidate and refetch
       queryClient.invalidateQueries(["marketIntelligence", deckId]);
@@ -88,6 +107,10 @@ const MarketIntelligencePanel = ({ deckId }) => {
       // Use our comprehensive price map as fallback
       const priceMap = getDefaultBasePriceMap();
       setPriceData(priceMap);
+
+      const unrolledPenalties = getUnrolledPenalties();
+      setPenalties(unrolledPenalties);
+
       setMarketIntelligenceName("Default Market Intelligence");
     },
   });
@@ -162,6 +185,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
     const payload = {
       name: marketIntelligenceName,
       price_data: priceData,
+      penalties: penalties,
     };
 
     saveMutation.mutate(payload);
@@ -250,7 +274,14 @@ const MarketIntelligencePanel = ({ deckId }) => {
           <TabPanels>
             {/* Price Tables Panel */}
             <TabPanel>
-              <PriceTablePanel marketIntelligenceData={marketIntelligenceData} selectedPorts={selectedPorts} priceData={priceData} generateDefaultPriceData={generateDefaultPriceData} isGenerating={generateDefaultMutation.isPending} />
+              <PriceTablePanel
+                marketIntelligenceData={marketIntelligenceData}
+                selectedPorts={selectedPorts}
+                priceData={priceData}
+                penalties={penalties}
+                generateDefaultPriceData={generateDefaultPriceData}
+                isGenerating={generateDefaultMutation.isPending}
+              />
             </TabPanel>
 
             {/* Manual Entry Panel */}
@@ -263,6 +294,8 @@ const MarketIntelligencePanel = ({ deckId }) => {
                 handlePortCountChange={handlePortCountChange}
                 priceData={priceData}
                 handlePriceChange={handlePriceChange}
+                penalties={penalties}
+                handlePenaltyChange={handlePenaltyChange}
               />
             </TabPanel>
 
