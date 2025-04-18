@@ -108,7 +108,7 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
           </tr>
           <tr>
             <td className="font-medium py-2">Type:</td>
-            <td className="py-2">{currentCard.type}</td>
+            <td className="py-2">{currentCard.type.toUpperCase()}</td>
           </tr>
           <tr>
             <td className="font-medium py-2">Priority:</td>

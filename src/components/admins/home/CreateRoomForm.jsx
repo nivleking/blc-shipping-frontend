@@ -26,10 +26,11 @@ import useToast from "../../../toast/useToast";
 //   cards_limit_per_round: 10,
 //   cards_must_process_per_round: 8,
 //   move_cost: 100000,
-//   extra_moves_cost: 50000,
-//   backlog_penalty_per_container_cost: 50000,
-//   ideal_crane_split: 2,
-//   swap_config: { SBY: "BPN", MDN: "MKS", MKS: "JYP", JYP: "MDN", BPN: "SBY" },
+//   dock_warehouse_cost: 50000,
+//   restowage_cost: 50000,
+//   // extra_moves_cost: 50000,
+//   // ideal_crane_split: 2,
+//   swap_config: { SBY: "MDN", MDN: "MKS", MKS: "JYP", JYP: "BPN", BPN: "SBY" },
 // };
 
 const initialFormState = {
@@ -46,9 +47,11 @@ const initialFormState = {
   cards_limit_per_round: 1,
   cards_must_process_per_round: 1,
   move_cost: 100000,
-  extra_moves_cost: 50000,
-  ideal_crane_split: 2,
+  dock_warehouse_cost: 50000,
+  restowage_cost: 50000,
   swap_config: {},
+  // extra_moves_cost: 50000,
+  // ideal_crane_split: 2,
 };
 
 const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refreshRooms }) => {
@@ -204,13 +207,14 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       max_users: formData.max_users,
       total_rounds: formData.total_rounds,
       move_cost: formData.move_cost,
-      extra_moves_cost: formData.extra_moves_cost,
-      ideal_crane_split: formData.ideal_crane_split,
-      backlog_penalty_per_container_cost: formData.backlog_penalty_per_container_cost,
+      dock_warehouse_cost: formData.dock_warehouse_cost,
+      restowage_cost: formData.restowage_cost,
       cards_must_process_per_round: formData.cards_must_process_per_round,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
       swap_config: formData.swap_config,
+      // extra_moves_cost: formData.extra_moves_cost,
+      // ideal_crane_split: formData.ideal_crane_split,
     };
 
     console.log("Create room payload:", payload);
@@ -351,7 +355,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         </div>
 
         {/* Extra Moves Cost Field */}
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <div className="flex items-center">
             <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
               Extra Moves Cost (Rp)
@@ -376,10 +380,10 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               <span className="text-gray-500">per move</span>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Ideal Crane Split Field */}
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <div className="flex items-center">
             <label htmlFor="ideal_crane_split" className="block text-gray-700 font-semibold">
               Ideal Crane Split
@@ -387,13 +391,13 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             <Tooltip>Number of cranes to be used as a ideal value for splitting</Tooltip>
           </div>
           <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
-        </div>
+        </div> */}
 
-        {/* Backlog Container Cost Field */}
+        {/* Dock Warehouse Cost Field */}
         <div className="flex flex-col">
           <div className="flex items-center">
             <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
-              Backlog Container Cost (Rp)
+              Dock Warehouse Cost (Rp)
             </label>
             <Tooltip>Cost per container that is not unloaded on time (in weeks)</Tooltip>
           </div>
@@ -403,12 +407,40 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             </div>
             <input
               type="number"
-              name="backlog_penalty_per_container_cost"
-              id="backlog_penalty_per_container_cost"
+              name="dock_warehouse_cost"
+              id="dock_warehouse_cost"
               className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="50000"
               min="1"
-              value={formData.backlog_penalty_per_container_cost}
+              value={formData.dock_warehouse_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Restowage Cost */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
+              Restowage Cost (Rp)
+            </label>
+            <Tooltip>Cost per container that is not unloaded on time (in weeks)</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="restowage_cost"
+              id="restowage_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="50000"
+              min="1"
+              value={formData.restowage_cost}
               onChange={handleChange}
             />
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

@@ -36,24 +36,23 @@ const Stowage = ({
   mustProcessCards,
   cardsLimit,
   port,
-  portSequence = [],
   restowageContainers = [],
   restowagePenalty = 0,
   restowageMoves = 0,
   bayMoves = {},
   bayPairs = [],
   totalMoves = 0,
-  idealCraneSplit = 2,
-  longCraneMoves = 0,
-  extraMovesOnLongCrane = 0,
   selectedHistoricalWeek,
   setSelectedHistoricalWeek,
   historicalStats,
   showHistorical,
   setShowHistorical,
   onRefreshCards,
-  backlogContainers = [],
+  dockWarehouseContainers = [],
   containerDestinationsCache,
+  // idealCraneSplit = 2,
+  // longCraneMoves = 0,
+  // extraMovesOnLongCrane = 0,
 }) => {
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
@@ -105,7 +104,7 @@ const Stowage = ({
             <div className="flex flex-col md:flex-row gap-4 mb-4">
               {/* Port Order Alert - takes half width on medium screens and up */}
               <div className="w-full md:w-1/2">
-                <PortOrderAlert currentPort={port} portSequence={portSequence} />
+                <PortOrderAlert currentPort={port} />
               </div>
 
               {/* Restowage Alert - takes half width on medium screens and up */}
@@ -150,7 +149,7 @@ const Stowage = ({
                   draggingItem={draggingItem}
                   containers={containers}
                   section={section}
-                  backlogContainers={backlogContainers}
+                  dockWarehouseContainers={dockWarehouseContainers}
                   draggingTargetContainer={draggingTargetContainer}
                   containerDestinationsCache={containerDestinationsCache}
                 />
@@ -169,13 +168,13 @@ const Stowage = ({
                 </h3>
                 <div className="bg-gray-50 p-2 rounded-lg border border-gray-200 overflow-x-auto max-h-[300px]">
                   <BayStatisticsTable
+                    // idealCraneSplit={idealCraneSplit}
+                    // longCraneMoves={longCraneMoves}
+                    // extraMovesOnLongCrane={extraMovesOnLongCrane}
                     bayCount={bayCount}
                     bayMoves={bayMoves}
                     bayPairs={bayPairs}
                     totalMoves={totalMoves}
-                    idealCraneSplit={idealCraneSplit}
-                    longCraneMoves={longCraneMoves}
-                    extraMovesOnLongCrane={extraMovesOnLongCrane}
                     currentRound={currentRound}
                     selectedWeek={selectedHistoricalWeek}
                     setSelectedWeek={setSelectedHistoricalWeek}

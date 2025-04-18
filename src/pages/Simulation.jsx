@@ -29,9 +29,10 @@ const Simulation = () => {
 
   // Market Intelligence states
   const [moveCost, setMoveCost] = useState(0);
-  const [extraMovesCost, setExtraMovesCost] = useState(0);
-  const [backlogPenaltyPerContainerCost, setBacklogPenaltyPerContainerCost] = useState(0);
+  const [dockWarehouseCost, setDockWarehouseCost] = useState(0);
+  const [restowageCost, setRestowageCost] = useState(0);
 
+  // const [extraMovesCost, setExtraMovesCost] = useState(0);
   // const fetchRankings = async () => {
   //   try {
   //     const response = await api.get(`/rooms/${roomId}/rankings`, {
@@ -65,7 +66,7 @@ const Simulation = () => {
   const [isSwapping, setIsSwapping] = useState(false);
   const [showSwapAlert, setShowSwapAlert] = useState(false);
   const [section, setSection] = useState(1);
-  const [backlogContainers, setBacklogContainers] = useState([]);
+  const [dockWarehouseContainers, setDockWarehouseContainers] = useState([]);
 
   const [targetContainers, setTargetContainers] = useState([]);
   const [containerDestinationsCache, setContainerDestinationsCache] = useState({});
@@ -80,7 +81,7 @@ const Simulation = () => {
     rejectedCards: 0,
     loadPenalty: 0,
     dischargePenalty: 0,
-    backlogPenalty: 0,
+    dockWarehousePenalty: 0,
   });
   const [swapInfo, setSwapInfo] = useState({
     receivesFrom: "",
@@ -97,13 +98,12 @@ const Simulation = () => {
   const [cardsLimit, setCardsLimit] = useState(0);
 
   const [bayMoves, setBayMoves] = useState({});
-  const [bayPairs, setBayPairs] = useState([]);
-  const [idealCraneSplit, setIdealCraneSplit] = useState(2);
-  const [longCraneMoves, setLongCraneMoves] = useState(0);
+  // const [bayPairs, setBayPairs] = useState([]);
+  // const [idealCraneSplit, setIdealCraneSplit] = useState(2);
+  // const [longCraneMoves, setLongCraneMoves] = useState(0);
 
-  const [extraMovesOnLongCrane, setExtraMovesOnLongCrane] = useState(0);
+  // const [extraMovesOnLongCrane, setExtraMovesOnLongCrane] = useState(0);
 
-  const [portSequence, setPortSequence] = useState([]);
   const [restowageContainers, setRestowageContainers] = useState([]);
   const [restowagePenalty, setRestowagePenalty] = useState(0);
   const [restowageMoves, setRestowageMoves] = useState(0);
@@ -117,10 +117,11 @@ const Simulation = () => {
       const data = response.data;
       // console.log("Bay Statistics:", data);
       setBayMoves(data.bay_moves || {});
-      setBayPairs(data.bay_pairs || []);
-      setLongCraneMoves(data.long_crane_moves || 0);
-      setExtraMovesOnLongCrane(data.extra_moves_on_long_crane || 0);
-      setBacklogContainers(data.backlog_containers || []);
+      setDockWarehouseContainers(data.dock_warehouse_containers || []);
+
+      // setBayPairs(data.bay_pairs || []);
+      // setLongCraneMoves(data.long_crane_moves || 0);
+      // setExtraMovesOnLongCrane(data.extra_moves_on_long_crane || 0);
     } catch (error) {
       console.error("Error fetching bay statistics:", error);
     }
@@ -243,8 +244,8 @@ const Simulation = () => {
       const deckId = roomResponse.data.deck_id;
       setDeckId(deckId);
       setMoveCost(roomResponse.data.move_cost);
-      setExtraMovesCost(roomResponse.data.extra_moves_cost);
-      setIdealCraneSplit(roomResponse.data.ideal_crane_split);
+      // setExtraMovesCost(roomResponse.data.extra_moves_cost);
+      // setIdealCraneSplit(roomResponse.data.ideal_crane_split);
 
       setMustProcessCards(roomResponse.data.cards_must_process_per_round);
       setCardsLimit(roomResponse.data.cards_limit_per_round);
@@ -369,6 +370,7 @@ const Simulation = () => {
       if (updatedRoomId === roomId) {
         // Refetch swap configuration when config is updated
         fetchSwapConfig();
+        fetchArenaData();
       }
     });
 
@@ -399,17 +401,10 @@ const Simulation = () => {
           rejectedCards: stats.rejected_cards || 0,
           loadPenalty: stats.load_penalty || 0,
           dischargePenalty: stats.discharge_penalty || 0,
-          backlogPenalty: stats.backlog_penalty || 0,
+          dockWarehousePenalty: stats.dock_warehouse_penalty || 0,
         });
         setPenalties(stats.penalty || 0);
         setRank(stats.rank || 1);
-      }
-    });
-
-    socket.on("port_config_updated", ({ roomId: updatedRoomId }) => {
-      if (updatedRoomId === roomId) {
-        // Update swap info
-        fetchSwapConfig();
       }
     });
 
@@ -485,9 +480,10 @@ const Simulation = () => {
       const deckId = roomResponse.data.deck_id;
       setDeckId(deckId);
       setMoveCost(roomResponse.data.move_cost);
-      setExtraMovesCost(roomResponse.data.extra_moves_cost);
-      setBacklogPenaltyPerContainerCost(roomResponse.data.backlog_penalty_per_container_cost);
-      setIdealCraneSplit(roomResponse.data.ideal_crane_split);
+      setDockWarehouseCost(roomResponse.data.dock_warehouse_cost);
+      setRestowageCost(roomResponse.data.restowage_cost);
+      // setExtraMovesCost(roomResponse.data.extra_moves_cost);
+      // setIdealCraneSplit(roomResponse.data.ideal_crane_split);
 
       setMustProcessCards(roomResponse.data.cards_must_process_per_round);
       setCardsLimit(roomResponse.data.cards_limit_per_round);
@@ -645,17 +641,11 @@ const Simulation = () => {
 
       setDroppedItems([...dockItems, ...newDroppedItems]);
 
-      const [restowageResponse, portSequenceResponse] = await Promise.all([
-        api.get(`/rooms/${roomId}/restowage-status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        api.get(`/rooms/${roomId}/port-sequence/${response.data.port}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      const restowageResponse = await api.get(`/rooms/${roomId}/restowage-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setRestowageContainers(restowageResponse.data.restowage_containers || []);
-      setPortSequence(portSequenceResponse.data.recommended_stacking_order || []);
       setRestowagePenalty(restowageResponse.data.restowage_penalty || 0);
       setRestowageMoves(restowageResponse.data.restowage_moves || 0);
 
@@ -1418,6 +1408,7 @@ const Simulation = () => {
       const fromArea = activeItem.area;
       const toArea = over.id;
       const moveType = fromArea.startsWith("bay") ? "discharge" : "load";
+      const containerId = active.id;
 
       // Determine which bay index to use for tracking
       let relevantBayIndex = moveType === "discharge" ? sourceBayIndex : destinationBayIndex;
@@ -1440,6 +1431,7 @@ const Simulation = () => {
             move_type: moveType,
             count: 1,
             bay_index: relevantBayIndex,
+            container_id: containerId,
           },
           {
             headers: {
@@ -1477,17 +1469,11 @@ const Simulation = () => {
       });
       console.log("API call successful for docks", resDock.data);
 
-      const [restowageResponse, portSequenceResponse] = await Promise.all([
-        api.get(`/rooms/${roomId}/restowage-status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        api.get(`/rooms/${roomId}/port-sequence/${resBay.data.port}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      const restowageResponse = await api.get(`/rooms/${roomId}/restowage-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setRestowageContainers(restowageResponse.data.restowage_containers || []);
-      setPortSequence(portSequenceResponse.data.recommended_stacking_order || []);
       setRestowagePenalty(restowageResponse.data.restowage_penalty || 0);
       setRestowageMoves(restowageResponse.data.restowage_moves || 0);
 
@@ -1580,7 +1566,7 @@ const Simulation = () => {
         rejectedCards: stats.rejected_cards || 0,
         loadPenalty: stats.load_penalty || 0,
         dischargePenalty: stats.discharge_penalty || 0,
-        backlogPenalty: stats.backlog_penalty || 0,
+        dockWarehousePenalty: stats.dock_warehouse_penalty || 0,
       });
 
       setProcessedCards(stats.processed_cards || 0);
@@ -1768,8 +1754,9 @@ const Simulation = () => {
             currentRound={currentRound}
             totalRounds={totalRounds}
             moveCost={moveCost}
-            extraMovesCost={extraMovesCost}
-            backlogPenaltyPerContainerCost={backlogPenaltyPerContainerCost}
+            dockWarehouseCost={dockWarehouseCost}
+            restowageCost={restowageCost}
+            // extraMovesCost={extraMovesCost}
           />
 
           <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
@@ -1870,23 +1857,22 @@ const Simulation = () => {
                   cardsLimit={cardsLimit}
                   port={port}
                   bayMoves={bayMoves}
-                  bayPairs={bayPairs}
                   totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
-                  idealCraneSplit={idealCraneSplit}
-                  longCraneMoves={longCraneMoves}
-                  extraMovesOnLongCrane={extraMovesOnLongCrane}
                   selectedHistoricalWeek={selectedHistoricalWeek}
                   setSelectedHistoricalWeek={setSelectedHistoricalWeek}
                   historicalStats={historicalStats}
                   showHistorical={showHistorical}
                   setShowHistorical={setShowHistorical}
                   onRefreshCards={handleRefreshCards}
-                  backlogContainers={backlogContainers}
-                  portSequence={portSequence}
+                  dockWarehouseContainers={dockWarehouseContainers}
                   restowageContainers={restowageContainers}
                   restowagePenalty={restowagePenalty}
                   restowageMoves={restowageMoves}
                   containerDestinationsCache={containerDestinationsCache}
+                  // bayPairs={bayPairs}
+                  // idealCraneSplit={idealCraneSplit}
+                  // longCraneMoves={longCraneMoves}
+                  // extraMovesOnLongCrane={extraMovesOnLongCrane}
                 />
               </TabPanel>
 
@@ -1897,13 +1883,13 @@ const Simulation = () => {
                     port={port}
                     currentRound={currentRound}
                     totalRounds={totalRounds}
-                    longCraneMoves={longCraneMoves}
-                    extraMovesOnLongCrane={extraMovesOnLongCrane}
-                    extraMovesCost={extraMovesCost}
                     totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
-                    idealCraneSplit={idealCraneSplit}
                     bayMoves={bayMoves}
-                    bayPairs={bayPairs}
+                    // bayPairs={bayPairs}
+                    // extraMovesOnLongCrane={extraMovesOnLongCrane}
+                    // longCraneMoves={longCraneMoves}
+                    // extraMovesCost={extraMovesCost}
+                    // idealCraneSplit={idealCraneSplit}
                   />
                 </div>
               </TabPanel>

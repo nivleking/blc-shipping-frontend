@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { AppContext } from "../../../context/AppContext";
 
-const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatIDR, moves = {}, currentRound = 1, totalRounds = 1, moveCost, extraMovesCost, backlogPenaltyPerContainerCost }) => {
+const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatIDR, moves = {}, currentRound = 1, totalRounds = 1, moveCost, dockWarehouseCost, restowageCost }) => {
   const { user } = useContext(AppContext);
   const [showExpenses, setShowExpenses] = useState(false);
 
@@ -66,13 +66,17 @@ const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatID
                 <span className="text-white text-xs font-bold">{formatIDR(moveCost)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-white text-xs">Extra Moves:</span>
-                <span className="text-white text-xs font-bold">{formatIDR(extraMovesCost)}</span>
+                <span className="text-white text-xs">Dock Warehouse Cost:</span>
+                <span className="text-white text-xs font-bold">{formatIDR(dockWarehouseCost)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-white text-xs">Backlog Penalty:</span>
-                <span className="text-white text-xs font-bold">{formatIDR(backlogPenaltyPerContainerCost)}</span>
+                <span className="text-white text-xs">Restowage Cost:</span>
+                <span className="text-white text-xs font-bold">{formatIDR(restowageCost)}</span>
               </div>
+              {/* <div className="flex justify-between">
+                <span className="text-white text-xs">Extra Moves:</span>
+                <span className="text-white text-xs font-bold">{formatIDR(extraMovesCost)}</span>
+              </div> */}
             </div>
           </div>
         )}

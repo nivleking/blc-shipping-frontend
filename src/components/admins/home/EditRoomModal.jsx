@@ -225,7 +225,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
             </div>
 
             {/* Extra Moves Cost */}
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <div className="flex items-center">
                 <label htmlFor="extra_moves_cost" className="text-gray-700 font-semibold mb-2">
                   Extra Moves Cost (IDR)
@@ -251,10 +251,10 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                 </div>
               </div>
               {errors.extra_moves_cost && <p className="text-red-500 mt-1 text-sm">{errors.extra_moves_cost}</p>}
-            </div>
+            </div> */}
 
             {/* Ideal Crane Split */}
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <div className="flex items-center">
                 <label htmlFor="ideal_crane_split" className="text-gray-700 font-semibold mb-2">
                   Ideal Crane Split
@@ -272,13 +272,13 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                 className={`p-3 border ${errors.ideal_crane_split ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:border-blue-500`}
               />
               {errors.ideal_crane_split && <p className="text-red-500 mt-1 text-sm">{errors.ideal_crane_split}</p>}
-            </div>
+            </div> */}
 
-            {/* Backlog Container Cost */}
+            {/* Dock Warehouse Cost */}
             <div className="flex flex-col">
               <div className="flex items-center">
-                <label htmlFor="backlog_penalty_per_container_cost" className="text-gray-700 font-semibold mb-2">
-                  Backlog Container Cost (IDR)
+                <label htmlFor="dock_warehouse_cost" className="text-gray-700 font-semibold mb-2">
+                  Dock Warehouse Cost (IDR)
                 </label>
                 <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
               </div>
@@ -288,19 +288,48 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                 </div>
                 <input
                   type="number"
-                  name="backlog_penalty_per_container_cost"
-                  id="backlog_penalty_per_container_cost"
-                  className={`w-full p-3 pl-10 pr-12 border ${errors.backlog_penalty_per_container_cost ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:border-blue-500`}
+                  name="dock_warehouse_cost"
+                  id="dock_warehouse_cost"
+                  className={`w-full p-3 pl-10 pr-12 border ${errors.dock_warehouse_cost ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:border-blue-500`}
                   placeholder="50000"
                   min="1"
-                  value={editingRoom.backlog_penalty_per_container_cost || 50000}
+                  value={editingRoom.dock_warehouse_cost || 50000}
                   onChange={handleChange}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <span className="text-gray-500">per move</span>
                 </div>
               </div>
-              {errors.backlog_penalty_per_container_cost && <p className="text-red-500 mt-1 text-sm">{errors.backlog_penalty_per_container_cost}</p>}
+              {errors.dock_warehouse_cost && <p className="text-red-500 mt-1 text-sm">{errors.dock_warehouse_cost}</p>}
+            </div>
+
+            {/* Restowage Cost */}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <label htmlFor="restowage_cost" className="text-gray-700 font-semibold mb-2">
+                  Restowage Cost (IDR)
+                </label>
+                <Tooltip></Tooltip>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="restowage_cost"
+                  id="restowage_cost"
+                  className={`w-full p-3 pl-10 pr-12 border ${errors.restowage_cost ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:border-blue-500`}
+                  placeholder="50000"
+                  min="1"
+                  value={editingRoom.restowage_cost || 50000}
+                  onChange={handleChange}
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per move</span>
+                </div>
+              </div>
+              {errors.restowage_cost && <p className="text-red-500 mt-1 text-sm">{errors.restowage_cost}</p>}
             </div>
 
             {/* Deck Selection */}

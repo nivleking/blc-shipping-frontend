@@ -6,7 +6,7 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { BiErrorCircle } from "react-icons/bi";
 import Tooltip from "../../Tooltip";
 
-const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, backlogContainers = [], draggingTargetContainer, containerDestinationsCache }) => {
+const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockWarehouseContainers = [], draggingTargetContainer, containerDestinationsCache }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [temporaryNextPage, setTemporaryNextPage] = useState(null);
   const itemsPerPage = dockSize.rows * dockSize.columns;
@@ -121,9 +121,9 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, backl
   const showPaginationControls = totalPages > 1 || hasContainersOnLaterPages;
 
   const getBacklogInfo = (containerId) => {
-    if (!backlogContainers || !backlogContainers.length) return null;
+    if (!dockWarehouseContainers || !dockWarehouseContainers.length) return null;
 
-    return backlogContainers.find((container) => container.container_id === containerId);
+    return dockWarehouseContainers.find((container) => container.container_id === containerId);
   };
 
   // Add function to get restowed status

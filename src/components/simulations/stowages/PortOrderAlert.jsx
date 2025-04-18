@@ -1,22 +1,60 @@
-import React from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { getPortColor } from "../../../assets/Colors";
+import { api, socket } from "../../../axios/axios";
+import { useParams } from "react-router-dom";
+import { AppContext } from "../../../context/AppContext";
 
-const PortOrderAlert = ({ currentPort, portSequence }) => {
-  if (!currentPort || !portSequence || portSequence.length === 0) {
+const PortOrderAlert = ({ currentPort }) => {
+  const { roomId } = useParams();
+  const { token } = useContext(AppContext);
+  const [portSequence, setPortSequence] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Function to fetch port sequence
+  const fetchPortSequence = async () => {
+    if (!currentPort || !roomId) return;
+
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/rooms/${roomId}/port-sequence/${currentPort}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setPortSequence(response.data.recommended_stacking_order || []);
+    } catch (error) {
+      console.error("Error fetching port sequence:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch on mount and when port changes
+  useEffect(() => {
+    if (currentPort && roomId && token) {
+      fetchPortSequence();
+    }
+  }, [currentPort, roomId, token]);
+
+  // Listen for port_config_updated events
+  useEffect(() => {
+    socket.on("port_config_updated", ({ roomId: updatedRoomId }) => {
+      if (updatedRoomId === roomId) {
+        fetchPortSequence();
+      }
+    });
+
+    return () => {
+      socket.off("port_config_updated");
+    };
+  }, [roomId, currentPort]);
+
+  if (isLoading || !currentPort || !portSequence || portSequence.length === 0) {
     return null;
   }
 
   // Get port-specific text and background colors
   const getPortStyles = (port) => {
     const portColor = getPortColor(port);
-
-    // Calculate appropriate background color (lighter version of the port color)
-    // For black (BPN port), use a gray background instead
-    const bgColor = port === "BPN" ? "bg-gray-200" : `bg-opacity-20 bg-${portColor.replace("#", "")}`;
-
-    // Text color is the port color, except for BPN which needs to remain readable
-    const textColor = port === "BPN" ? "text-gray-900" : `text-${portColor.replace("#", "")}`;
-
     return {
       backgroundColor: portColor + "20", // 20 is hex for 12% opacity
       color: portColor,
