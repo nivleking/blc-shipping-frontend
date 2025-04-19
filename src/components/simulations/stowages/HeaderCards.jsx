@@ -86,14 +86,8 @@ const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatID
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
           <div className="text-white">
-            <p className="text-sm font-medium opacity-80">Current Rank</p>
-            <h3 className="text-2xl font-bold">#{rank}</h3>
-            <div className="flex gap-4 mt-1">
-              <div>
-                <p className="text-xs opacity-80">Total Revenue</p>
-                <p className="text-xl font-bold">{formatIDR(revenue - penalties) || 0}</p>
-              </div>
-            </div>
+            <p className="text-sm opacity-80">Total Revenue</p>
+            <p className="text-2xl font-bold">{formatIDR(revenue - penalties) || 0}</p>
           </div>
           <div className="p-2 bg-white/20 rounded-lg">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

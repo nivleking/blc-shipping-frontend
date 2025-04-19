@@ -1,6 +1,21 @@
 import PortLegendSimulation from "./PortLegendSimulation";
 
-const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR, handleAcceptCard, handleRejectCard, isProcessingCard, isCardVisible, processedCards, mustProcessCards, cardsLimit, isLimitExceeded, onRefreshCards }) => {
+const SalesCallCard = ({
+  salesCallCards,
+  currentCardIndex,
+  containers,
+  formatIDR,
+  handleAcceptCard,
+  handleRejectCard,
+  isProcessingCard,
+  isCardVisible,
+  processedCards,
+  mustProcessCards,
+  cardsLimit,
+  isLimitExceeded,
+  onRefreshCards,
+  unfulfilledContainers,
+}) => {
   // Cek apakah tidak ada kartu yang tersedia
   const noCardsAvailable = !salesCallCards.length || currentCardIndex >= salesCallCards.length;
 
@@ -50,6 +65,18 @@ const SalesCallCard = ({ salesCallCards, currentCardIndex, containers, formatIDR
   const originalRound = currentCard?.original_round;
   const isCommitted = currentCard?.priority?.toLowerCase() === "committed";
   const processPercentage = (processedCards / mustProcessCards) * 100;
+
+  const getContainerStatus = (containerId) => {
+    if (!unfulfilledContainers) return "loaded";
+
+    // Check all cards for this container
+    for (const cardId in unfulfilledContainers) {
+      if (unfulfilledContainers[cardId].includes(containerId)) {
+        return "unloaded";
+      }
+    }
+    return "loaded";
+  };
 
   return (
     <div key={currentCard.id} className="bg-white rounded-lg shadow-md p-4 w-full">

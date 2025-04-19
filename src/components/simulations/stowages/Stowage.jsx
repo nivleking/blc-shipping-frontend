@@ -50,6 +50,7 @@ const Stowage = ({
   onRefreshCards,
   dockWarehouseContainers = [],
   containerDestinationsCache,
+  unfulfilledContainers = [],
   // idealCraneSplit = 2,
   // longCraneMoves = 0,
   // extraMovesOnLongCrane = 0,
@@ -65,9 +66,7 @@ const Stowage = ({
       <div className="flex justify-between items-center mb-4 mt-4 bg-white rounded-xl shadow-sm p-4">
         <div className="flex flex-col md:flex-row md:items-center gap-2">
           <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-            <span>
-              Section {section}: {section === 1 ? "Unload Port Containers" : "Handle Sales Calls"}
-            </span>
+            <span>Section {section === 1 ? "Unload" : "Sales Calls"}</span>
             <span className="text-sm font-medium px-3 py-1 bg-blue-100 text-blue-800 rounded-full">
               Week {currentRound} of {totalRounds}
             </span>
@@ -228,6 +227,7 @@ const Stowage = ({
                         cardsLimit={cardsLimit}
                         onRefreshCards={onRefreshCards}
                         port={port}
+                        unfulfilledContainers={unfulfilledContainers}
                       />
                     </div>
                   ) : (

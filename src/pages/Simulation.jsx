@@ -70,6 +70,8 @@ const Simulation = () => {
 
   const [targetContainers, setTargetContainers] = useState([]);
   const [containerDestinationsCache, setContainerDestinationsCache] = useState({});
+
+  const [unfulfilledContainers, setUnfulfilledContainers] = useState({});
   // const [destinationsFetched, setDestinationsFetched] = useState(false);
 
   const [penalties, setPenalties] = useState(0);
@@ -810,8 +812,8 @@ const Simulation = () => {
 
       setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
 
-      const cardRevenue = parseFloat(currentCard.revenue) || 0;
-      const newRevenue = parseFloat(revenue) + cardRevenue;
+      // const cardRevenue = parseFloat(currentCard.revenue) || 0;
+      // const newRevenue = parseFloat(revenue) + cardRevenue;
 
       console.log("Current Round:", currentRound);
       await api.post(
@@ -827,7 +829,7 @@ const Simulation = () => {
           },
         }
       );
-      setRevenue(newRevenue);
+      // setRevenue(newRevenue);
 
       const newContainers = containers.filter((container) => container.card_id === cardId);
       const updatedDroppedItems = [...droppedItems];
@@ -882,25 +884,25 @@ const Simulation = () => {
         return nextIndex;
       });
 
-      await api.put(
-        `/ship-bays/${roomId}/${user.id}/section`,
-        {
-          section: "section2",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // await api.put(
+      //   `/ship-bays/${roomId}/${user.id}/section`,
+      //   {
+      //     section: "section2",
+      //   },
+      //   {
+      //     headers: {
+      //       Authorization: `Bearer ${token}`,
+      //     },
+      //   }
+      // );
 
       await Promise.all([
         api.post("/ship-bays", {
           arena: newBayData,
           user_id: user.id,
           room_id: roomId,
-          revenue: newRevenue,
           section: "section2",
+          // revenue: newRevenue,
         }),
         api.post("/ship-docks", {
           arena: dockArenaData,
@@ -917,7 +919,7 @@ const Simulation = () => {
         setIsCardVisible(true);
       }, 1500);
 
-      showSuccess(`Containers added and revenue increased by ${formatIDR(cardRevenue)}!`);
+      showSuccess(`Card accepted! Move all containers to ship bay to earn revenue.`);
 
       socket.emit("stats_requested", {
         roomId,
@@ -1289,7 +1291,8 @@ const Simulation = () => {
                 {
                   move_type: "discharge",
                   count: 1,
-                  bay_index: sourceBayIndex, // Add bay_index parameter
+                  bay_index: sourceBayIndex,
+                  container_id: active.id,
                 },
                 {
                   headers: {
@@ -1445,7 +1448,11 @@ const Simulation = () => {
         arena: newBayData,
         user_id: user.id,
         room_id: roomId,
-        revenue: revenue,
+        moved_container: {
+          id: container.id,
+          from: fromArea,
+          to: toArea,
+        },
       });
 
       await api.put(
@@ -1460,6 +1467,23 @@ const Simulation = () => {
         }
       );
       console.log("API call successful for bays", resBay.data);
+
+      const unfulfilledResponse = await api.get(`/card-temporary/unfulfilled/${roomId}/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("Unfulfilled containers:", unfulfilledResponse.data);
+      setUnfulfilledContainers(unfulfilledResponse.data);
+
+      const shipBayResponse = await api.get(`ship-bays/${roomId}/${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (shipBayResponse.data && shipBayResponse.data.revenue !== undefined) {
+        setRevenue(shipBayResponse.data.revenue);
+        setPenalties(shipBayResponse.data.penalty || 0);
+      }
 
       const resDock = await api.post("/ship-docks", {
         arena: dockArenaData, // Send new format
@@ -1869,6 +1893,7 @@ const Simulation = () => {
                   restowagePenalty={restowagePenalty}
                   restowageMoves={restowageMoves}
                   containerDestinationsCache={containerDestinationsCache}
+                  unfulfilledContainers={unfulfilledContainers}
                   // bayPairs={bayPairs}
                   // idealCraneSplit={idealCraneSplit}
                   // longCraneMoves={longCraneMoves}
