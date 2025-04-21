@@ -18,7 +18,21 @@ const isValidPlacement = (droppedItems, baySize, cellId) => {
   return true;
 };
 
-const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, containers, isHistoryView = false, targetContainers = [], currentPort = "", restowageContainers = [], containerDestinationsCache }) => {
+const ShipBay = ({
+  bayCount,
+  baySize,
+  droppedItems,
+  draggingItem,
+  bayTypes,
+  containers,
+  isHistoryView = false,
+  targetContainers = [],
+  currentPort = "",
+  restowageContainers = [],
+  containerDestinationsCache,
+  hoveredCardId = null, //
+  onContainerHover, //
+}) => {
   // Normalize port code for consistency
   const normalizedCurrentPort = currentPort ? currentPort.trim().toUpperCase() : "";
 
@@ -50,6 +64,29 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
 
     return affectedBays;
   }, [droppedItems, restowageMap]);
+
+  const shouldHighlightContainer = (containerId) => {
+    if (!hoveredCardId) return false;
+
+    const container = containers.find((c) => c.id.toString() === containerId.toString());
+    return container && container.card_id === hoveredCardId;
+  };
+
+  // Function to get card group for visual feedback
+  const getContainerCardGroup = (containerId) => {
+    const container = containers.find((c) => c.id.toString() === containerId.toString());
+    return container && container.card_id ? container.card_id : null;
+  };
+
+  const shouldHighlightCell = (cellId) => {
+    if (!hoveredCardId) return false;
+
+    const containerInCell = droppedItems.find((item) => item.area === cellId);
+    if (!containerInCell) return false;
+
+    const container = containers.find((c) => c.id.toString() === containerInCell.id.toString());
+    return container && container.card_id === hoveredCardId;
+  };
 
   return (
     <div className="p-5" style={{ height: "100%", backgroundColor: "#f0f0f0", overflowX: "auto" }}>
@@ -103,9 +140,17 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
 
                   const isRestowageProblem = item && restowageMap[item.id];
                   const isBlocking = isRestowageProblem && restowageMap[item.id]?.is_blocking;
+                  const isHighlighted = shouldHighlightCell(cellId);
 
                   return (
-                    <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={isValid} isHistoryView={isHistoryView}>
+                    <DroppableCell
+                      key={cellId}
+                      id={cellId}
+                      coordinates={coordinates}
+                      isValid={isValid}
+                      isHistoryView={isHistoryView}
+                      isHighlighted={isHighlighted} //
+                    >
                       {item && (
                         <DraggableContainer
                           id={item.id}
@@ -122,6 +167,9 @@ const ShipBay = ({ bayCount, baySize, droppedItems, draggingItem, bayTypes, cont
                             isRestowageProblem ? (isBlocking ? `Blocking container: Will need to be moved at ${restowageMap[item.id].destination}` : `Restowage issue: Will need early handling at ${restowageMap[item.id].destination}`) : ""
                           }
                           destination={containerDestinationsCache[item.id]}
+                          isHighlighted={shouldHighlightContainer(item.id)}
+                          cardGroup={getContainerCardGroup(item.id)}
+                          onHover={onContainerHover} //
                         />
                       )}
                     </DroppableCell>

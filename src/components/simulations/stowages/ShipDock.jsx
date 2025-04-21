@@ -6,7 +6,19 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { BiErrorCircle } from "react-icons/bi";
 import Tooltip from "../../Tooltip";
 
-const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockWarehouseContainers = [], draggingTargetContainer, containerDestinationsCache }) => {
+const ShipDock = ({
+  dockSize,
+  allItems,
+  draggingItem,
+  containers,
+  section,
+  dockWarehouseContainers = [],
+  draggingTargetContainer,
+  containerDestinationsCache,
+  hoveredCardId,
+  onContainerHover,
+  unfulfilledContainers = {}, //
+}) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [temporaryNextPage, setTemporaryNextPage] = useState(null);
   const itemsPerPage = dockSize.rows * dockSize.columns;
@@ -126,10 +138,27 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockW
     return dockWarehouseContainers.find((container) => container.container_id === containerId);
   };
 
-  // Add function to get restowed status
-  const isRestowedContainer = (containerId) => {
-    const item = dockItems.find((item) => item.id === containerId);
-    return item && item.is_restowed === true;
+  const shouldHighlightContainer = (containerId) => {
+    if (!hoveredCardId) return false;
+
+    const container = containers.find((c) => c.id.toString() === containerId.toString());
+    return container && container.card_id === hoveredCardId;
+  };
+
+  // Function to get card group for visual feedback
+  const getContainerCardGroup = (containerId) => {
+    const container = containers.find((c) => c.id.toString() === containerId.toString());
+    return container && container.card_id ? container.card_id : null;
+  };
+
+  const shouldHighlightCell = (cellId) => {
+    if (!hoveredCardId) return false;
+
+    const containerInCell = allItems.find((item) => item.area === cellId);
+    if (!containerInCell) return false;
+
+    const container = containers.find((c) => c.id.toString() === containerInCell.id.toString());
+    return container && container.card_id === hoveredCardId;
   };
 
   return (
@@ -220,6 +249,7 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockW
               const colIndex = index % visibleSize.columns;
               const coordinates = `${rowIndex}${colIndex}`;
 
+              const isHighlighted = shouldHighlightCell(cellId);
               const item = allItems.find((item) => item.area === cellId);
               const isDropTarget = section === 1 && draggingTargetContainer && !item;
               const isTemporaryNewCell = temporaryNextPage !== null && displayPage !== currentPage;
@@ -228,7 +258,15 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockW
               const isDockWarehouse = !!dockWarehouseInfo;
 
               return (
-                <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={true} isDropTarget={isDropTarget} isNewPage={isTemporaryNewCell}>
+                <DroppableCell
+                  key={cellId}
+                  id={cellId}
+                  coordinates={coordinates}
+                  isValid={true}
+                  isDropTarget={isDropTarget}
+                  isNewPage={isTemporaryNewCell}
+                  isHighlighted={isHighlighted} //
+                >
                   {item && (
                     <DraggableContainer
                       id={item.id}
@@ -241,6 +279,10 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockW
                       isRestowed={item.is_restowed}
                       tooltipContent={item.is_restowed ? "Container moved due to restowage issue" : ""}
                       destination={containerDestinationsCache[item.id]}
+                      onHover={onContainerHover}
+                      isHighlighted={shouldHighlightContainer(item.id)}
+                      cardGroup={getContainerCardGroup(item.id)}
+                      isUnfulfilled={unfulfilledContainers[item.id]}
                     />
                   )}
                 </DroppableCell>

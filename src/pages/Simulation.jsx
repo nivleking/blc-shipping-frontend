@@ -110,6 +110,21 @@ const Simulation = () => {
   const [restowagePenalty, setRestowagePenalty] = useState(0);
   const [restowageMoves, setRestowageMoves] = useState(0);
 
+  const [hoveredCardId, setHoveredCardId] = useState(null);
+
+  // Tambahkan function handler untuk hover container
+  const handleContainerHover = (containerId, isHovering) => {
+    if (isHovering) {
+      // Cari card_id untuk container yang dihover
+      const container = containers.find((c) => c.id.toString() === containerId.toString());
+      if (container && container.card_id) {
+        setHoveredCardId(container.card_id);
+      }
+    } else {
+      setHoveredCardId(null);
+    }
+  };
+
   const fetchBayStatistics = async () => {
     try {
       const response = await api.get(`/ship-bays/${roomId}/${user.id}/statistics`, {
@@ -1896,6 +1911,8 @@ const Simulation = () => {
                   restowageMoves={restowageMoves}
                   containerDestinationsCache={containerDestinationsCache}
                   unfulfilledContainers={unfulfilledContainers}
+                  hoveredCardId={hoveredCardId}
+                  onContainerHover={handleContainerHover}
                   // bayPairs={bayPairs}
                   // idealCraneSplit={idealCraneSplit}
                   // longCraneMoves={longCraneMoves}

@@ -51,6 +51,8 @@ const Stowage = ({
   dockWarehouseContainers = [],
   containerDestinationsCache,
   unfulfilledContainers = [],
+  hoveredCardId,
+  onContainerHover,
   // idealCraneSplit = 2,
   // longCraneMoves = 0,
   // extraMovesOnLongCrane = 0,
@@ -126,6 +128,8 @@ const Stowage = ({
                 currentPort={port}
                 restowageContainers={restowageContainers}
                 containerDestinationsCache={containerDestinationsCache}
+                hoveredCardId={hoveredCardId}
+                onContainerHover={onContainerHover}
               />
             </div>
           </div>
@@ -151,6 +155,9 @@ const Stowage = ({
                   dockWarehouseContainers={dockWarehouseContainers}
                   draggingTargetContainer={draggingTargetContainer}
                   containerDestinationsCache={containerDestinationsCache}
+                  onContainerHover={onContainerHover}
+                  hoveredCardId={hoveredCardId}
+                  unfulfilledContainers={unfulfilledContainers}
                 />
               </div>
             </div>

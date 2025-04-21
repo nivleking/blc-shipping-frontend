@@ -3,7 +3,28 @@ import { CSS } from "@dnd-kit/utilities";
 import "./DraggableContainer.css";
 import { useState } from "react";
 
-const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView, isTarget, isOptionalTarget, isDockWarehouse, dockWarehouseWeeks, isRestowageProblem, isBlocking, isRestowed, tooltipContent, destination }) => {
+const DraggableContainer = ({
+  id,
+  text,
+  style,
+  isDragging,
+  color,
+  type = "dry",
+  isHistoryView,
+  isTarget,
+  isOptionalTarget,
+  isDockWarehouse,
+  dockWarehouseWeeks,
+  isRestowageProblem,
+  isBlocking,
+  isRestowed,
+  tooltipContent,
+  destination, //
+  onHover,
+  isHighlighted = false,
+  cardGroup = null,
+  isUnfulfilled = false,
+}) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
     disabled: isHistoryView,
@@ -57,12 +78,22 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
     ${isRestowageProblem && isBlocking ? "ring-2 ring-red-500" : ""}
     ${isRestowageProblem && !isBlocking ? "ring-2 ring-orange-400" : ""}
     ${isDockWarehouse ? "border-2 border-red-500" : ""}
-    w-full h-full max-w-[80px] max-h-[60px] mx-auto
     ${isRestowed ? "border-2 border-red-500 border-dashed" : ""}
+    ${isHighlighted ? "ring-2 ring-red-500 scale-105 shadow-lg" : ""}
+    ${isUnfulfilled ? "outline outline-2 outline-orange-400" : ""}
     w-full h-full max-w-[80px] max-h-[60px] mx-auto
   `;
 
-  // console.log("Destination", destination);
+  // Handle hover events
+  const handleMouseEnter = () => {
+    if (onHover) onHover(id, true);
+    if (tooltipContent) setShowTooltip(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (onHover) onHover(id, false);
+    if (tooltipContent) setShowTooltip(false);
+  };
 
   return (
     <div
@@ -70,11 +101,14 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
       {...(isHistoryView ? {} : { ...listeners, ...attributes })}
       style={{ ...defaultStyle, ...style }}
       className={containerClasses}
-      onMouseEnter={() => tooltipContent && setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave} //
     >
       <div className="relative w-full h-full p-2">
         <span className="absolute top-1 left-1 text-[10px] sm:text-xs font-medium text-white drop-shadow-md">#{text}</span>
+
+        {/* Card group indicator - new */}
+        {/* {cardGroup && <div className="absolute -top-3 -left-3 w-5 h-5 rounded-full bg-green-600 text-white text-[10px] flex items-center justify-center font-bold ring-1 ring-white">{cardGroup.toString().slice(-2)}</div>} */}
 
         <div
           className={`
