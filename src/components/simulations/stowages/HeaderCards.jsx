@@ -107,7 +107,7 @@ const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatID
         <div className="flex items-center justify-between">
           <div className="text-white">
             <p className="text-sm font-medium opacity-80">Section</p>
-            <h3 className="text-2xl font-bold">Section {section === 1 ? "Unload" : "Sales Call"}</h3>
+            <h3 className="text-2xl font-bold">Section {section === 1 ? "Discharge" : "Sales Call"}</h3>
             <p className="text-sm font-medium">
               Week {currentRound} of {totalRounds}
             </p>
