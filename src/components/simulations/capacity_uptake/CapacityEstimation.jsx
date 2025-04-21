@@ -1,15 +1,23 @@
 import React from "react";
 
-const CapacityEstimation = ({ port = "", nextPort = "", laterPorts = [], week = 1, totalRounds = 1, maxCapacity = { dry: 0, reefer: 0, total: 0 }, hasCapacityIssue = false }) => {
-  // Placeholder data for demonstration
-  const pointA = { dry: 0, reefer: 0, total: 0 };
-  const pointB = { dry: 0, reefer: 0, total: 0 };
-  const pointC = { dry: 0, reefer: 0, total: 0 };
-  const pointD = { dry: 0, reefer: 0, total: 0 };
-  const utilizationOutOfThisPort = { dry: 0, reefer: 0, total: 0 };
-  const pointF = { dry: 0, reefer: 0, total: 0 };
-  const pointG = { dry: 0, reefer: 0, total: 0 };
-
+const CapacityEstimation = ({
+  port = "",
+  nextPort = "",
+  laterPorts = [],
+  week = 1,
+  totalRounds = 1,
+  maxCapacity = { dry: 0, reefer: 0, total: 0 },
+  hasCapacityIssue = false,
+  // Gunakan points yang dihitung di parent
+  pointA = { dry: 0, reefer: 0, total: 0 },
+  pointB = { dry: 0, reefer: 0, total: 0 },
+  pointC = { dry: 0, reefer: 0, total: 0 },
+  pointD = { dry: 0, reefer: 0, total: 0 },
+  pointE = { dry: 0, reefer: 0, total: 0 },
+  pointF = { dry: 0, reefer: 0, total: 0 },
+  pointG = { dry: 0, reefer: 0, total: 0 },
+  utilizationOutOfThisPort = { dry: 0, reefer: 0, total: 0 },
+}) => {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
       <h2 className="text-xl font-bold mb-4">Step 1: Capacity Estimation</h2>
@@ -27,6 +35,7 @@ const CapacityEstimation = ({ port = "", nextPort = "", laterPorts = [], week = 
 
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 border">
+          {/* Table Header Rows */}
           <thead className="bg-gray-100">
             <tr>
               <th rowSpan="2" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">
@@ -51,53 +60,55 @@ const CapacityEstimation = ({ port = "", nextPort = "", laterPorts = [], week = 
               <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Total</th>
             </tr>
           </thead>
+
+          {/* Table Body */}
           <tbody className="bg-white divide-y divide-gray-200">
             {/* Cargo on board */}
-            <tr>
+            <tr className="bg-yellow-100">
               <td rowSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
                 Cargo on board arriving at port
               </td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 border">Next Port: {nextPort}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointA.dry}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointA.reefer}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointA.dry}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointA.reefer}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointA.total}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">A</td>
               <td className="px-4 py-2 text-sm text-gray-700 border">
                 Number of containers destined for port {nextPort} when arriving at port {port}
               </td>
             </tr>
-            <tr>
+            <tr className="bg-yellow-100">
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 border">Later Port: {laterPorts.join("/")}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointB.dry}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointB.reefer}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointB.dry}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointB.reefer}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointB.total}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">B</td>
               <td className="px-4 py-2 text-sm text-gray-700 border">
-                Number of containers destined for port {laterPorts.join(" and ")} when arriving at port {port}
+                Number of containers destined for port {laterPorts.join("/")} when arriving at port {port}
               </td>
             </tr>
 
             {/* New bookings */}
-            <tr>
+            <tr className="bg-yellow-100">
               <td rowSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
                 New bookings to be loaded at port
                 <br />
                 (Including Backlog)
               </td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 border">Next Port: {nextPort}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointC.dry}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointC.reefer}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointC.dry}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointC.reefer}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointC.total}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">C</td>
               <td className="px-4 py-2 text-sm text-gray-700 border">Number of containers from sales calls destined for port {nextPort}</td>
             </tr>
-            <tr>
+            <tr className="bg-yellow-100">
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 border">Later Port: {laterPorts.join("/")}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointD.dry}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointD.reefer}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointD.dry}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointD.reefer}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointD.total}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">D</td>
-              <td className="px-4 py-2 text-sm text-gray-700 border">Number of containers from sales calls destined for port {laterPorts.join(" and ")}</td>
+              <td className="px-4 py-2 text-sm text-gray-700 border">Number of containers from sales calls destined for port {laterPorts.join("/")}</td>
             </tr>
 
             {/* Summary rows */}
@@ -105,46 +116,46 @@ const CapacityEstimation = ({ port = "", nextPort = "", laterPorts = [], week = 
               <td colSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-blue-900 border">
                 Utilisation out of this port (A+B+C+D)
               </td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{utilizationOutOfThisPort.dry}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{utilizationOutOfThisPort.reefer}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{utilizationOutOfThisPort.dry}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{utilizationOutOfThisPort.reefer}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{utilizationOutOfThisPort.total}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-center border"></td>
-              <td className="px-4 py-2 text-sm text-blue-800 border">Total cargo on the vessel when departing port {port}</td>
+              <td className="px-4 py-2 text-sm text-blue-800 border">Total cargo on the ship when departing port {port}</td>
             </tr>
 
             <tr>
               <td colSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
                 Maximum Ship Capacity
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{maxCapacity.dry}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{maxCapacity.reefer}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{maxCapacity.total}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointE.dry}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointE.reefer}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointE.total}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">E</td>
-              <td className="px-4 py-2 text-sm text-gray-700 border">Maximum vessel capacity</td>
+              <td className="px-4 py-2 text-sm text-gray-700 border">Maximum ship capacity</td>
             </tr>
 
             <tr>
               <td colSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
                 Utilisation out of next port (B+D)
               </td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointF.dry}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointF.reefer}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointF.dry}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointF.reefer}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointF.total}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">F</td>
               <td className="px-4 py-2 text-sm text-gray-700 border">
-                Number of containers destined for port {laterPorts.join(" and ")} when arriving at port {nextPort}
+                Number of containers destined for port {laterPorts.join("/")} when arriving at port {nextPort}
               </td>
             </tr>
 
-            <tr>
+            <tr className="bg-yellow-400">
               <td colSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
                 Remaining available capacity at next port (E-F)
               </td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointG.dry}</td>
-              <td className="bg-black px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointG.reefer}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointG.dry}</td>
+              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointG.reefer}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointG.total}</td>
               <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">G</td>
-              <td className="px-4 py-2 text-sm text-gray-700 border">Remaining vessel capacity when arriving at port {nextPort}</td>
+              <td className="px-4 py-2 text-sm text-gray-700 border">Remaining ship capacity when arriving at port {nextPort}</td>
             </tr>
           </tbody>
         </table>

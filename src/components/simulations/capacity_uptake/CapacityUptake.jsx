@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { AppContext } from "../../../context/AppContext";
 import { api } from "../../../axios/axios";
 import { useParams } from "react-router-dom";
 import CapacityEstimation from "./CapacityEstimation";
 import OrderProcessing from "./OrderProcessing";
-
-const formatIDR = (value) => {
-  if (value === null || value === undefined) return "-";
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
-};
 
 const CapacityUptake = ({ currentRound, totalRounds }) => {
   const { roomId } = useParams();
@@ -22,9 +17,114 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
   const [nextPort, setNextPort] = useState("");
   const [laterPorts, setLaterPorts] = useState([]);
   const [maxCapacity, setMaxCapacity] = useState({ dry: 0, reefer: 0, total: 0 });
-  const [pointG, setPointG] = useState({ dry: 0, reefer: 0, total: 0 });
   const [capacityStatus, setCapacityStatus] = useState({ dry: 0, reefer: 0, total: 0 });
   const [hasCapacityIssue, setHasCapacityIssue] = useState(false);
+
+  // -- CENTRALIZED CAPACITY CALCULATION LOGIC --
+
+  // Point A: Containers on board heading to next port
+  const pointA = useMemo(() => {
+    const containers = capacityData?.arena_start?.containers || [];
+    const containersToNextPort = containers.filter((container) => {
+      return container.destination === nextPort;
+    });
+
+    const dry = containersToNextPort.filter((c) => c.type === "dry").length;
+    const reefer = containersToNextPort.filter((c) => c.type === "reefer").length;
+    const total = dry + reefer;
+
+    console.log(`Point A (${nextPort}):`, { dry, reefer, total });
+
+    return { dry, reefer, total };
+  }, [capacityData?.arena_start, nextPort]);
+
+  // Point B: Containers on board heading to later ports
+  const pointB = useMemo(() => {
+    const containers = capacityData?.arena_start?.containers || [];
+    const containersToLaterPorts = containers.filter((container) => {
+      return container.destination && laterPorts.includes(container.destination);
+    });
+
+    const dry = containersToLaterPorts.filter((c) => c.type === "dry").length;
+    const reefer = containersToLaterPorts.filter((c) => c.type === "reefer").length;
+    const total = dry + reefer;
+
+    console.log(`Point B (${laterPorts.join("/")}):`, { dry, reefer, total });
+
+    return { dry, reefer, total };
+  }, [capacityData?.arena_start, laterPorts]);
+
+  // Point C: New booked containers from accepted cards to next port
+  const pointC = useMemo(() => {
+    const acceptedCards = capacityData?.accepted_cards || [];
+    const cardsToNextPort = acceptedCards.filter((card) => card.destination === nextPort);
+
+    let dry = 0;
+    let reefer = 0;
+
+    cardsToNextPort.forEach((card) => {
+      const quantity = card.quantity || 1;
+      if (card.type === "dry") {
+        dry += quantity;
+      } else if (card.type === "reefer") {
+        reefer += quantity;
+      }
+    });
+
+    const total = dry + reefer;
+    return { dry, reefer, total };
+  }, [capacityData?.accepted_cards, nextPort]);
+
+  // Point D: New booked containers from accepted cards to later ports
+  const pointD = useMemo(() => {
+    const acceptedCards = capacityData?.accepted_cards || [];
+    const cardsToLaterPorts = acceptedCards.filter((card) => laterPorts.includes(card.destination));
+
+    let dry = 0;
+    let reefer = 0;
+
+    cardsToLaterPorts.forEach((card) => {
+      const quantity = card.quantity || 1;
+      if (card.type === "dry") {
+        dry += quantity;
+      } else if (card.type === "reefer") {
+        reefer += quantity;
+      }
+    });
+
+    const total = dry + reefer;
+    return { dry, reefer, total };
+  }, [capacityData?.accepted_cards, laterPorts]);
+
+  // Point E: Max ship capacity (already available in maxCapacity state)
+  const pointE = maxCapacity;
+
+  // Point F: Utilization out of next port (B + D)
+  const pointF = useMemo(() => {
+    return {
+      dry: pointB.dry + pointD.dry,
+      reefer: pointB.reefer + pointD.reefer,
+      total: pointB.total + pointD.total,
+    };
+  }, [pointB, pointD]);
+
+  // Point G: Remaining available capacity at next port (E - F)
+  const pointG = useMemo(() => {
+    return {
+      dry: pointE.dry - pointF.dry,
+      reefer: pointE.reefer - pointF.reefer,
+      total: pointE.total - pointF.total,
+    };
+  }, [pointE, pointF]);
+
+  // Calculate total utilization out of this port (A + B + C + D)
+  const utilizationOutOfThisPort = useMemo(() => {
+    return {
+      dry: pointA.dry + pointB.dry + pointC.dry + pointD.dry,
+      reefer: pointA.reefer + pointB.reefer + pointC.reefer + pointD.reefer,
+      total: pointA.total + pointB.total + pointC.total + pointD.total,
+    };
+  }, [pointA, pointB, pointC, pointD]);
 
   useEffect(() => {
     if (roomId && user?.id && token) {
@@ -43,23 +143,36 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
       console.log("Capacity Uptake Data:", data);
       setCapacityData(data);
 
-      // Extract port, next port, and later ports from the data
-      setPort(data.port || "");
-      setNextPort(data.next_port || "");
-      setLaterPorts(data.later_ports || []);
+      // Ekstrak next port dan later ports dari swap_config
+      if (data.swap_config && data.port) {
+        const swapConfig = data.swap_config;
+
+        // Mendapatkan next port (port berikutnya langsung dari swap_config)
+        const nextPort = swapConfig[data.port];
+        setNextPort(nextPort || "");
+        setPort(data.port || "");
+
+        // Mendapatkan later ports (port-port berikutnya setelah next port)
+        const laterPorts = [];
+        let currentPort = nextPort;
+
+        // Dapatkan port setelah next port
+        currentPort = swapConfig[currentPort]; // Mulai dari port setelah next port
+
+        // Buat urutan port sesuai konfigurasi
+        while (currentPort && currentPort !== data.port && !laterPorts.includes(currentPort)) {
+          laterPorts.push(currentPort);
+          currentPort = swapConfig[currentPort];
+        }
+
+        setLaterPorts(laterPorts);
+      }
 
       // Extract max capacity
       setMaxCapacity({
         dry: data.max_capacity?.dry || 0,
         reefer: data.max_capacity?.reefer || 0,
         total: data.max_capacity?.total || 0,
-      });
-
-      // Extract point G (remaining capacity)
-      setPointG({
-        dry: data.remaining_capacity?.dry || 0,
-        reefer: data.remaining_capacity?.reefer || 0,
-        total: data.remaining_capacity?.total || 0,
       });
 
       // Process sales calls data
@@ -96,7 +209,7 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
         weekRevenueTotal: totalRevenue,
       });
 
-      // Calculate capacity status
+      // Check for capacity issues
       const acceptedDryContainers = data.dry_containers_accepted || 0;
       const acceptedReeferContainers = data.reefer_containers_accepted || 0;
 
@@ -106,7 +219,6 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
         total: pointG.total - (acceptedDryContainers + acceptedReeferContainers),
       });
 
-      // Check for capacity issues
       setHasCapacityIssue(pointG.dry - acceptedDryContainers < 0 || pointG.reefer - acceptedReeferContainers < 0 || pointG.total - (acceptedDryContainers + acceptedReeferContainers) < 0);
     } catch (error) {
       console.error("Error fetching capacity uptake data:", error);
@@ -151,10 +263,26 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
       </div>
 
       {/* Display Capacity Estimation (Step 1) */}
-      <CapacityEstimation port={port} nextPort={nextPort} laterPorts={laterPorts} week={selectedWeek} totalRounds={totalRounds} maxCapacity={maxCapacity} hasCapacityIssue={hasCapacityIssue} />
+      <CapacityEstimation
+        port={port}
+        nextPort={nextPort}
+        laterPorts={laterPorts}
+        week={selectedWeek}
+        totalRounds={totalRounds}
+        maxCapacity={maxCapacity}
+        hasCapacityIssue={hasCapacityIssue}
+        pointA={pointA}
+        pointB={pointB}
+        pointC={pointC}
+        pointD={pointD}
+        pointE={pointE}
+        pointF={pointF}
+        pointG={pointG}
+        utilizationOutOfThisPort={utilizationOutOfThisPort}
+      />
 
       {/* Display Order Processing (Step 2) */}
-      <OrderProcessing salesCallsData={salesCallsData} pointG={pointG} capacityStatus={capacityStatus} />
+      <OrderProcessing salesCallsData={salesCallsData} pointG={pointG} capacityStatus={capacityStatus} utilizationOutOfThisPort={utilizationOutOfThisPort} />
     </div>
   );
 };
