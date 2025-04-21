@@ -611,7 +611,7 @@ const Simulation = () => {
                   id: container.id,
                   area: `docks-${container.position}`,
                   color: containerInfo.color,
-                  is_restowed: container.is_restowed || false,
+                  is_restowed: container.is_restowed,
                 };
               }
               return null;
@@ -629,7 +629,7 @@ const Simulation = () => {
                     id: item,
                     area: `docks-${index}`,
                     color: container.color,
-                    is_restowed: container.is_restowed || false,
+                    is_restowed: container.is_restowed,
                   };
                 }
               }
@@ -698,6 +698,7 @@ const Simulation = () => {
               id: container.id,
               area: `docks-${container.position}`,
               color: containerData.color,
+              is_restowed: container.is_restowed,
             });
           }
         }
@@ -712,6 +713,7 @@ const Simulation = () => {
                 id: item,
                 area: `docks-${index}`,
                 color: container.color,
+                is_restowed: container.is_restowed,
               });
             }
           }

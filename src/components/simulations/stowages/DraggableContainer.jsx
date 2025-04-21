@@ -3,7 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import "./DraggableContainer.css";
 import { useState } from "react";
 
-const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView, isTarget, isOptionalTarget, isBacklogged, backlogWeeks, isRestowageProblem, isBlocking, isRestowed, tooltipContent, destination }) => {
+const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", isHistoryView, isTarget, isOptionalTarget, isDockWarehouse, dockWarehouseWeeks, isRestowageProblem, isBlocking, isRestowed, tooltipContent, destination }) => {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
     disabled: isHistoryView,
@@ -56,7 +56,7 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
     ${isOptionalTarget ? "ring-1 ring-green-400 border-dashed" : ""}
     ${isRestowageProblem && isBlocking ? "ring-2 ring-red-500" : ""}
     ${isRestowageProblem && !isBlocking ? "ring-2 ring-orange-400" : ""}
-    ${isBacklogged ? "border-2 border-red-500" : ""}
+    ${isDockWarehouse ? "border-2 border-red-500" : ""}
     w-full h-full max-w-[80px] max-h-[60px] mx-auto
     ${isRestowed ? "border-2 border-red-500 border-dashed" : ""}
     w-full h-full max-w-[80px] max-h-[60px] mx-auto
@@ -85,36 +85,25 @@ const DraggableContainer = ({ id, text, style, isDragging, color, type = "dry", 
           {type.toUpperCase()}
         </div>
 
-        {/* Add destination display */}
+        {/* Destination Display with Restowage Display */}
         {destination && (
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-            <span className="text-xs font-bold bg-black bg-opacity-50 text-white px-2 py-0.5 rounded whitespace-nowrap">{destination}</span>
+            <span className="text-xs font-bold bg-black bg-opacity-50 text-white px-2 py-0.5 rounded whitespace-nowrap">
+              {destination}
+              {isRestowed && <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-red-900 text-white text-xs font-bold rounded-full shadow-sm">↓</span>}
+            </span>
           </div>
         )}
 
-        {/* Restowage indicator */}
-        {isRestowageProblem && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-            <div className="w-6 h-6 flex items-center justify-center bg-red-900 text-white text-xs font-bold rounded-full shadow-md animate-pulse">⚠️</div>
-          </div>
-        )}
-
-        {/* Restowed container indicator */}
-        {isRestowed && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-            <div className="w-6 h-6 flex items-center justify-center bg-red-900 text-white text-xs font-bold rounded-full shadow-md">↓</div>
-          </div>
-        )}
+        {/* Keep the FREE LOAD indicator but remove the centered arrow */}
+        {isRestowed && <div className="absolute -bottom-0 right-0 left-0 bg-green-600 text-white px-1.5 py-0.5 text-[8px] rounded-full font-bold whitespace-nowrap">1x FREE LOAD</div>}
 
         {/* Add unload indicator for target containers */}
         {isTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">UNLOAD</div>}
 
-        {/* Make optional indicator more eye-catching */}
-        {/* {isOptionalTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-700 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">OPTIONAL</div>} */}
-
-        {/* Backlog badge */}
-        {isBacklogged && (
-          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-rose-950 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">LATE {backlogWeeks}w</div>
+        {/* Dock warehouse badge */}
+        {isDockWarehouse && (
+          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-rose-950 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">LATE {dockWarehouseWeeks}w</div>
         )}
 
         {/* Update tooltip to show restowed info */}

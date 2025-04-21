@@ -120,7 +120,7 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockW
   // Show if we have multiple pages OR if we have containers on later pages
   const showPaginationControls = totalPages > 1 || hasContainersOnLaterPages;
 
-  const getBacklogInfo = (containerId) => {
+  const getDockWarehouseInfo = (containerId) => {
     if (!dockWarehouseContainers || !dockWarehouseContainers.length) return null;
 
     return dockWarehouseContainers.find((container) => container.container_id === containerId);
@@ -224,8 +224,8 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockW
               const isDropTarget = section === 1 && draggingTargetContainer && !item;
               const isTemporaryNewCell = temporaryNextPage !== null && displayPage !== currentPage;
 
-              const backlogInfo = item ? getBacklogInfo(item.id) : null;
-              const isBacklogged = !!backlogInfo;
+              const dockWarehouseInfo = item ? getDockWarehouseInfo(item.id) : null;
+              const isDockWarehouse = !!dockWarehouseInfo;
 
               return (
                 <DroppableCell key={cellId} id={cellId} coordinates={coordinates} isValid={true} isDropTarget={isDropTarget} isNewPage={isTemporaryNewCell}>
@@ -236,10 +236,10 @@ const ShipDock = ({ dockSize, allItems, draggingItem, containers, section, dockW
                       isDragging={draggingItem === item.id}
                       color={item.color}
                       type={containers.find((c) => c.id === item.id)?.type?.toLowerCase() || "dry"}
-                      isBacklogged={isBacklogged}
-                      backlogWeeks={backlogInfo ? backlogInfo.weeks_pending : 0}
-                      isRestowed={isRestowedContainer(item.id)}
-                      tooltipContent={isRestowedContainer(item.id) ? "Container moved due to restowage issue" : ""}
+                      isDockWarehouse={isDockWarehouse}
+                      dockWarehouseWeeks={dockWarehouseInfo ? dockWarehouseInfo.weeks_pending : 0}
+                      isRestowed={item.is_restowed}
+                      tooltipContent={item.is_restowed ? "Container moved due to restowage issue" : ""}
                       destination={containerDestinationsCache[item.id]}
                     />
                   )}
