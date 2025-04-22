@@ -1,24 +1,40 @@
 import React, { useMemo } from "react";
 
 const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTotal: 0 }, pointG = { dry: 0, reefer: 0, total: 0 }, pointH = { dry: 1, reefer: 1, total: 2 }, capacityStatus = { dry: 0, reefer: 0, total: 0 } }) => {
-  // Sort the sales calls by presumed order of processing
-  // We assume they're in chronological order within each accepted/rejected array
-  // and we use the index as a proxy for timestamp
+  // Sort the sales calls by presumed order of handling
   const sortedSalesCalls = useMemo(() => {
-    // Create a copy with index information to track original order
-    const acceptedWithIndex = (salesCallsData.weekSalesCalls || []).filter((call) => call.status === "accepted").map((call, index) => ({ ...call, originalIndex: index, listType: "accepted" }));
+    // Create a single array without pre-filtering by status
+    const allCards = (salesCallsData.weekSalesCalls || []).map((call) => ({
+      ...call,
 
-    const rejectedWithIndex = (salesCallsData.weekSalesCalls || []).filter((call) => call.status === "rejected").map((call, index) => ({ ...call, originalIndex: index, listType: "rejected" }));
+      originalIndex: salesCallsData.weekSalesCalls.indexOf(call),
+    }));
 
-    // Combine all cards
-    const allCards = [...acceptedWithIndex, ...rejectedWithIndex];
-
-    // Sort by card ID as a proxy for chronological order
-    // This assumes card IDs are assigned sequentially
+    // Sort purely by handledAt timestamp
     return allCards.sort((a, b) => {
-      return (a.processed_at || 0) - (b.processed_at || 0);
+      const aTimestamp = a.handledAt || 0;
+      const bTimestamp = b.handledAt || 0;
+      return aTimestamp - bTimestamp;
     });
   }, [salesCallsData.weekSalesCalls]);
+
+  console.log(
+    "Before sorting:",
+    salesCallsData.weekSalesCalls.map((c) => ({
+      id: c.id,
+      status: c.status,
+      handledAt: c.handledAt,
+    }))
+  );
+
+  console.log(
+    "After sorting:",
+    sortedSalesCalls.map((c) => ({
+      id: c.id,
+      status: c.status,
+      handledAt: c.handledAt,
+    }))
+  );
 
   // Get sales calls that have been accepted
   const acceptedSalesCalls = salesCallsData.weekSalesCalls.filter((call) => call.status === "accepted");

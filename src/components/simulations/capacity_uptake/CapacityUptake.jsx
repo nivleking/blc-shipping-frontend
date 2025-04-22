@@ -189,6 +189,7 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
           dryContainers: card.type === "dry" ? card.quantity : 0,
           reeferContainers: card.type === "reefer" ? card.quantity : 0,
           totalContainers: card.quantity,
+          handledAt: card.handled_at,
         })),
         ...rejectedCalls.map((card) => ({
           id: card.id,
@@ -198,6 +199,7 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
           dryContainers: card.type === "dry" ? card.quantity : 0,
           reeferContainers: card.type === "reefer" ? card.quantity : 0,
           totalContainers: card.quantity,
+          handledAt: card.handled_at,
         })),
       ];
 

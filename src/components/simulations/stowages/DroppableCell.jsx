@@ -25,7 +25,7 @@ const DroppableCell = ({
         border-2
         flex items-center justify-center
         ${!isHistoryView ? "transition-colors duration-200" : ""}
-        ${!isHistoryView && isOver ? "border-blue-400 bg-blue-50" : isDropTarget ? "border-yellow-400 bg-yellow-50" : isHighlighted ? "border-red-400 bg-red-300" : "border-gray-200"}
+        ${!isHistoryView && isOver ? "border-blue-400 bg-blue-50" : isDropTarget ? "border-yellow-400 bg-yellow-50" : isHighlighted ? "border-orange-400 bg-yellow-400" : "border-gray-200"}
         ${isValid ? "bg-white" : "bg-red-50"}
       `}
     >
