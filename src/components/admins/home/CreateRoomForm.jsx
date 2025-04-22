@@ -105,7 +105,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     },
     onError: (error) => {
       console.error("Error creating room:", error);
-      showError(error.response?.data?.message || "Failed to create room");
+      setErrors(error.response.data.errors || {});
+      showError(error.response.data.message || "Failed to create room");
     },
   });
 
