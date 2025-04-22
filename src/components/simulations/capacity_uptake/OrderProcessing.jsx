@@ -1,6 +1,11 @@
 import React, { useMemo } from "react";
 
-const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTotal: 0 }, pointG = { dry: 0, reefer: 0, total: 0 }, pointH = { dry: 1, reefer: 1, total: 2 }, capacityStatus = { dry: 0, reefer: 0, total: 0 } }) => {
+const OrderProcessing = ({
+  salesCallsData = { weekSalesCalls: [], weekRevenueTotal: 0 },
+  pointG = { dry: 0, reefer: 0, total: 0 },
+  pointH = { dry: 0, reefer: 0, total: dry },
+  capacityStatus = { dry: 0, reefer: 0, total: 0 }, //
+}) => {
   // Sort the sales calls by presumed order of handling
   const sortedSalesCalls = useMemo(() => {
     // Create a single array without pre-filtering by status
@@ -134,7 +139,7 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
             <tr>
               <th className="px-4 py-2 text-xs text-center font-medium text-gray-500 uppercase tracking-wider border">BOOKING NUMBER</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Status</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Priority (NC/C)</th>
+              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Priority</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Revenue (IDR)</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Dry</th>
               <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Reefer</th>
@@ -148,7 +153,10 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
                 <tr key={card.id} className={card.status === "rejected" ? "bg-red-200 text-gray-600" : "bg-green-200"}>
                   <td className="px-4 py-2 whitespace-nowrap text-sm text-center font-medium border">{card.id}</td>
                   <td className={`px-4 py-2 whitespace-nowrap text-sm text-center border ${card.status === "accepted" ? "text-green-600" : "text-red-600"}`}>{card.status === "accepted" ? "Accepted" : "Rejected"}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">{card.priority === "Committed" ? "C" : "NC"}</td>
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">
+                    {card.priority}
+                    {card.isBacklog ? " (Backlog)" : ""}
+                  </td>
                   <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">{formatIDR(card.revenue)}</td>
                   <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">{card.dryContainers || 0}</td>
                   <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">{card.reeferContainers || 0}</td>
@@ -196,8 +204,6 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
       </div>
 
       <div className="mt-4">
-        <p className="text-sm text-gray-600 italic">*Priority indicates whether the booking is for a Non-Committed (NC) or Committed (C) client. Maximum per week for committed bookings is 5 and 15 slots in total.</p>
-
         {acceptedSalesCalls.length > 0 && (capacityStatus.dry < 0 || capacityStatus.reefer < 0 || capacityStatus.total < 0) && (
           <div className="mt-3 bg-red-50 border-l-4 border-red-400 p-4">
             <div className="flex">

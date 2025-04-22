@@ -117,6 +117,16 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
     };
   }, [pointE, pointF]);
 
+  const pointH = useMemo(() => {
+    const backlogData = capacityData?.backlog || { dry: 0, reefer: 0, total: 0 };
+
+    return {
+      dry: backlogData.dry || 0,
+      reefer: backlogData.reefer || 0,
+      total: backlogData.total || 0,
+    };
+  }, [capacityData?.backlog]);
+
   // Calculate total utilization out of this port (A + B + C + D)
   const utilizationOutOfThisPort = useMemo(() => {
     return {
@@ -179,6 +189,8 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
       const salesCalls = data.accepted_cards || [];
       const rejectedCalls = data.rejected_cards || [];
 
+      // console.log("Data capacity uptake:", data);
+
       // Combine and format sales calls data
       const formattedSalesCalls = [
         ...salesCalls.map((card) => ({
@@ -190,6 +202,7 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
           reeferContainers: card.type === "reefer" ? card.quantity : 0,
           totalContainers: card.quantity,
           handledAt: card.handled_at,
+          isBacklog: card.is_backlog,
         })),
         ...rejectedCalls.map((card) => ({
           id: card.id,
@@ -200,6 +213,7 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
           reeferContainers: card.type === "reefer" ? card.quantity : 0,
           totalContainers: card.quantity,
           handledAt: card.handled_at,
+          isBacklog: card.is_backlog,
         })),
       ];
 
@@ -284,7 +298,13 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
       />
 
       {/* Display Order Processing (Step 2) */}
-      <OrderProcessing salesCallsData={salesCallsData} pointG={pointG} capacityStatus={capacityStatus} utilizationOutOfThisPort={utilizationOutOfThisPort} />
+      <OrderProcessing
+        salesCallsData={salesCallsData}
+        pointG={pointG}
+        pointH={pointH}
+        capacityStatus={capacityStatus}
+        utilizationOutOfThisPort={utilizationOutOfThisPort} //
+      />
     </div>
   );
 };
