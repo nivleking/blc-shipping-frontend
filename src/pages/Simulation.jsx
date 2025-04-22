@@ -1779,175 +1779,173 @@ const Simulation = () => {
         </div>
       )}
 
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : (
-        <div className="container mx-auto px-6 space-y-6">
-          <HeaderCards
-            roomId={roomId}
-            port={port}
-            revenue={revenue}
-            penalties={penalties}
-            rank={rank}
-            section={section}
-            formatIDR={formatIDR}
-            moves={moveStats}
-            currentRound={currentRound}
-            totalRounds={totalRounds}
-            moveCost={moveCost}
-            dockWarehouseCost={dockWarehouseCost}
-            restowageCost={restowageCost}
-            // extraMovesCost={extraMovesCost}
-          />
+      <div className="container mx-auto px-6 space-y-6">
+        <HeaderCards
+          roomId={roomId}
+          port={port}
+          revenue={revenue}
+          penalties={penalties}
+          rank={rank}
+          section={section}
+          formatIDR={formatIDR}
+          moves={moveStats}
+          currentRound={currentRound}
+          totalRounds={totalRounds}
+          moveCost={moveCost}
+          dockWarehouseCost={dockWarehouseCost}
+          restowageCost={restowageCost}
+          // extraMovesCost={extraMovesCost}
+        />
 
-          <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
-            <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
-              <Tab
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+        <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
+          <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5
                   ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
-                }
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  Capacity Uptake
-                </div>
-              </Tab>
+              }
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                Capacity Uptake
+              </div>
+            </Tab>
 
-              <Tab
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5
                   ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
-                }
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                  Stowage
-                </div>
-              </Tab>
-              <Tab
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+              }
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                Stowage
+              </div>
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5
     ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
-                }
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Weekly Performance
-                </div>
-              </Tab>
+              }
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Weekly Performance
+              </div>
+            </Tab>
 
-              <Tab
-                className={({ selected }) =>
-                  `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5
                   ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
-                }
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  Market Intelligence
-                </div>
-              </Tab>
-            </TabList>
+              }
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                Market Intelligence
+              </div>
+            </Tab>
+          </TabList>
 
-            <TabPanels className="mt-4">
-              {/* Capacity Uptake */}
-              <TabPanel>
-                <CapacityUptake port={port} currentRound={currentRound} totalRounds={totalRounds} />
-              </TabPanel>
+          <TabPanels className="mt-4">
+            {/* Capacity Uptake */}
+            <TabPanel>
+              <CapacityUptake port={port} currentRound={currentRound} totalRounds={totalRounds} />
+            </TabPanel>
 
-              <TabPanel>
-                <Stowage
-                  bayCount={bayCount}
-                  baySize={baySize}
-                  bayTypes={bayTypes}
-                  droppedItems={droppedItems}
-                  draggingItem={draggingItem}
-                  dockSize={dockSize}
-                  isLimitExceeded={isLimitExceeded}
-                  salesCallCards={salesCallCards}
-                  currentCardIndex={currentCardIndex}
-                  containers={containers}
-                  formatIDR={formatIDR}
-                  handleAcceptCard={handleAcceptCard}
-                  handleRejectCard={handleRejectCard}
-                  handleDragStart={handleDragStart}
-                  handleDragEnd={handleDragEnd}
-                  section={section}
-                  onNextSection={handleNextSection}
-                  targetContainers={targetContainers}
-                  isProcessingCard={isProcessingCard}
-                  isCardVisible={isCardVisible}
+            <TabPanel>
+              <Stowage
+                bayCount={bayCount}
+                baySize={baySize}
+                bayTypes={bayTypes}
+                droppedItems={droppedItems}
+                draggingItem={draggingItem}
+                dockSize={dockSize}
+                isLimitExceeded={isLimitExceeded}
+                salesCallCards={salesCallCards}
+                currentCardIndex={currentCardIndex}
+                containers={containers}
+                formatIDR={formatIDR}
+                handleAcceptCard={handleAcceptCard}
+                handleRejectCard={handleRejectCard}
+                handleDragStart={handleDragStart}
+                handleDragEnd={handleDragEnd}
+                section={section}
+                onNextSection={handleNextSection}
+                targetContainers={targetContainers}
+                isProcessingCard={isProcessingCard}
+                isCardVisible={isCardVisible}
+                currentRound={currentRound}
+                totalRounds={totalRounds}
+                processedCards={processedCards}
+                mustProcessCards={mustProcessCards}
+                cardsLimit={cardsLimit}
+                port={port}
+                bayMoves={bayMoves}
+                totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
+                selectedHistoricalWeek={selectedHistoricalWeek}
+                setSelectedHistoricalWeek={setSelectedHistoricalWeek}
+                historicalStats={historicalStats}
+                showHistorical={showHistorical}
+                setShowHistorical={setShowHistorical}
+                onRefreshCards={handleRefreshCards}
+                dockWarehouseContainers={dockWarehouseContainers}
+                restowageContainers={restowageContainers}
+                restowagePenalty={restowagePenalty}
+                restowageMoves={restowageMoves}
+                containerDestinationsCache={containerDestinationsCache}
+                unfulfilledContainers={unfulfilledContainers}
+                hoveredCardId={hoveredCardId}
+                onContainerHover={handleContainerHover}
+                // bayPairs={bayPairs}
+                // idealCraneSplit={idealCraneSplit}
+                // longCraneMoves={longCraneMoves}
+                // extraMovesOnLongCrane={extraMovesOnLongCrane}
+              />
+            </TabPanel>
+
+            {/* Weekly Performance Tab */}
+            <TabPanel>
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <WeeklyPerformance
+                  port={port}
                   currentRound={currentRound}
                   totalRounds={totalRounds}
-                  processedCards={processedCards}
-                  mustProcessCards={mustProcessCards}
-                  cardsLimit={cardsLimit}
-                  port={port}
-                  bayMoves={bayMoves}
                   totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
-                  selectedHistoricalWeek={selectedHistoricalWeek}
-                  setSelectedHistoricalWeek={setSelectedHistoricalWeek}
-                  historicalStats={historicalStats}
-                  showHistorical={showHistorical}
-                  setShowHistorical={setShowHistorical}
-                  onRefreshCards={handleRefreshCards}
-                  dockWarehouseContainers={dockWarehouseContainers}
-                  restowageContainers={restowageContainers}
-                  restowagePenalty={restowagePenalty}
-                  restowageMoves={restowageMoves}
-                  containerDestinationsCache={containerDestinationsCache}
-                  unfulfilledContainers={unfulfilledContainers}
-                  hoveredCardId={hoveredCardId}
-                  onContainerHover={handleContainerHover}
+                  bayMoves={bayMoves}
                   // bayPairs={bayPairs}
-                  // idealCraneSplit={idealCraneSplit}
-                  // longCraneMoves={longCraneMoves}
                   // extraMovesOnLongCrane={extraMovesOnLongCrane}
+                  // longCraneMoves={longCraneMoves}
+                  // extraMovesCost={extraMovesCost}
+                  // idealCraneSplit={idealCraneSplit}
                 />
-              </TabPanel>
+              </div>
+            </TabPanel>
 
-              {/* Weekly Performance Tab */}
-              <TabPanel>
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <WeeklyPerformance
-                    port={port}
-                    currentRound={currentRound}
-                    totalRounds={totalRounds}
-                    totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
-                    bayMoves={bayMoves}
-                    // bayPairs={bayPairs}
-                    // extraMovesOnLongCrane={extraMovesOnLongCrane}
-                    // longCraneMoves={longCraneMoves}
-                    // extraMovesCost={extraMovesCost}
-                    // idealCraneSplit={idealCraneSplit}
-                  />
-                </div>
-              </TabPanel>
+            {/* Market Intelligence Tab */}
+            <TabPanel>
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <MarketIntelligenceSimulation port={port} roomId={roomId} moveCost={moveCost} />
+              </div>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
+      </div>
 
-              {/* Market Intelligence Tab */}
-              <TabPanel>
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <MarketIntelligenceSimulation port={port} roomId={roomId} moveCost={moveCost} />
-                </div>
-              </TabPanel>
-            </TabPanels>
-          </TabGroup>
-        </div>
-      )}
+      {isLoading && <LoadingSpinner />}
     </div>
   );
 };
