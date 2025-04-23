@@ -112,6 +112,36 @@ const Simulation = () => {
 
   const [hoveredCardId, setHoveredCardId] = useState(null);
 
+  const [financialSummary, setFinancialSummary] = useState(null);
+  const [showFinancialModal, setShowFinancialModal] = useState(false);
+
+  // Add this function to fetch financial summary
+  const fetchFinancialSummary = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/ship-bays/financial-summary/${roomId}/${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setFinancialSummary(response.data);
+    } catch (error) {
+      console.error("Error fetching financial summary:", error);
+      showError("Failed to fetch financial data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add a function to toggle the financial modal visibility
+  const toggleFinancialModal = () => {
+    // Fetch latest data when opening
+    if (!showFinancialModal) {
+      fetchFinancialSummary();
+    }
+    setShowFinancialModal(!showFinancialModal);
+  };
+
   // Tambahkan function handler untuk hover container
   const handleContainerHover = (containerId, isHovering) => {
     if (isHovering) {
@@ -735,6 +765,12 @@ const Simulation = () => {
         });
       }
 
+      const unfulfilledResponse = await api.get(`/card-temporary/unfulfilled/${roomId}/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("Unfulfilled containers:", unfulfilledResponse.data);
+      setUnfulfilledContainers(unfulfilledResponse.data);
+
       // Update dropped items with dock items
       setDroppedItems((prev) => {
         // Remove all previous dock items
@@ -912,6 +948,12 @@ const Simulation = () => {
       //     },
       //   }
       // );
+
+      const unfulfilledResponse = await api.get(`/card-temporary/unfulfilled/${roomId}/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("Unfulfilled containers:", unfulfilledResponse.data);
+      setUnfulfilledContainers(unfulfilledResponse.data);
 
       await Promise.all([
         api.post("/ship-bays", {
@@ -1126,12 +1168,12 @@ const Simulation = () => {
         return;
       }
 
-      // If in section 1, check if this is a target container that needs unloading
+      // If in section 1, check if this is a target container that needs discharging
       if (section === 1) {
         const isTargetContainer = targetContainers.some((target) => target.id === sourceItem.id);
 
         if (isTargetContainer) {
-          showInfo("Drag this container to the ship dock to unload it");
+          showInfo("Drag this container to the ship dock to discharge it");
         }
       }
     }
@@ -1264,7 +1306,7 @@ const Simulation = () => {
           });
 
           if (containerResponse.data.card && containerResponse.data.card.destination === port) {
-            // This container should be unloaded at current port
+            // This container should be dischargeed at current port
 
             // Remove from dropped items (visual effect of container being removed)
             const updatedDroppedItems = droppedItems.filter((item) => item.id !== active.id);
@@ -1299,7 +1341,7 @@ const Simulation = () => {
             };
             setBayData(flatBayData);
 
-            showSuccess("Container unloaded successfully!");
+            showSuccess("Container dischargeed successfully!");
 
             // Track discharge move - Include bay_index
             try {
@@ -1647,7 +1689,7 @@ const Simulation = () => {
     }
 
     // Filter containers whose destination matches the current port
-    const containersToUnload = droppedItems.filter((item) => {
+    const containersToDischarge = droppedItems.filter((item) => {
       const destination = containerDestinationsCache[item.id];
 
       // Debug individual container check
@@ -1657,10 +1699,10 @@ const Simulation = () => {
       return destination && destination.trim().toUpperCase() === port.trim().toUpperCase();
     });
 
-    console.log("Containers to unload at this port:", containersToUnload);
+    console.log("Containers to discharge at this port:", containersToDischarge);
 
     // Update the target containers state
-    setTargetContainers(containersToUnload);
+    setTargetContainers(containersToDischarge);
   }, [droppedItems, containerDestinationsCache, port, section]);
 
   async function fetchContainerDestinations() {
@@ -1701,7 +1743,7 @@ const Simulation = () => {
   // Update handleNextSection to use the simplified check
   const handleNextSection = async () => {
     if (!canProceedToSectionTwo()) {
-      showError("Please unload all containers destined for your port first!");
+      showError("Please discharge all containers destined for your port first!");
       return;
     }
 
@@ -1798,15 +1840,15 @@ const Simulation = () => {
         />
 
         <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
-          <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+          <TabList className="flex space-x-0.5 rounded-md bg-blue-900/20 p-0.5">
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5
-                  ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                `w-full rounded-md py-1 px-1.5 text-xs font-medium
+        ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center justify-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1814,48 +1856,49 @@ const Simulation = () => {
                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                   />
                 </svg>
-                Capacity Uptake
+                <span>Capacity</span>
               </div>
             </Tab>
 
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5
-                  ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                `w-full rounded-md py-1 px-1.5 text-xs font-medium
+        ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center justify-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
-                Stowage
-              </div>
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5
-    ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
-              }
-            >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Weekly Performance
+                <span>Stowage</span>
               </div>
             </Tab>
 
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5
-                  ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                `w-full rounded-md py-1 px-1.5 text-xs font-medium
+        ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center justify-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Performance</span>
+              </div>
+            </Tab>
+
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-md py-1 px-1.5 text-xs font-medium
+        ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+              }
+            >
+              <div className="flex items-center justify-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
-                Market Intelligence
+                <span>Market</span>
               </div>
             </Tab>
           </TabList>
@@ -1910,6 +1953,9 @@ const Simulation = () => {
                 unfulfilledContainers={unfulfilledContainers}
                 hoveredCardId={hoveredCardId}
                 onContainerHover={handleContainerHover}
+                financialSummary={financialSummary}
+                showFinancialModal={showFinancialModal}
+                toggleFinancialModal={toggleFinancialModal}
                 // bayPairs={bayPairs}
                 // idealCraneSplit={idealCraneSplit}
                 // longCraneMoves={longCraneMoves}

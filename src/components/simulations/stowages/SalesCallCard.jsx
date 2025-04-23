@@ -72,7 +72,7 @@ const SalesCallCard = ({
     // Check all cards for this container
     for (const cardId in unfulfilledContainers) {
       if (unfulfilledContainers[cardId].includes(containerId)) {
-        return "unloaded";
+        return "discharged";
       }
     }
     return "loaded";

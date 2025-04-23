@@ -132,8 +132,8 @@ const DraggableContainer = ({
         {/* Keep the FREE LOAD indicator but remove the centered arrow */}
         {isRestowed && <div className="absolute -bottom-0 right-0 left-0 bg-green-600 text-white px-1.5 py-0.5 text-[8px] rounded-full font-bold whitespace-nowrap">1x FREE LOAD</div>}
 
-        {/* Add unload indicator for target containers */}
-        {isTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">UNLOAD</div>}
+        {/* Add discharge indicator for target containers */}
+        {isTarget && <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-1.5 sm:px-2 py-0.5 sm:py-1 text-[8px] sm:text-[9px] rounded-full font-bold whitespace-nowrap">DISCHARGE</div>}
 
         {/* Dock warehouse badge */}
         {isDockWarehouse && (

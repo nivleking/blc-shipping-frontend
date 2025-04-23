@@ -8,6 +8,12 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId, moveCost }) => {
   const { token } = useContext(AppContext);
   const [viewMode, setViewMode] = useState("matrix");
   const [filterType, setFilterType] = useState("all");
+  const [penalties, setPenalties] = useState({
+    dry_committed: 0,
+    dry_non_committed: 0,
+    reefer_committed: 0,
+    reefer_non_committed: 0,
+  });
 
   // Query to fetch the deck ID if not provided directly
   const deckQuery = useQuery({
@@ -41,6 +47,10 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId, moveCost }) => {
 
       if (!response.data?.price_data) {
         throw new Error("Invalid market intelligence data format");
+      }
+
+      if (response.data.penalties) {
+        setPenalties(response.data.penalties);
       }
 
       return response.data.price_data;
@@ -379,21 +389,21 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId, moveCost }) => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     <tr className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">Dry</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(0)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(0)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(penalties.dry_non_committed || 0)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(penalties.dry_committed || 0)}</td>
                     </tr>
                     <tr className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">Reefer</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(0)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(0)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(penalties.reefer_non_committed || 0)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-600">{formatCurrency(penalties.reefer_committed || 0)}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <div className="mt-4 p-4 bg-red-50 rounded-lg">
+              {/* <div className="mt-4 p-4 bg-red-50 rounded-lg">
                 <p className="text-sm text-red-600">Note: An additional {formatCurrency(0)} penalty per container for previously rolled containers</p>
-              </div>
+              </div> */}
 
               <div className="mt-6">
                 <h4 className="font-medium mb-2 text-gray-700">Move Penalties:</h4>

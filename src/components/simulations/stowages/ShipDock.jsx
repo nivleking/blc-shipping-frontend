@@ -161,6 +161,46 @@ const ShipDock = ({
     return container && container.card_id === hoveredCardId;
   };
 
+  // An alternative approach that's more specific to your data structure
+  const unfulfilledSummary = useMemo(() => {
+    const summary = {
+      dry: 0,
+      reefer: 0,
+      total: 0,
+    };
+
+    // Get all container IDs by extracting values from the nested objects
+    const containersToCheck = [];
+
+    // For each card group in unfulfilledContainers
+    Object.keys(unfulfilledContainers).forEach((cardId) => {
+      // Get the container objects for this card
+      const cardContainers = unfulfilledContainers[cardId];
+
+      // Add each container ID to our check list
+      Object.keys(cardContainers).forEach((position) => {
+        const containerId = cardContainers[position];
+        if (containerId) {
+          containersToCheck.push(containerId.toString());
+        }
+      });
+    });
+
+    // Count containers by type
+    containers.forEach((container) => {
+      if (containersToCheck.includes(container.id.toString())) {
+        if (container.type?.toLowerCase() === "reefer") {
+          summary.reefer++;
+        } else {
+          summary.dry++;
+        }
+        summary.total++;
+      }
+    });
+
+    return summary;
+  }, [unfulfilledContainers, containers]);
+
   return (
     <div className="flex flex-col w-full">
       {/* Summary information */}
@@ -237,6 +277,26 @@ const ShipDock = ({
           </div>
         )}
       </div>
+
+      {unfulfilledSummary.total > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="mr-2 p-1.5 bg-blue-100 rounded-full">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="font-medium text-blue-800">Containers to Load: {unfulfilledSummary.total}</span>
+            </div>
+            <div className="flex space-x-2">
+              {unfulfilledSummary.dry > 0 && <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">Dry: {unfulfilledSummary.dry}</span>}
+              {unfulfilledSummary.reefer > 0 && <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Reefer: {unfulfilledSummary.reefer}</span>}
+            </div>
+          </div>
+          <p className="text-xs text-blue-600 mt-1">Drag these containers to the ship to fulfill your sales call commitments.</p>
+        </div>
+      )}
 
       {/* Container Grid */}
       <div className={`relative ${!hasContainersOnPage && totalContainers > 0 ? "min-h-[300px] flex items-center justify-center" : ""}`}>

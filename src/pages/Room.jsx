@@ -351,7 +351,7 @@ const Room = () => {
 
   async function endSimulation() {
     if (currentRound <= totalRounds) {
-      showError(`Simulation can only be ended after the final unloading phase (Week ${totalRounds + 1})`);
+      showError(`Simulation can only be ended after the final discharging phase (Week ${totalRounds + 1})`);
       return;
     }
 
@@ -384,7 +384,7 @@ const Room = () => {
 
   const handleSwapConfigSave = async (newSwapConfig) => {
     if (currentRound > totalRounds) {
-      showError("Cannot modify swap configuration during final unloading phase");
+      showError("Cannot modify swap configuration during final discharging phase");
       return;
     }
 
@@ -415,7 +415,7 @@ const Room = () => {
 
   const handleSwapBays = async () => {
     // if (currentRound > totalRounds) {
-    //   showError("Bay swapping is disabled during final unloading phase");
+    //   showError("Bay swapping is disabled during final discharging phase");
     //   return;
     // }
 
@@ -787,7 +787,7 @@ const Room = () => {
                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-400" : "bg-yellow-400 border-2 border-yellow-500 text-white hover:bg-yellow-500"} 
     shadow-sm`}
-                  title={currentRound > totalRounds ? "Swap configuration disabled in final unloading phase" : "Edit swap configuration"}
+                  title={currentRound > totalRounds ? "Swap configuration disabled in final discharging phase" : "Edit swap configuration"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path
@@ -806,7 +806,7 @@ const Room = () => {
                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"} 
     shadow-md`}
-                  title={currentRound > totalRounds ? "Bay swapping disabled in final unloading phase" : "Swap bays"}
+                  title={currentRound > totalRounds ? "Bay swapping disabled in final discharging phase" : "Swap bays"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
@@ -822,7 +822,7 @@ const Room = () => {
                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-md transition-all duration-200 ${
                     currentRound > totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   }`}
-                  title={currentRound <= totalRounds ? `Can only end simulation after the final unloading phase (Week ${totalRounds + 1})` : "End simulation"}
+                  title={currentRound <= totalRounds ? `Can only end simulation after the final discharging phase (Week ${totalRounds + 1})` : "End simulation"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />

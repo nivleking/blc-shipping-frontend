@@ -104,7 +104,7 @@ const PortOrderAlert = ({ currentPort }) => {
               <span className="text-xs text-gray-500">BOTTOM</span>
             </div>
           </div>
-          <p className="mt-1 text-xs text-gray-600">Stack containers with furthest ports at the bottom for efficient loading/unloading for future ports.</p>
+          <p className="mt-1 text-xs text-gray-600">Stack containers with furthest ports at the bottom for efficient loading/discharge for future ports.</p>
         </div>
       </div>
     </div>

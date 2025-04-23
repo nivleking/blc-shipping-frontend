@@ -26,7 +26,17 @@ import useToast from "../../../toast/useToast";
 //   cards_limit_per_round: 10,
 //   cards_must_process_per_round: 8,
 //   move_cost: 100000,
-//   dock_warehouse_cost: 50000,
+//   dock_warehouse_costs: {
+//     default: 50000,
+//     dry: {
+//       committed: 1600000,
+//       non_committed: 800000,
+//     },
+//     reefer: {
+//       committed: 2400000,
+//       non_committed: 160000,
+//     },
+//   },
 //   restowage_cost: 50000,
 //   // extra_moves_cost: 50000,
 //   // ideal_crane_split: 2,
@@ -47,7 +57,17 @@ const initialFormState = {
   cards_limit_per_round: 1,
   cards_must_process_per_round: 1,
   move_cost: 100000,
-  dock_warehouse_cost: 50000,
+  dock_warehouse_costs: {
+    default: 50000,
+    dry: {
+      committed: 1600000,
+      non_committed: 800000,
+    },
+    reefer: {
+      committed: 2400000,
+      non_committed: 160000,
+    },
+  },
   restowage_cost: 50000,
   swap_config: {},
   // extra_moves_cost: 50000,
@@ -208,7 +228,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       max_users: formData.max_users,
       total_rounds: formData.total_rounds,
       move_cost: formData.move_cost,
-      dock_warehouse_cost: formData.dock_warehouse_cost,
+      dock_warehouse_costs: formData.dock_warehouse_costs,
       restowage_cost: formData.restowage_cost,
       cards_must_process_per_round: formData.cards_must_process_per_round,
       cards_limit_per_round: formData.cards_limit_per_round,
@@ -325,129 +345,6 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             max={formData.cards_limit_per_round}
             className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
           />
-        </div>
-
-        {/* Move Cost Field */}
-        <div className="flex flex-col">
-          <div className="flex items-center">
-            <label htmlFor="move_cost" className="block text-gray-700 font-semibold">
-              Move Cost (Rp)
-            </label>
-            <Tooltip>Cost per move (discharge or load)</Tooltip>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">Rp</span>
-            </div>
-            <input
-              type="number"
-              name="move_cost"
-              id="move_cost"
-              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="100000"
-              min="1"
-              value={formData.move_cost}
-              onChange={handleChange}
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">per move</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Extra Moves Cost Field */}
-        {/* <div className="flex flex-col">
-          <div className="flex items-center">
-            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
-              Extra Moves Cost (Rp)
-            </label>
-            <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">Rp</span>
-            </div>
-            <input
-              type="number"
-              name="extra_moves_cost"
-              id="extra_moves_cost"
-              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="50000"
-              min="1"
-              value={formData.extra_moves_cost}
-              onChange={handleChange}
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">per move</span>
-            </div>
-          </div>
-        </div> */}
-
-        {/* Ideal Crane Split Field */}
-        {/* <div className="flex flex-col">
-          <div className="flex items-center">
-            <label htmlFor="ideal_crane_split" className="block text-gray-700 font-semibold">
-              Ideal Crane Split
-            </label>
-            <Tooltip>Number of cranes to be used as a ideal value for splitting</Tooltip>
-          </div>
-          <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
-        </div> */}
-
-        {/* Dock Warehouse Cost Field */}
-        <div className="flex flex-col">
-          <div className="flex items-center">
-            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
-              Dock Warehouse Cost (Rp)
-            </label>
-            <Tooltip>Cost per container that is not unloaded on time (in weeks)</Tooltip>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">Rp</span>
-            </div>
-            <input
-              type="number"
-              name="dock_warehouse_cost"
-              id="dock_warehouse_cost"
-              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="50000"
-              min="1"
-              value={formData.dock_warehouse_cost}
-              onChange={handleChange}
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">per move</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Restowage Cost */}
-        <div className="flex flex-col">
-          <div className="flex items-center">
-            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
-              Restowage Cost (Rp)
-            </label>
-            <Tooltip>Cost per container that is not unloaded on time (in weeks)</Tooltip>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">Rp</span>
-            </div>
-            <input
-              type="number"
-              name="restowage_cost"
-              id="restowage_cost"
-              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="50000"
-              min="1"
-              value={formData.restowage_cost}
-              onChange={handleChange}
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">per move</span>
-            </div>
-          </div>
         </div>
 
         {/* Deck Selection */}
@@ -727,6 +624,223 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
           {errors.ship_layout && <p className="text-red-500 mt-1">{errors.ship_layout[0]}</p>}
         </div>
+
+        {/* Extra Moves Cost Field */}
+        {/* <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
+              Extra Moves Cost (Rp)
+            </label>
+            <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="extra_moves_cost"
+              id="extra_moves_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="50000"
+              min="1"
+              value={formData.extra_moves_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div> */}
+
+        {/* Ideal Crane Split Field */}
+        {/* <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="ideal_crane_split" className="block text-gray-700 font-semibold">
+              Ideal Crane Split
+            </label>
+            <Tooltip>Number of cranes to be used as a ideal value for splitting</Tooltip>
+          </div>
+          <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        </div> */}
+
+        {/* Dock Warehouse Cost Field */}
+        <div className="flex flex-col lg:col-span-3">
+          <div className="flex items-center">
+            <label className="block text-gray-700 font-semibold">Dock Warehouse Costs</label>
+            <Tooltip>Set penalties for containers that remain on the ship past their destination port</Tooltip>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            {/* Dry Committed */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Dry Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_costs.dry.committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.dock_warehouse_costs.dry.committed}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      dock_warehouse_costs: {
+                        ...formData.dock_warehouse_costs,
+                        dry: {
+                          ...formData.dock_warehouse_costs.dry,
+                          committed: parseInt(e.target.value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Dry Non-Committed */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Dry Non-Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_costs.dry.non_committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.dock_warehouse_costs.dry.non_committed}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      dock_warehouse_costs: {
+                        ...formData.dock_warehouse_costs,
+                        dry: {
+                          ...formData.dock_warehouse_costs.dry,
+                          non_committed: parseInt(e.target.value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Reefer Committed */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Reefer Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_costs.reefer.committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.dock_warehouse_costs.reefer.committed}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      dock_warehouse_costs: {
+                        ...formData.dock_warehouse_costs,
+                        reefer: {
+                          ...formData.dock_warehouse_costs.reefer,
+                          committed: parseInt(e.target.value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Reefer Non-Committed */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Reefer Non-Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_costs.reefer.non_committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.dock_warehouse_costs.reefer.non_committed}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      dock_warehouse_costs: {
+                        ...formData.dock_warehouse_costs,
+                        reefer: {
+                          ...formData.dock_warehouse_costs.reefer,
+                          non_committed: parseInt(e.target.value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Move Cost Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="move_cost" className="block text-gray-700 font-semibold">
+              Move Cost (Rp)
+            </label>
+            <Tooltip>Cost per move (discharge or load)</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="move_cost"
+              id="move_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="100000"
+              min="1"
+              value={formData.move_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Restowage Cost */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
+              Restowage Cost (Rp)
+            </label>
+            <Tooltip>Cost per container that is not discharged on time (in weeks)</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="restowage_cost"
+              id="restowage_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="50000"
+              min="1"
+              value={formData.restowage_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div>
+
         {/* Port Swap Configuration */}
         <div className="flex flex-col lg:col-span-3 md:col-span-2">
           <div className="flex items-center">

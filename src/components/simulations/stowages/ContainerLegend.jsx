@@ -19,7 +19,7 @@ const ContainerLegend = () => {
         </div>
         <div className="flex items-center">
           <div className="w-4 h-4 ring-2 ring-yellow-400 rounded-sm bg-yellow-50"></div>
-          <span className="ml-2 text-sm text-gray-600">Unload Target</span>
+          <span className="ml-2 text-sm text-gray-600">Discharge Target</span>
         </div>  
         <div className="flex items-center">
           <div className="w-4 h-4 border border-dashed border-red-500 rounded-sm"></div>

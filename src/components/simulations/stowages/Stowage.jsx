@@ -8,6 +8,7 @@ import BayStatisticsTable from "./BayStatisticsTable";
 import RestowageAlert from "./RestowageAlert";
 import PortOrderAlert from "./PortOrderAlert";
 import ContainerLegend from "./ContainerLegend";
+import FinancialSummaryModal from "./FinancialSummaryModal";
 
 const Stowage = ({
   bayCount,
@@ -53,16 +54,33 @@ const Stowage = ({
   unfulfilledContainers = [],
   hoveredCardId,
   onContainerHover,
+  financialSummary,
+  showFinancialModal,
+  toggleFinancialModal,
   // idealCraneSplit = 2,
   // longCraneMoves = 0,
   // extraMovesOnLongCrane = 0,
 }) => {
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
+  const handleFinancialButtonClick = () => {
+    toggleFinancialModal();
+  };
+
   // console.log(containerDestinationsCache);
   return (
     <>
       {/* <PortLegendSimulation /> */}
+
+      {financialSummary && (
+        <FinancialSummaryModal
+          isOpen={showFinancialModal}
+          onClose={() => toggleFinancialModal(false)}
+          financialData={financialSummary}
+          formatIDR={formatIDR}
+          currentRound={currentRound} //
+        />
+      )}
 
       {/* Section Header */}
       <div className="flex justify-between items-center mb-4 mt-4 bg-white rounded-xl shadow-sm p-4">
@@ -83,7 +101,7 @@ const Stowage = ({
               disabled={currentRound > totalRounds}
               className={`px-4 py-2 rounded-lg transition-colors ${currentRound > totalRounds ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
             >
-              {currentRound > totalRounds ? "Final Unloading Phase" : "Proceed to Section 2"}
+              {currentRound > totalRounds ? "Final Discharge Phase" : "Proceed to Section 2"}
             </button>
           </div>
         )}
@@ -98,8 +116,18 @@ const Stowage = ({
                 <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
               </svg>
               Ship Bay
-              {section === 1 && targetContainers.length > 0 && <span className="ml-4 text-sm text-yellow-600 font-semibold animate-pulse">{targetContainers.length} containers need unloading</span>}
+              {section === 1 && targetContainers.length > 0 && <span className="ml-4 text-sm text-yellow-600 font-semibold animate-pulse">{targetContainers.length} containers need discharging</span>}
             </h3>
+
+            {/* Add Financial Summary Button in the center */}
+            <button onClick={handleFinancialButtonClick} className="mx-auto flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-md shadow-sm transition-colors">
+              <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1.5v1A1.5 1.5 0 0114 6.5H7A1.5 1.5 0 015.5 5V4H4zm4-1v1h4V3a1 1 0 00-1-1H9a1 1 0 00-1 1z" clipRule="evenodd" />
+                <path d="M11 14a1 1 0 100-2H9a1 1 0 100 2h2zm2-4a1 1 0 100-2H9a1 1 0 100 2h4z" />
+              </svg>
+              Financial Summary
+              {financialSummary && <span className="ml-2 px-2 py-0.5 bg-white text-emerald-700 text-xs font-bold rounded-full">{formatIDR(financialSummary.final_revenue)}</span>}
+            </button>
 
             {/* Alert container - flex row to place alerts side by side */}
             <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -259,7 +287,7 @@ const Stowage = ({
                     Sales Calls
                   </h3>
                   <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
-                    <p className="text-gray-600 mb-2">Complete unloading port containers first</p>
+                    <p className="text-gray-600 mb-2">Complete discharging port containers first</p>
                     <p className="text-sm text-gray-500">Sales calls will be available in Section 2</p>
                   </div>
                 </div>
