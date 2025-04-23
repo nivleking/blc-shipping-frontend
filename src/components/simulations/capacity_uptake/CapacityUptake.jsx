@@ -246,29 +246,29 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex justify-center items-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-xs">
         <strong className="font-bold">Error!</strong>
-        <span className="block sm:inline"> {error}</span>
+        <span className="ml-1">{error}</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center mb-4">
+    <div className="space-y-3">
+      <div className="flex justify-between items-center mb-2">
         <div className="flex items-center space-x-2">
-          <label htmlFor="weekSelector" className="text-sm font-medium text-gray-700">
+          <label htmlFor="weekSelector" className="text-xs font-medium text-gray-700">
             Select Week:
           </label>
-          <select id="weekSelector" value={selectedWeek} onChange={(e) => setSelectedWeek(Number(e.target.value))} className="block rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+          <select id="weekSelector" value={selectedWeek} onChange={(e) => setSelectedWeek(Number(e.target.value))} className="text-xs rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-0.5 px-2">
             {Array.from({ length: currentRound }, (_, i) => (
               <option key={i + 1} value={i + 1}>
                 Week {i + 1}
@@ -278,7 +278,7 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
         </div>
       </div>
 
-      {/* Display Capacity Estimation (Step 1) */}
+      {/* Compact Capacity Estimation (Step 1) */}
       <CapacityEstimation
         port={port}
         nextPort={nextPort}
@@ -297,7 +297,7 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
         utilizationOutOfThisPort={utilizationOutOfThisPort}
       />
 
-      {/* Display Order Processing (Step 2) */}
+      {/* Compact Order Processing (Step 2) */}
       <OrderProcessing
         salesCallsData={salesCallsData}
         pointG={pointG}

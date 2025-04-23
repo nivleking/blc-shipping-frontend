@@ -1,17 +1,11 @@
 import React, { useMemo } from "react";
 
-const OrderProcessing = ({
-  salesCallsData = { weekSalesCalls: [], weekRevenueTotal: 0 },
-  pointG = { dry: 0, reefer: 0, total: 0 },
-  pointH = { dry: 0, reefer: 0, total: dry },
-  capacityStatus = { dry: 0, reefer: 0, total: 0 }, //
-}) => {
+const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTotal: 0 }, pointG = { dry: 0, reefer: 0, total: 0 }, pointH = { dry: 0, reefer: 0, total: dry + reefer }, capacityStatus = { dry: 0, reefer: 0, total: 0 } }) => {
   // Sort the sales calls by presumed order of handling
   const sortedSalesCalls = useMemo(() => {
     // Create a single array without pre-filtering by status
     const allCards = (salesCallsData.weekSalesCalls || []).map((call) => ({
       ...call,
-
       originalIndex: salesCallsData.weekSalesCalls.indexOf(call),
     }));
 
@@ -22,24 +16,6 @@ const OrderProcessing = ({
       return aTimestamp - bTimestamp;
     });
   }, [salesCallsData.weekSalesCalls]);
-
-  console.log(
-    "Before sorting:",
-    salesCallsData.weekSalesCalls.map((c) => ({
-      id: c.id,
-      status: c.status,
-      handledAt: c.handledAt,
-    }))
-  );
-
-  console.log(
-    "After sorting:",
-    sortedSalesCalls.map((c) => ({
-      id: c.id,
-      status: c.status,
-      handledAt: c.handledAt,
-    }))
-  );
 
   // Get sales calls that have been accepted
   const acceptedSalesCalls = salesCallsData.weekSalesCalls.filter((call) => call.status === "accepted");
@@ -83,50 +59,50 @@ const OrderProcessing = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mt-8">
-      <h2 className="text-xl font-bold mb-4">Step 2: Order Processing (Loading List)</h2>
+    <div className="bg-white rounded-lg shadow-md p-3 mt-3">
+      <h2 className="text-sm font-bold mb-2">Step 2: Order Processing (Loading List)</h2>
 
       {/* Available capacity section */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 border mb-6">
+        <table className="min-w-full divide-y divide-gray-200 border mb-3 text-xs">
           <thead className="bg-gray-100">
             <tr>
-              <th colSpan="2" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">
+              <th colSpan="2" className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">
                 Capacity adjusted for guaranteed deposits
               </th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Dry Container (FFE)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Reefer Container (FFE)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Total Cargo (FFE)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Code</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Dry Container (FFE)</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Reefer Container (FFE)</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Total Cargo (FFE)</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Code</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             <tr className="bg-yellow-400">
-              <td colSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
+              <td colSpan="2" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900 border">
                 Remaining Capacity Available for Loading
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointG.dry}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointG.reefer}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointG.total}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">G</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center border">{pointG.dry}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center border">{pointG.reefer}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center border">{pointG.total}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border">G</td>
             </tr>
             <tr className="bg-yellow-100">
-              <td colSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
+              <td colSpan="2" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900 border">
                 Backlog From Previous Week
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointH.dry}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointH.reefer}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center border">{pointH.total}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">H</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center border">{pointH.dry}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center border">{pointH.reefer}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center border">{pointH.total}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border">H</td>
             </tr>
             <tr>
-              <td colSpan="2" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
+              <td colSpan="2" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900 border">
                 Capacity Available for Bookings (G-H)
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm font-bold text-center border text-gray-900">{pointI.dry}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm font-bold text-center border text-gray-900">{pointI.reefer}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm font-bold text-center border text-gray-900">{pointI.total}</td>
-              <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">I</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs font-bold text-center border text-gray-900">{pointI.dry}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs font-bold text-center border text-gray-900">{pointI.reefer}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs font-bold text-center border text-gray-900">{pointI.total}</td>
+              <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border">I</td>
             </tr>
           </tbody>
         </table>
@@ -134,39 +110,39 @@ const OrderProcessing = ({
 
       {/* Orders listing - Sorted by order of processing */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 border">
+        <table className="min-w-full divide-y divide-gray-200 border text-xs">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-2 text-xs text-center font-medium text-gray-500 uppercase tracking-wider border">BOOKING NUMBER</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Status</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Priority</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Revenue (IDR)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Dry</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Reefer</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Total</th>
-              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Code</th>
+              <th className="px-2 py-1.5 text-xs text-center font-medium text-gray-500 uppercase tracking-wider border">BOOKING NUMBER</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Status</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Priority</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Revenue (IDR)</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Dry</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Reefer</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Total</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Code</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedSalesCalls.length > 0 ? (
               sortedSalesCalls.map((card) => (
                 <tr key={card.id} className={card.status === "rejected" ? "bg-red-200 text-gray-600" : "bg-green-200"}>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-center font-medium border">{card.id}</td>
-                  <td className={`px-4 py-2 whitespace-nowrap text-sm text-center border ${card.status === "accepted" ? "text-green-600" : "text-red-600"}`}>{card.status === "accepted" ? "Accepted" : "Rejected"}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center font-medium border">{card.id}</td>
+                  <td className={`px-2 py-1 whitespace-nowrap text-xs text-center border ${card.status === "accepted" ? "text-green-600" : "text-red-600"}`}>{card.status === "accepted" ? "Accepted" : "Rejected"}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">
                     {card.priority}
                     {card.isBacklog ? " (Backlog)" : ""}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">{formatIDR(card.revenue)}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">{card.dryContainers || 0}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">{card.reeferContainers || 0}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-center border">{card.totalContainers || card.quantity || 0}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border"></td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{formatIDR(card.revenue)}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.dryContainers || 0}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.reeferContainers || 0}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.totalContainers || card.quantity || 0}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border"></td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="px-4 py-4 text-center text-sm text-gray-500 border italic">
+                <td colSpan="8" className="px-2 py-2 text-center text-xs text-gray-500 border italic">
                   Get your sales call cards from section 2!
                 </td>
               </tr>
@@ -176,26 +152,26 @@ const OrderProcessing = ({
             {acceptedSalesCalls.length > 0 && (
               <>
                 <tr className="bg-blue-100">
-                  <td colSpan="3" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-blue-900 border">
+                  <td colSpan="3" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-blue-900 border">
                     Final Bookings for the Week
                     <br />
                     (Total Accepted Bookings)
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{formatIDR(salesCallsSummary.revenue)}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{pointJ.dry}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{pointJ.reefer}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-900 text-center font-bold border">{pointJ.total}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">J</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-900 text-center font-bold border">{formatIDR(salesCallsSummary.revenue)}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-900 text-center font-bold border">{pointJ.dry}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-900 text-center font-bold border">{pointJ.reefer}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-900 text-center font-bold border">{pointJ.total}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border">J</td>
                 </tr>
                 <tr className="bg-gray-100">
-                  <td colSpan="3" className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 border">
+                  <td colSpan="3" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900 border">
                     Estimated Total Revenue for Accepted Bookings and Final Capacity Status for the Ship (I-J)
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center font-bold border">{formatIDR(salesCallsSummary.revenue)}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center font-bold border">{pointK.dry}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center font-bold border">{pointK.reefer}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 text-center font-bold border">{pointK.total}</td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-blue-600 font-medium text-center border">K</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{formatIDR(salesCallsSummary.revenue)}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{pointK.dry}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{pointK.reefer}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{pointK.total}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border">K</td>
                 </tr>
               </>
             )}
@@ -203,12 +179,12 @@ const OrderProcessing = ({
         </table>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-2">
         {acceptedSalesCalls.length > 0 && (capacityStatus.dry < 0 || capacityStatus.reefer < 0 || capacityStatus.total < 0) && (
-          <div className="mt-3 bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="mt-2 bg-red-50 border-l-4 border-red-400 p-2">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-4 w-4 text-red-400" viewBox="0 0 20 20" fill="currentColor">
                   <path
                     fillRule="evenodd"
                     d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
@@ -216,8 +192,8 @@ const OrderProcessing = ({
                   />
                 </svg>
               </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700">Negative values indicate that the ship is overbooked regarding reefer or total slots</p>
+              <div className="ml-2">
+                <p className="text-xs text-red-700">Negative values indicate that the ship is overbooked regarding reefer or total slots</p>
               </div>
             </div>
           </div>
