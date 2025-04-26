@@ -21,7 +21,8 @@ const ShipDock = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [temporaryNextPage, setTemporaryNextPage] = useState(null);
-  const itemsPerPage = dockSize.rows * dockSize.columns;
+  // const itemsPerPage = dockSize.rows * dockSize.columns;
+  const itemsPerPage = 44;
 
   // Count dock items
   const dockItems = allItems.filter((item) => item.area && item.area.startsWith("docks-"));
@@ -83,8 +84,8 @@ const ShipDock = ({
   const hasContainersOnPage = visibleItems.length > 0 || temporaryNextPage !== null;
 
   const visibleSize = {
-    rows: 8,
-    columns: 6,
+    rows: 4,
+    columns: 11,
   };
 
   // Calculate current page capacity stats (for UI feedback only)
@@ -204,36 +205,35 @@ const ShipDock = ({
   return (
     <div className="flex flex-col w-full">
       {/* Summary information */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center h-4">
         <div className="flex items-center">
-          <h3 className="text-lg font-semibold">Ship Dock</h3>
-          <Tooltip>Containers waiting to be loaded onto the ship bays. You can drag containers from here to the ship bays.</Tooltip>
+          <h3 className="text-[9px] font-semibold">Ship Dock</h3>
         </div>
 
-        <div className="text-sm text-gray-600">
+        <div className="text-[9px] text-gray-600">
           Total containers: {totalContainers}
           {showPaginationControls && ` (showing ${currentPageItems} on page ${currentPage + 1} of ${totalPages})`}
         </div>
       </div>
 
       {/* Pagination UI - Always show when we have containers beyond page 0 */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-sm text-gray-500">
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-[9px] text-gray-500">
           <span className="font-medium">
             Page {displayPage + 1} of {totalPages}
             {temporaryNextPage !== null && <span className="ml-2 text-blue-600">(New page)</span>}
           </span>
-          <span className="ml-2 text-gray-400">({hasContainersOnPage ? `${visibleItems.length} containers` : `No containers`})</span>
+          <span className="ml-1 text-gray-400">({hasContainersOnPage ? `${visibleItems.length} containers` : `No containers`})</span>
         </div>
 
         {showPaginationControls && (
-          <div className="flex space-x-2 items-center">
+          <div className="flex space-x-1 items-center">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
               disabled={currentPage === 0}
-              className={`flex items-center px-3 py-1.5 rounded-md transition-colors ${currentPage === 0 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-blue-50 text-blue-600 hover:bg-blue-100"}`}
+              className={`text-[9px] flex items-center px-1.5 py-0.5 transition-colors ${currentPage === 0 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-blue-50 text-blue-600 hover:bg-blue-100"}`}
             >
-              <FiChevronLeft className="mr-1" /> Prev
+              <FiChevronLeft className="h-2 w-2" /> Prev
             </button>
 
             <div className="hidden sm:flex items-center space-x-1">
@@ -257,7 +257,7 @@ const ShipDock = ({
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded-md flex items-center justify-center
+                    className={`text-[9px] w-4 h-4 rounded-md flex items-center justify-center
                       ${currentPage === pageNum ? "bg-blue-600 text-white font-medium" : "hover:bg-gray-100"}
                       ${hasContainers && currentPage !== pageNum ? "border-2 border-green-400" : ""}`}
                   >
@@ -270,7 +270,7 @@ const ShipDock = ({
             <button
               onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
               disabled={currentPage === totalPages - 1}
-              className={`flex items-center px-3 py-1.5 rounded-md transition-colors ${currentPage === totalPages - 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-blue-50 text-blue-600 hover:bg-blue-100"}`}
+              className={`text-[9px] flex items-center px-1.5 py-0.5 rounded-md transition-colors ${currentPage === totalPages - 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-blue-50 text-blue-600 hover:bg-blue-100"}`}
             >
               Next <FiChevronRight className="ml-1" />
             </button>
@@ -279,29 +279,37 @@ const ShipDock = ({
       </div>
 
       {unfulfilledSummary.total > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 shadow-sm">
-          <div className="flex items-center justify-between">
+        <div className="mb-1">
+          <div className="text-[9px] flex items-center justify-between">
             <div className="flex items-center">
-              <div className="mr-2 p-1.5 bg-blue-100 rounded-full">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
               <span className="font-medium text-blue-800">Containers to Load: {unfulfilledSummary.total}</span>
             </div>
-            <div className="flex space-x-2">
-              {unfulfilledSummary.dry > 0 && <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">Dry: {unfulfilledSummary.dry}</span>}
-              {unfulfilledSummary.reefer > 0 && <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Reefer: {unfulfilledSummary.reefer}</span>}
+            <div className="flex space-x-1">
+              {unfulfilledSummary.dry > 0 && <span className="px-1.5 py-0.5 bg-gray-100 text-gray-800 text-[9px] font-medium rounded-full">Dry: {unfulfilledSummary.dry}</span>}
+              {unfulfilledSummary.reefer > 0 && <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-medium rounded-full">Reefer: {unfulfilledSummary.reefer}</span>}
             </div>
           </div>
-          <p className="text-xs text-blue-600 mt-1">Drag these containers to the ship to fulfill your sales call commitments.</p>
+          {/* <p className="text-[9px] text-blue-600">Drag these containers to the ship to fulfill your sales call commitments.</p> */}
         </div>
       )}
 
       {/* Container Grid */}
-      <div className={`relative ${!hasContainersOnPage && totalContainers > 0 ? "min-h-[300px] flex items-center justify-center" : ""}`}>
-        <div className={`rounded-xl overflow-hidden transition-all duration-300 ${isCurrentPageFull ? "ring-4 ring-blue-400 shadow-lg shadow-blue-200" : isCurrentPageNearCapacity ? "ring-4 ring-amber-400 shadow-lg shadow-amber-200" : ""}`}>
-          <ContainerDock id="docks" rows={visibleSize.rows} columns={visibleSize.columns} capacityStatus={temporaryNextPage !== null ? "new" : isCurrentPageFull ? "critical" : isCurrentPageNearCapacity ? "warning" : "normal"}>
+      <div
+        className={`relative ${!hasContainersOnPage && totalContainers > 0 ? "min-h-[300px] flex items-center justify-center" : ""}`}
+        style={{
+          height: "100%",
+          maxWidth: "100%",
+        }}
+      >
+        <div
+          className={`overflow-auto transition-all duration-300 ${isCurrentPageFull ? "ring-1 ring-blue-400 shadow-lg shadow-blue-200" : isCurrentPageNearCapacity ? "ring-1 ring-amber-400 shadow-lg shadow-amber-200" : ""}`} //
+        >
+          <ContainerDock
+            id="docks"
+            rows={visibleSize.rows}
+            columns={visibleSize.columns}
+            capacityStatus={temporaryNextPage !== null ? "new" : isCurrentPageFull ? "critical" : isCurrentPageNearCapacity ? "warning" : "normal"} //
+          >
             {Array.from({ length: itemsPerPage }).map((_, index) => {
               const cellIndex = displayPage * itemsPerPage + index;
               const cellId = `docks-${cellIndex}`;
@@ -350,7 +358,7 @@ const ShipDock = ({
             })}
           </ContainerDock>
         </div>
-        {!hasContainersOnPage && totalContainers > 0 && temporaryNextPage === null && (
+        {/* {!hasContainersOnPage && totalContainers > 0 && temporaryNextPage === null && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl">
             <div className="text-center p-6">
               <BiErrorCircle className="mx-auto h-12 w-12 text-gray-400" />
@@ -358,17 +366,17 @@ const ShipDock = ({
               <p className="mt-1 text-sm text-gray-500">Try navigating to another page to see your containers.</p>
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Visual indicator of pages with containers */}
       {showPaginationControls && (
-        <div className="flex justify-center mt-2 space-x-1">
+        <div className="flex justify-center mt-2 space-x-0.5">
           {Array.from({ length: totalPages }).map((_, index) => (
             <div
               key={`page-indicator-${index}`}
               onClick={() => setCurrentPage(index)}
-              className={`w-2 h-2 rounded-full cursor-pointer transition-all
+              className={`w-1.5 h-1.5 rounded-full cursor-pointer transition-all
                 ${currentPage === index ? "bg-blue-600 scale-125" : containersByPage[index] ? "bg-green-400" : "bg-gray-300"}`}
               title={`Page ${index + 1}${containersByPage[index] ? ` (${containersByPage[index]} containers)` : " (empty)"}`}
             />

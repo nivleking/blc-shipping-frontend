@@ -89,7 +89,7 @@ const ShipBay = ({
   };
 
   return (
-    <div className="p-5" style={{ height: "100%", backgroundColor: "#f0f0f0", overflowX: "auto" }}>
+    <div className="p-1" style={{ height: "100%", backgroundColor: "#f0f0f0", overflowX: "auto" }}>
       <div className="flex" style={{ width: "max-content" }}>
         {Array.from({ length: bayCount }).map((_, bayIndex) => {
           const hasRestowageIssue = baysWithRestowageIssues[bayIndex];
@@ -98,35 +98,39 @@ const ShipBay = ({
             <div
               key={`bay-${bayIndex}`}
               className={`
-                mb-4 mx-2 rounded-lg overflow-hidden
-                ${bayTypes?.[bayIndex] === "reefer" ? "bg-gradient-to-b from-blue-50 to-white border-2 border-blue-300" : "bg-gradient-to-b from-gray-50 to-white border-2 border-gray-200"}
-                ${hasRestowageIssue ? "ring-2 ring-red-500 shadow-lg shadow-red-200" : ""}
-                ${hasRestowageIssue ? "relative" : ""}
+                mx-2 rounded-md overflow-hidden shadow-sm
+                ${bayTypes?.[bayIndex] === "reefer" ? "bg-gradient-to-b from-blue-50 to-white border border-blue-300" : "bg-gradient-to-b from-gray-50 to-white border border-gray-200"}
+                ${hasRestowageIssue ? "relative ring-1 ring-red-500 shadow-lg shadow-red-200" : ""}
               `}
             >
               {/* Bay Header */}
               <div
                 className={`
-                text-center p-3 border-b-2 
+                text-center p-1 border-b
                 ${bayTypes?.[bayIndex] === "reefer" ? "border-blue-200 bg-blue-50" : "border-gray-200 bg-gray-50"}
                 ${hasRestowageIssue ? "bg-red-50 border-red-200" : ""}
               `}
               >
-                <h5 className={`text-lg font-bold mb-1 ${hasRestowageIssue ? "text-red-700" : ""}`}>Bay {bayIndex + 1}</h5>
+                <h5 className={`text-[9px] font-semibold ${hasRestowageIssue ? "text-red-700" : ""}`}>Bay {bayIndex + 1}</h5>
                 <div className="flex justify-center items-center">
                   <span
                     className={`
-                    inline-block px-3 py-1 rounded-full text-xs font-semibold
+                      text-[9px] inline-block px-1.5 py-0.5 rounded-full font-medium
                     ${bayTypes?.[bayIndex] === "reefer" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}
                   `}
                   >
                     {bayTypes?.[bayIndex]?.toUpperCase() || "DEFAULT"}
                   </span>
-                  {hasRestowageIssue && <span className="ml-2 inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">RESTOWAGE ISSUE</span>}
+                  {hasRestowageIssue && <span className="text-[9px] inline-block px-1 py-0.5 rounded-full font-medium bg-red-100 text-red-700">RESTOWAGE ISSUE</span>}
                 </div>
               </div>
 
-              <ContainerBay id={`bay-${bayIndex}`} rows={baySize.rows} columns={baySize.columns} hasRestowageIssue={hasRestowageIssue}>
+              <ContainerBay
+                id={`bay-${bayIndex}`}
+                rows={baySize.rows}
+                columns={baySize.columns}
+                hasRestowageIssue={hasRestowageIssue} //
+              >
                 {Array.from({ length: baySize.rows * baySize.columns }).map((_, cellIndex) => {
                   const cellId = `bay-${bayIndex}-${cellIndex}`;
                   const isValid = isHistoryView ? true : isValidPlacement(droppedItems, baySize, cellId);

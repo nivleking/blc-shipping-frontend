@@ -1821,7 +1821,7 @@ const Simulation = () => {
         </div>
       )}
 
-      <div className="container mx-auto px-6 space-y-6">
+      <div className="container mx-auto px-2 space-y-2">
         <HeaderCards
           roomId={roomId}
           port={port}
@@ -1840,66 +1840,62 @@ const Simulation = () => {
         />
 
         <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
-          <TabList className="flex space-x-0.5 rounded-md bg-blue-900/20 p-0.5">
+          <TabList className="flex w-full h-6 items-center rounded-md bg-gray-200 p-0.5 shadow-inner">
             <Tab
               className={({ selected }) =>
-                `w-full rounded-md py-1 px-1.5 text-xs font-medium
-        ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                  selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                }`
               }
             >
-              <div className="flex items-center justify-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                <span>Capacity</span>
-              </div>
+              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              <span>Capacity</span>
             </Tab>
 
             <Tab
               className={({ selected }) =>
-                `w-full rounded-md py-1 px-1.5 text-xs font-medium
-        ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                  selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                }`
               }
             >
-              <div className="flex items-center justify-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <span>Stowage</span>
-              </div>
+              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              <span>Stowage</span>
             </Tab>
 
             <Tab
               className={({ selected }) =>
-                `w-full rounded-md py-1 px-1.5 text-xs font-medium
-        ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                  selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                }`
               }
             >
-              <div className="flex items-center justify-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>Performance</span>
-              </div>
+              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Weekly</span>
             </Tab>
 
             <Tab
               className={({ selected }) =>
-                `w-full rounded-md py-1 px-1.5 text-xs font-medium
-        ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+                `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                  selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                }`
               }
             >
-              <div className="flex items-center justify-center gap-1">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-                <span>Market</span>
-              </div>
+              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              <span>Market</span>
             </Tab>
           </TabList>
 

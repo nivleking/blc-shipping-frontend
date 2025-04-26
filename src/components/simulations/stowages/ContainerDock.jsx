@@ -13,13 +13,13 @@ const ContainerDock = ({ id, rows, columns, children, capacityStatus = "normal" 
   };
 
   return (
-    <div className={`p-2 md:p-3 lg:p-4 rounded-xl shadow-inner overflow-hidden ${getBgColor()}`}>
+    <div className={`p-1 shadow-inner ${getBgColor()}`}>
       <div
-        className="grid gap-1 sm:gap-2"
+        className="grid gap-1"
         style={{
-          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${rows}, auto)`,
-          maxWidth: "100%",
+          gridTemplateColumns: `repeat(${columns}, 50px)`,
+          gridTemplateRows: `repeat(${rows}, 50px)`,
+          width: "max-content", 
         }}
       >
         {children}

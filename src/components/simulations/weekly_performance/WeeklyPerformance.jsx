@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AppContext } from "../../../context/AppContext";
-import { useParams } from "react-router-dom";
 import { api } from "../../../axios/axios";
+import { useParams } from "react-router-dom";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
 };
 
-const WeeklyPerformance = ({ port, currentRound, totalRounds, longCraneMoves = 0, extraMovesCost = 0, extraMovesOnLongCrane = 0, totalMoves = 0, idealCraneSplit = 2, bayMoves = {}, bayPairs = [] }) => {
+const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, totalMoves = 0 }) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,11 +16,13 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, longCraneMoves = 0
   const [error, setError] = useState(null);
   const [weeklyData, setWeeklyData] = useState([]);
   const [cumulativeRevenue, setCumulativeRevenue] = useState(0);
+  const [financialSummary, setFinancialSummary] = useState(null);
 
   useEffect(() => {
     if (roomId && user?.id && token) {
       fetchPerformanceData(selectedWeek);
       fetchAllWeeksData();
+      fetchFinancialSummary();
     }
   }, [roomId, user?.id, token, selectedWeek]);
 
@@ -28,14 +30,15 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, longCraneMoves = 0
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/rooms/${roomId}/users/${user.id}/weekly-performance/${week}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await api.get(`/rooms/${roomId}/weekly-performance/${user?.id}/${week}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-
       setPerformanceData(response.data.data);
     } catch (err) {
-      console.error("Error fetching weekly performance data:", err);
-      setError("Failed to load weekly performance data. Please try again later.");
+      setError("Failed to fetch performance data. Please try again.");
+      console.error("Error fetching performance data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -43,25 +46,39 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, longCraneMoves = 0
 
   const fetchAllWeeksData = async () => {
     try {
-      let allWeeksData = [];
+      let allWeeklyData = [];
       let totalRevenue = 0;
 
-      // Fetch data for all weeks up to current round
       for (let week = 1; week <= currentRound; week++) {
-        const response = await api.get(`/rooms/${roomId}/users/${user.id}/weekly-performance/${week}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get(`/rooms/${roomId}/weekly-performance/${user?.id}/${week}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (response.data.data) {
-          allWeeksData.push(response.data.data);
-          totalRevenue += response.data.data.revenue || 0;
+          allWeeklyData.push(response.data.data);
+          totalRevenue += response.data.data.net_result || 0;
         }
       }
 
-      setWeeklyData(allWeeksData);
+      setWeeklyData(allWeeklyData);
       setCumulativeRevenue(totalRevenue);
     } catch (err) {
       console.error("Error fetching all weeks data:", err);
+    }
+  };
+
+  const fetchFinancialSummary = async () => {
+    try {
+      const response = await api.get(`/ship-bays/financial-summary/${roomId}/${user?.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setFinancialSummary(response.data);
+    } catch (err) {
+      console.error("Error fetching financial summary:", err);
     }
   };
 
@@ -75,53 +92,19 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, longCraneMoves = 0
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
         <strong className="font-bold">Error!</strong>
         <span className="block sm:inline"> {error}</span>
       </div>
     );
   }
 
-  // Prepare rolling container data for current week
-  const rolledContainers = {
-    committed: {
-      dry: performanceData?.committed_dry_containers_not_loaded || 0,
-      reefer: performanceData?.committed_reefer_containers_not_loaded || 0,
-    },
-    nonCommitted: {
-      dry: performanceData?.non_committed_dry_containers_not_loaded || 0,
-      reefer: performanceData?.non_committed_reefer_containers_not_loaded || 0,
-    },
-  };
-
-  // Calculate penalties based on rolling matrix - update with actual values
-  const dryNonCommittedPenalty = rolledContainers.nonCommitted.dry * 0;
-  const reeferNonCommittedPenalty = rolledContainers.nonCommitted.reefer * 0;
-  const dryCommittedPenalty = rolledContainers.committed.dry * 0;
-  const reeferCommittedPenalty = rolledContainers.committed.reefer * 0;
-  const rollingPenalty = dryNonCommittedPenalty + reeferNonCommittedPenalty + dryCommittedPenalty + reeferCommittedPenalty;
-
-  // For now, set restow penalties to 0
-  const restowPenalty = 0;
-
-  // Use the extraMovesOnLongCrane prop from Simulation component for current week
-  // Only use the performanceData version for historical data
-  const currentExtraMovesOnLongCrane = selectedWeek === currentRound ? extraMovesOnLongCrane : performanceData?.extra_moves_on_long_crane || 0;
-
-  // Calculate long crane penalties using the direct prop
-  const longCranePenalty = currentExtraMovesOnLongCrane * extraMovesCost;
-
-  // Calculate total penalties
-  const totalPenalties = rollingPenalty + restowPenalty + longCranePenalty;
-
   return (
     <div className="space-y-6">
-      {/* Header with week selection */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Weekly Performance Summary</h2>
+        <h2 className="text-sm font-bold text-gray-800">Weekly Performance Summary</h2>
         <div className="flex items-center space-x-2">
-          <span className="text-gray-600">Week:</span>
-          <select className="border rounded-md px-3 py-1.5 bg-white" value={selectedWeek} onChange={(e) => setSelectedWeek(parseInt(e.target.value))} disabled>
+          <select className="border rounded-md px-1.5 py-0.5 bg-white text-xs" value={selectedWeek} onChange={(e) => setSelectedWeek(parseInt(e.target.value))}>
             {Array.from({ length: Math.min(currentRound, totalRounds) }, (_, i) => (
               <option key={i + 1} value={i + 1}>
                 Week {i + 1}
@@ -132,143 +115,329 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, longCraneMoves = 0
         </div>
       </div>
 
-      {/* Rolling Penalty Matrix */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h4 className="text-md font-semibold text-gray-800 mb-4">Crane Efficiency</h4>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <tbody>
-              <tr className="border-b">
-                <td className="py-2 px-4 font-medium">Ideal Crane Split:</td>
-                <td className="py-2 px-4 text-right">{selectedWeek === currentRound ? idealCraneSplit : performanceData?.ideal_crane_split || 2}</td>
-              </tr>
-              {/* <tr className="border-b">
-                <td className="py-2 px-4 font-medium">Total Moves:</td>
-                <td className="py-2 px-4 text-right">{selectedWeek === currentRound ? totalMoves : (performanceData?.discharge_moves || 0) + (performanceData?.load_moves || 0)}</td>
-              </tr> */}
-              <tr className="border-b">
-                <td className="py-2 px-4 font-medium">Extra Moves on Long Crane:</td>
-                <td className="py-2 px-4 text-right">{currentExtraMovesOnLongCrane}</td>
-              </tr>
-              <tr className="border-b">
-                <td className="py-2 px-4 font-medium">Extra Moves Penalty:</td>
-                <td className="py-2 px-4 text-right">{formatIDR(longCranePenalty)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Operational Cost Tracking Table */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold mb-4">Operational Cost Tracking</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 border">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Week</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">No. of Rolled Committed Dry Containers</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">No. of Rolled Committed Reefer Containers</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">No. of Rolled Non-Committed Dry Containers</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">No. of Rolled Non-Committed Reefer Containers</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">No. of Restows (Boxes)</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Restow Penalty (Rp xxx/Box)</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Long Crane Additional Moves</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Long Crane Penalty ({formatIDR(extraMovesCost)})</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Total Penalties</th>
-                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Total Revenues</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {weeklyData.map((week, index) => {
-                const weekNumber = index + 1;
-
-                // Calculate penalties for this week
-                const weekRolledContainers = {
-                  committed: {
-                    dry: week?.committed_dry_containers_not_loaded || 0,
-                    reefer: week?.committed_reefer_containers_not_loaded || 0,
-                  },
-                  nonCommitted: {
-                    dry: week?.non_committed_dry_containers_not_loaded || 0,
-                    reefer: week?.non_committed_reefer_containers_not_loaded || 0,
-                  },
-                };
-
-                const weekDryNonCommittedPenalty = weekRolledContainers.nonCommitted.dry * 0;
-                const weekReeferNonCommittedPenalty = weekRolledContainers.nonCommitted.reefer * 0;
-                const weekDryCommittedPenalty = weekRolledContainers.committed.dry * 0;
-                const weekReeferCommittedPenalty = weekRolledContainers.committed.reefer * 0;
-                const weekRollingPenalty = weekDryNonCommittedPenalty + weekReeferNonCommittedPenalty + weekDryCommittedPenalty + weekReeferCommittedPenalty;
-
-                // For now, set restow penalties to 0
-                const weekRestowCount = 0;
-                const weekRestowPenalty = weekRestowCount * 3000000;
-
-                // Long crane penalties for this week
-                // Use the passed props for current week
-                const weekLongCraneAdditionalMoves = weekNumber === currentRound ? extraMovesOnLongCrane : week?.extra_moves_on_long_crane || 0;
-
-                const weekLongCranePenalty = weekLongCraneAdditionalMoves * extraMovesCost;
-
-                // Total penalties for this week
-                const weekTotalPenalties = weekRollingPenalty + weekRestowPenalty + weekLongCranePenalty;
-
-                return (
-                  <tr key={weekNumber} className={weekNumber === selectedWeek ? "bg-blue-50" : ""}>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-center border">{weekNumber}</td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{weekRolledContainers.committed.dry}</td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{weekRolledContainers.committed.reefer}</td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{weekRolledContainers.nonCommitted.dry}</td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{weekRolledContainers.nonCommitted.reefer}</td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border"></td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border"></td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{weekLongCraneAdditionalMoves}</td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{formatIDR(weekLongCranePenalty)}</td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{formatIDR(weekTotalPenalties)}</td>
-                    <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{formatIDR(week?.revenue || 0)}</td>
+      {/* Rate/Cost Constants Table - Side by Side Layout */}
+      {financialSummary && (
+        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+          <h3 className="text-sm font-semibold mb-3 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-indigo-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path
+                fillRule="evenodd"
+                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Penalty and Cost Rates
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Move & Restowage Costs - Blue Theme */}
+            <div className="bg-gradient-to-b from-blue-50 to-white rounded-lg border border-blue-200 overflow-hidden shadow-sm">
+              <div className="bg-blue-600 px-3 py-2">
+                <h4 className="text-sm font-semibold text-white flex items-center">
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Basic Operational Costs
+                </h4>
+              </div>
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-blue-100">
+                    <th className="px-2 py-1.5 text-left text-xs font-medium text-blue-800 uppercase tracking-wider border-b border-blue-200">Cost Type</th>
+                    <th className="px-2 py-1.5 text-center text-xs font-medium text-blue-800 uppercase tracking-wider border-b border-blue-200">Rate</th>
                   </tr>
-                );
-              })}
-              {/* Total Revenue Row */}
-              <tr className="bg-gray-100 font-semibold">
-                <td colSpan="10" className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium text-gray-900 border">
-                  Total Revenue
-                </td>
-                <td className="px-4 py-2 bg-black whitespace-nowrap text-sm text-gray-900 text-center border">{formatIDR(cumulativeRevenue)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Weekly Performance Details for Selected Week */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold mb-4">Week {selectedWeek} Performance Details</h3>
-
-        {/* Financial summary for selected week */}
-        <div className="gap-6">
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h4 className="text-md font-semibold text-gray-800 mb-4">Financial Summary</h4>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <tbody>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">Revenue:</td>
-                    <td className="py-2 px-4 text-right text-green-600 font-semibold">{formatIDR(performanceData?.revenue || 0)}</td>
+                </thead>
+                <tbody className="divide-y divide-blue-100">
+                  <tr className="hover:bg-blue-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-800 border-r border-blue-100">Move Cost (per container)</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-blue-700 font-semibold text-center">{formatIDR(financialSummary.move_cost || 0)}</td>
                   </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">Total Penalties:</td>
-                    <td className="py-2 px-4 text-right text-red-600 font-semibold">{formatIDR(totalPenalties)}</td>
+                  <tr className="hover:bg-blue-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-800 border-r border-blue-100">Restowage Cost (per container)</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-blue-700 font-semibold text-center">{formatIDR(financialSummary.restowage_cost || 0)}</td>
                   </tr>
-                  <tr className="border-b">
-                    <td className="py-2 px-4 font-medium">Net Result:</td>
-                    <td className="py-2 px-4 text-right font-bold">{formatIDR((performanceData?.revenue || 0) - totalPenalties)}</td>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Unrolled Cost Rates - Red Theme */}
+            <div className="bg-gradient-to-b from-red-50 to-white rounded-lg border border-red-200 overflow-hidden shadow-sm">
+              <div className="bg-red-600 px-3 py-2">
+                <h4 className="text-sm font-semibold text-white flex items-center">
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Unrolled Penalty Rates
+                </h4>
+              </div>
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-red-100">
+                    <th className="px-2 py-1.5 text-left text-xs font-medium text-red-800 uppercase tracking-wider border-b border-red-200">Container</th>
+                    <th className="px-2 py-1.5 text-center text-xs font-medium text-red-800 uppercase tracking-wider border-b border-red-200">Committed</th>
+                    <th className="px-2 py-1.5 text-center text-xs font-medium text-red-800 uppercase tracking-wider border-b border-red-200">Non-Committed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-red-100">
+                  <tr className="hover:bg-red-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-800 border-r border-red-100">Dry</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-red-700 font-semibold text-center border-r border-red-100">{formatIDR(financialSummary.unrolled_cost_rates?.dry_committed || 0)}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-red-700 font-semibold text-center">{formatIDR(financialSummary.unrolled_cost_rates?.dry_non_committed || 0)}</td>
+                  </tr>
+                  <tr className="hover:bg-red-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-800 border-r border-red-100">Reefer</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-red-700 font-semibold text-center border-r border-red-100">{formatIDR(financialSummary.unrolled_cost_rates?.reefer_committed || 0)}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-red-700 font-semibold text-center">{formatIDR(financialSummary.unrolled_cost_rates?.reefer_non_committed || 0)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Dock Warehouse Cost Rates - Amber Theme */}
+            <div className="bg-gradient-to-b from-amber-50 to-white rounded-lg border border-amber-200 overflow-hidden shadow-sm">
+              <div className="bg-amber-600 px-3 py-2">
+                <h4 className="text-sm font-semibold text-white flex items-center">
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                    />
+                  </svg>
+                  Dock Warehouse Penalty
+                </h4>
+              </div>
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-amber-100">
+                    <th className="px-2 py-1.5 text-left text-xs font-medium text-amber-800 uppercase tracking-wider border-b border-amber-200">Container</th>
+                    <th className="px-2 py-1.5 text-center text-xs font-medium text-amber-800 uppercase tracking-wider border-b border-amber-200">Committed</th>
+                    <th className="px-2 py-1.5 text-center text-xs font-medium text-amber-800 uppercase tracking-wider border-b border-amber-200">Non-Committed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100">
+                  <tr className="hover:bg-amber-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-800 border-r border-amber-100">Dry</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-amber-700 font-semibold text-center border-r border-amber-100">{formatIDR(financialSummary.dock_warehouse_costs?.dry?.committed || 0)}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-amber-700 font-semibold text-center">{formatIDR(financialSummary.dock_warehouse_costs?.dry?.non_committed || 0)}</td>
+                  </tr>
+                  <tr className="hover:bg-amber-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-800 border-r border-amber-100">Reefer</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-amber-700 font-semibold text-center border-r border-amber-100">{formatIDR(financialSummary.dock_warehouse_costs?.reefer?.committed || 0)}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-amber-700 font-semibold text-center">{formatIDR(financialSummary.dock_warehouse_costs?.reefer?.non_committed || 0)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Combined Weekly Performance Table */}
+      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+        <h3 className="text-sm font-semibold mb-3">Weekly Performance Summary</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 border text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th rowSpan="4" className="px-3 py-2 text-center text-xs font-medium text-gray-700 uppercase border">
+                  Week
+                </th>
+                {/* Updated Moves column to include Restow */}
+                <th colSpan="3" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-gray-100">
+                  Moves
+                </th>
+                {/* Unrolled Heading Group */}
+                <th colSpan="4" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">
+                  Unrolled
+                </th>
+                {/* Dock Warehouse Heading Group */}
+                <th colSpan="4" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">
+                  Dock Warehouse
+                </th>
+                <th rowSpan="4" className="px-3 py-2 text-center text-xs font-medium text-gray-700 uppercase border">
+                  Penalties
+                </th>
+                <th rowSpan="4" className="px-3 py-2 text-center text-xs font-medium text-gray-700 uppercase border">
+                  Revenue
+                </th>
+                <th rowSpan="4" className="px-3 py-2 text-center text-xs font-medium text-gray-700 uppercase border">
+                  Net Result
+                </th>
+              </tr>
+              <tr>
+                {/* Load, Discharge and Restow as sub-headers */}
+                <th rowSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-gray-100">
+                  Load
+                </th>
+                <th rowSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-gray-100">
+                  Discharge
+                </th>
+                <th rowSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-gray-100">
+                  Restow
+                </th>
+                {/* Unrolled Second Level - Committed/Non-Committed */}
+                <th colSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">
+                  Committed
+                </th>
+                <th colSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">
+                  Non-Committed
+                </th>
+                {/* Dock Warehouse Second Level */}
+                <th colSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">
+                  Committed
+                </th>
+                <th colSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">
+                  Non-Committed
+                </th>
+              </tr>
+              <tr>
+                {/* Unrolled Third Level - Container Types */}
+                <th className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">Dry</th>
+                <th className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">Reefer</th>
+                <th className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">Dry</th>
+                <th className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">Reefer</th>
+                {/* Dock Warehouse Third Level */}
+                <th className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">Dry</th>
+                <th className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">Reefer</th>
+                <th className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">Dry</th>
+                <th className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">Reefer</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {weeklyData.map((week, index) => {
+                // Calculate each week's penalties
+                const moveCostPenalty = (week.discharge_moves + week.load_moves) * (financialSummary?.move_cost || 0);
+                const totalPenalty = week.move_costs + (week.extra_moves_penalty || 0);
+
+                return (
+                  <tr key={index} className={week.week === selectedWeek ? "bg-blue-50" : ""}>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center font-medium border">
+                      Week {week.week}
+                      {week.week === currentRound && <span className="ml-1 text-[9px] text-blue-600">(Current)</span>}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.load_moves || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.discharge_moves || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.restowage_moves || 0}</td>
+
+                    {/* Rest of the row remains the same */}
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.committed_dry_containers_not_loaded || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.committed_reefer_containers_not_loaded || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.non_committed_dry_containers_not_loaded || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.non_committed_reefer_containers_not_loaded || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.dock_warehouse_dry_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.dock_warehouse_reefer_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.dock_warehouse_dry_non_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.dock_warehouse_reefer_non_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border text-red-600 font-medium">{formatIDR(totalPenalty)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border text-green-600 font-medium">{formatIDR(week.revenue || 0)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border font-medium">{formatIDR(week.net_result || 0)}</td>
+                  </tr>
+                );
+              })}
+
+              {/* Updated summary row */}
+              <tr className="bg-black text-white font-semibold">
+                <td colSpan="12" className="px-3 py-2 whitespace-nowrap text-right text-xs border">
+                  Summary
+                </td>
+                {/* Total Penalties Column */}
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-red-700 text-white">
+                  {formatIDR(weeklyData.reduce((sum, week) => sum + (week.move_costs || 0) + (week.extra_moves_penalty || 0), 0))}
+                  <div className="text-[9px] text-gray-200 mt-0.5">Total Penalties</div>
+                </td>
+                {/* Total Revenue Column */}
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-green-700 text-white">
+                  {formatIDR(weeklyData.reduce((sum, week) => sum + (week.revenue || 0), 0))}
+                  <div className="text-[9px] text-gray-200 mt-0.5">Total Revenue</div>
+                </td>
+                {/* Net Total Column */}
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-blue-700 text-white">
+                  {formatIDR(cumulativeRevenue)}
+                  <div className="text-[9px] text-gray-200 mt-0.5">Net Total</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Financial Impact Summary Table for Current Week */}
+      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+        <h3 className="text-sm font-semibold mb-3 flex items-center">
+          <span>Financial Breakdown for Week {selectedWeek}</span>
+          <span className="ml-auto text-sm font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Net Result: {formatIDR(financialSummary?.final_revenue || 0)}</span>
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 border text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border">Category</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Count</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Unit Cost</th>
+                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Financial Impact</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              <tr>
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 border">Total Revenue</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">-</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">-</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-green-600 font-medium text-center border">{formatIDR(financialSummary?.revenue || 0)}</td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 border">Container Moves</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{(performanceData?.load_moves || 0) + (performanceData?.discharge_moves || 0)}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{formatIDR(financialSummary?.move_cost || 0)}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-red-600 font-medium text-center border">{formatIDR(financialSummary?.moves_penalty || 0)}</td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 border">Unrolled Containers</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">
+                  {(performanceData?.committed_dry_containers_not_loaded || 0) +
+                    (performanceData?.non_committed_dry_containers_not_loaded || 0) +
+                    (performanceData?.committed_reefer_containers_not_loaded || 0) +
+                    (performanceData?.non_committed_reefer_containers_not_loaded || 0)}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">Varies</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-red-600 font-medium text-center border">{formatIDR(financialSummary?.unrolled_penalty || 0)}</td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 border">Restowage</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.restowage_moves || 0}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{formatIDR(financialSummary?.restowage_cost || 0)}</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-red-600 font-medium text-center border">{formatIDR(financialSummary?.restowage_penalty || 0)}</td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 border">Dock Warehouse</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">
+                  {(financialSummary?.dock_warehouse_dry_committed || 0) +
+                    (financialSummary?.dock_warehouse_dry_non_committed || 0) +
+                    (financialSummary?.dock_warehouse_reefer_committed || 0) +
+                    (financialSummary?.dock_warehouse_reefer_non_committed || 0)}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">Varies</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-red-600 font-medium text-center border">{formatIDR(financialSummary?.dock_warehouse_penalty || 0)}</td>
+              </tr>
+              <tr className="bg-gray-50 font-medium">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-bold text-gray-900 border">Total Penalties</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">-</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">-</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-red-600 font-bold text-center border">{formatIDR(financialSummary?.total_penalty || 0)}</td>
+              </tr>
+              <tr className="bg-blue-50">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-bold text-blue-900 border">Net Result</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">-</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">-</td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-bold text-center border">{formatIDR(financialSummary?.final_revenue || 0)}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

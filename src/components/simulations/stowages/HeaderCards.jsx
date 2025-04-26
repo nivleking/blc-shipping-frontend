@@ -6,7 +6,7 @@ const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, formatID
   const [showExpenses, setShowExpenses] = useState(false);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-3">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-1">
       {/* Revenue Card */}
       <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-2.5 shadow">
         <div className="flex items-center justify-between">
