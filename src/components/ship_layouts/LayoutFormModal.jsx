@@ -122,18 +122,18 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-800">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-1xl font-bold text-gray-800">
             {isEdit ? "Edit Ship Layout" : "Create New Ship Layout"} {isEdit && ":" + selectedLayout.name}
           </h2>
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <button
               onClick={() => {
                 isEdit ? setShowEditForm(false) : setShowCreateForm(false);
                 setFormData(initialFormState);
                 setErrors({ rows: false, columns: false, bayCount: false });
               }}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 text-xs"
             >
               Cancel
             </button>
@@ -141,7 +141,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
               onClick={(e) => {
                 submitWithValidation(e, isEdit ? handleEdit : handleSubmit);
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs"
             >
               {isEdit ? "Update Layout" : "Save Layout"}
             </button>
@@ -149,10 +149,10 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
         </div>
 
         {/* Form Content */}
-        <div className="flex-1 overflow-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="flex-1 overflow-auto p-6 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Layout Name</label>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Layout Name</label>
               <input
                 type="text"
                 value={formData.name}
@@ -163,7 +163,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Description</label>
               <input
                 type="text"
                 value={formData.description}
@@ -174,7 +174,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bay Size</label>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Bay Size</label>
               <div className="flex items-center gap-4">
                 <div>
                   <label className="text-xs text-gray-500">Rows (2-10)</label>
@@ -226,7 +226,7 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Number of Bays</label>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Number of Bays</label>
               <div>
                 <input
                   type="number"
@@ -253,8 +253,8 @@ const LayoutFormModal = ({ isEdit, formData, setFormData, handleSubmit, handleEd
           </div>
 
           {/* Layout Preview */}
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-4">
+          <div className="border-t pt-2">
+            <h3 className="text-sm font-medium text-gray-700 mb-2 ">
               Layout Preview
               <span className="text-xs text-gray-500 ml-2">(Click on bays to toggle between dry and reefer types)</span>
             </h3>

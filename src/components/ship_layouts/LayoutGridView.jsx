@@ -12,8 +12,8 @@ const LayoutGridView = ({ currentPageData, offset, setSelectedLayout, setShowPre
           <div className="flex items-start space-x-6 w-full">
             {/* Layout Icon and Status */}
             <div className="flex-shrink-0">
-              <div className="w-16 h-16 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1-1H5a1 1 0 01-1-1v-6z" />
                 </svg>
               </div>
@@ -23,14 +23,14 @@ const LayoutGridView = ({ currentPageData, offset, setSelectedLayout, setShowPre
             <div className="flex flex-col flex-grow">
               <div className="flex items-center space-x-2 mb-3">
                 <span className="text-sm font-medium text-gray-500">#{offset + index + 1}</span>
-                <h3 className="text-lg font-semibold text-gray-900">{layout.name}</h3>
+                <h3 className="text-1xl font-semibold text-gray-900">{layout.name}</h3>
               </div>
 
               <div className="text-sm text-gray-600 mb-3">
                 <p>{layout.description}</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-3 gap-4 text-xs">
                 {/* Bay Configuration */}
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center text-gray-600">
@@ -85,13 +85,13 @@ const LayoutGridView = ({ currentPageData, offset, setSelectedLayout, setShowPre
           </div>
 
           {/* Right section with action buttons */}
-          <div className="flex flex-col space-y-2 mt-4 sm:mt-0 min-w-[120px]">
+          <div className="flex flex-col space-y-2 mt-2 sm:mt-0 min-w-[120px]">
             <button
               onClick={() => {
                 setSelectedLayout(layout);
                 setShowPreviewModal(true);
               }}
-              className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
+              className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100"
             >
               <AiFillEye className="mr-2 h-4 w-4" /> Preview
             </button>
@@ -110,11 +110,11 @@ const LayoutGridView = ({ currentPageData, offset, setSelectedLayout, setShowPre
                 });
                 setShowEditForm(true);
               }}
-              className="inline-flex items-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100"
+              className="inline-flex items-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-xs font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100"
             >
               <HiPencil className="mr-2 h-4 w-4" /> Edit
             </button>
-            <button onClick={() => confirmDelete(layout)} className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100">
+            <button onClick={() => confirmDelete(layout)} className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100">
               <HiTrash className="mr-2 h-4 w-4" /> Delete
             </button>
           </div>

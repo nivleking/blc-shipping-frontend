@@ -29,7 +29,7 @@ import useToast from "../../../toast/useToast";
 //   dock_warehouse_costs: {
 //     default: 50000,
 //     dry: {
-//       committed: 1600000,
+//       committed: 160000,
 //       non_committed: 800000,
 //     },
 //     reefer: {
@@ -110,6 +110,15 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     setDeckOrigins([]);
   };
 
+  // Add this new state in CreateRoomForm after the other state variables
+  const [unrolledCosts, setUnrolledCosts] = useState({
+    dry_committed: 0,
+    dry_non_committed: 0,
+    reefer_committed: 0,
+    reefer_non_committed: 0,
+  });
+  const [isLoadingCosts, setIsLoadingCosts] = useState(false);
+
   const createRoomMutation = useMutation({
     mutationFn: async (newRoomData) => {
       return api.post("/rooms", newRoomData, {
@@ -160,6 +169,12 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         max_users: 0,
       }));
       setDeckOrigins([]);
+      setUnrolledCosts({
+        dry_committed: 0,
+        dry_non_committed: 0,
+        reefer_committed: 0,
+        reefer_non_committed: 0,
+      });
       return;
     }
 
@@ -170,6 +185,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     }));
 
     try {
+      // Fetch origins
       const response = await api.get(`decks/${deckId}/origins`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -183,7 +199,25 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       }));
 
       setDeckOrigins(Object.values(origins));
-      console.log("Deck origins:", origins);
+
+      // Also fetch market intelligence data for this deck
+      setIsLoadingCosts(true);
+      try {
+        const miResponse = await api.get(`/market-intelligence/deck/${deckId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (miResponse.data && miResponse.data.penalties) {
+          setUnrolledCosts(miResponse.data.penalties);
+        }
+      } catch (miError) {
+        console.error("Error fetching market intelligence:", miError);
+        showWarning("Could not load market intelligence data for this deck.");
+      } finally {
+        setIsLoadingCosts(false);
+      }
     } catch (error) {
       console.error("Error selecting deck:", error);
       showError("Error selecting deck. Please try again.");
@@ -250,12 +284,12 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
   const filteredLayouts = layoutQuery === "" ? layouts : layouts.filter((layout) => layout.name.toLowerCase().includes(layoutQuery.toLowerCase()));
 
   return (
-    <form onSubmit={createRoom} className="bg-white p-8 rounded-lg shadow-lg space-y-6 mb-4">
+    <form onSubmit={createRoom} className="bg-white p-8 rounded-lg shadow-lg space-y-2 mb-4">
       <div className="w-full">
         <h3 className="text-1xl font-bold text-gray-900">Create New Room</h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
         {/* Room ID Field */}
         <div className="flex flex-col">
           <div className="flex items-center">
@@ -664,16 +698,130 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
         </div> */}
 
+        {/* Unrolled Container Costs (Read-only) */}
+        <div className="flex flex-col lg:col-span-3 border border-amber-200 rounded-lg p-4 bg-amber-50">
+          <div className="flex items-center justify-between pb-2 border-b border-amber-200 mb-3">
+            <div className="flex items-center">
+              <label className="block text-amber-800 font-semibold">Unrolled Container Penalties</label>
+              <Tooltip>Penalties for containers that aren't loaded by their committed deadline (from Market Intelligence)</Tooltip>
+            </div>
+            <Link
+              to={selectedDeck ? `/admin-create-sales-call-cards/${selectedDeck.id}` : "#"}
+              className={`text-xs ${selectedDeck ? "text-amber-600 hover:text-amber-800" : "text-gray-400 cursor-not-allowed"}`}
+              onClick={(e) => !selectedDeck && e.preventDefault()}
+            >
+              Edit in Market Intelligence
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            {/* Dry Committed */}
+            <div>
+              <label className="block text-sm font-medium text-amber-700">Dry Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="unrolled_costs.dry.committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500 cursor-not-allowed"
+                  value={unrolledCosts.dry_committed || 0}
+                  disabled
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per container</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Dry Non-Committed */}
+            <div>
+              <label className="block text-sm font-medium text-amber-700">Dry Non-Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="unrolled_costs.dry.non_committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500 cursor-not-allowed"
+                  value={unrolledCosts.dry_non_committed || 0}
+                  disabled
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per container</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Reefer Committed */}
+            <div>
+              <label className="block text-sm font-medium text-amber-700">Reefer Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="unrolled_costs.reefer.committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500 cursor-not-allowed"
+                  value={unrolledCosts.reefer_committed || 0}
+                  disabled
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per container</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Reefer Non-Committed */}
+            <div>
+              <label className="block text-sm font-medium text-amber-700">Reefer Non-Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="unrolled_costs.reefer.non_committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500 cursor-not-allowed"
+                  value={unrolledCosts.reefer_non_committed || 0}
+                  disabled
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per container</span>
+                </div>
+              </div>
+            </div>
+
+            {isLoadingCosts && (
+              <div className="col-span-2 flex justify-center">
+                <div className="animate-pulse flex space-x-2 items-center">
+                  <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-xs text-gray-500">Loading costs...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Dock Warehouse Cost Field */}
-        <div className="flex flex-col lg:col-span-3">
-          <div className="flex items-center">
-            <label className="block text-gray-700 font-semibold">Dock Warehouse Costs</label>
-            <Tooltip>Set penalties for containers that remain on the ship past their destination port</Tooltip>
+        <div className="flex flex-col lg:col-span-3 border border-blue-200 rounded-lg p-4 bg-blue-50">
+          <div className="flex items-center pb-2 border-b border-blue-200 mb-3">
+            <label className="block text-blue-800 font-semibold">Dock Warehouse Costs</label>
+            <Tooltip>Set costs for containers that remain on the ship past their destination port</Tooltip>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
             {/* Dry Committed */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Dry Committed</label>
+              <label className="block text-sm font-medium text-blue-700">Dry Committed</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <span className="text-gray-500">Rp</span>
@@ -701,7 +849,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
             {/* Dry Non-Committed */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Dry Non-Committed</label>
+              <label className="block text-sm font-medium text-blue-700">Dry Non-Committed</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <span className="text-gray-500">Rp</span>
@@ -729,7 +877,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
             {/* Reefer Committed */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Reefer Committed</label>
+              <label className="block text-sm font-medium text-blue-700">Reefer Committed</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <span className="text-gray-500">Rp</span>
@@ -757,7 +905,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
             {/* Reefer Non-Committed */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Reefer Non-Committed</label>
+              <label className="block text-sm font-medium text-blue-700">Reefer Non-Committed</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <span className="text-gray-500">Rp</span>
@@ -849,7 +997,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           </div>
 
           <div className="flex items-center mt-2">
-            <div className={`rounded-lg border ${Object.keys(swapConfig).length > 0 ? "border-blue-200 bg-blue-50" : "border-gray-300"} px-3 py-3 w-full flex justify-between items-center`}>
+            <div className={`rounded-md border ${Object.keys(swapConfig).length > 0 ? "border-blue-200 bg-blue-50" : "border-gray-300"} px-2 py-2 w-full flex justify-between items-center`}>
               {Object.keys(swapConfig).length > 0 ? (
                 <div className="text-sm text-gray-700 flex-1 truncate">
                   {Object.keys(swapConfig).length} port {Object.keys(swapConfig).length === 1 ? "swap" : "swaps"} configured
@@ -890,8 +1038,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       </div>
 
       {/* Submit Button */}
-      <div className="flex justify-end space-x-4">
-        <button type="submit" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">
+      <div className="flex justify-end space-x-4 text-sm">
+        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">
           Create Room
         </button>
       </div>

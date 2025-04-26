@@ -122,26 +122,26 @@ const AdminDecks = () => {
 
       {deleteDeckMutation.isPending && <LoadingOverlay messages={["Deleting the deck...", "Removing associated cards..."]} currentMessageIndex={deleteLoadingMessageIndex} title="Deleting Deck" />}
 
-      <div className="mb-4">
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-lg space-y-6">
+      <div className="mb-2">
+        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-lg space-y-4">
           <div className="w-full">
             <h3 className="text-1xl font-bold text-gray-900">Create New Deck</h3>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col text-sm">
             <label className="block text-gray-700 font-semibold">Deck Name</label>
             <input type="text" name="name" value={formData.name} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter Deck Name" />
             {createDeckMutation.error?.response?.data?.errors?.name && <p className="text-red-500 text-sm">{createDeckMutation.error.response.data.errors.name}</p>}
           </div>
-          <button type="submit" className="p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300" disabled={createDeckMutation.isPending}>
+          <button type="submit" className="p-3 text-white text-sm bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300" disabled={createDeckMutation.isPending}>
             {createDeckMutation.isPending ? "Creating..." : "Create Deck"}
           </button>
         </form>
       </div>
 
-      <div className="w-full bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-1xl font-bold text-gray-800 mb-4">All Decks</h3>
-          <div className="bg-gray-100 rounded-lg p-1 flex">
+      <div className="w-full bg-white p-8 rounded-lg shadow-md">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-1xl font-bold text-gray-800">All Decks</h3>
+          <div className="bg-gray-100 rounded-lg p-1 flex text-xs">
             <button className={`p-1.5 rounded-md flex items-center ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("grid")} title="Grid view">
               Grid
             </button>

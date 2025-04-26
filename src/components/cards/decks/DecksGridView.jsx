@@ -4,7 +4,7 @@ import { IoCardOutline, IoFileTrayStackedOutline, IoLocationOutline, IoTimeOutli
 
 const DecksGridView = ({ decks, currentPageData, offset, handleDeleteClick, deleteMutationPending }) => {
   return (
-    <div className="space-y-4 text-sm">
+    <div className="space-y-2 text-sm">
       {currentPageData.map((deck, index) => {
         const stats = deck.stats || {
           totalPorts: 0,
@@ -16,17 +16,17 @@ const DecksGridView = ({ decks, currentPageData, offset, handleDeleteClick, dele
         };
 
         return (
-          <div key={deck.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+          <div key={deck.id} className="text-xs bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="p-6">
               {/* Header Section */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-3">
                   <div className="bg-blue-100 p-2 rounded-lg">
                     <IoCardOutline className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
                     <span className="text-sm text-gray-500 font-medium">#{offset + index + 1}</span>
-                    <h3 className="text-xl font-bold text-gray-900">{deck.name}</h3>
+                    <h3 className="text-1xl font-bold text-gray-900">{deck.name}</h3>
                   </div>
                 </div>
                 <div className="flex space-x-2">

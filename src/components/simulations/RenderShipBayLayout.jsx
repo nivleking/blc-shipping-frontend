@@ -21,13 +21,13 @@ const RenderShipBayLayout = ({ bayCount, baySize, bayTypes, onBayTypeChange, rea
           key={`bay-${bayIndex}`}
           className={`flex-shrink-0 flex flex-col items-center
             ${bayTypes?.[bayIndex] === "reefer" ? "bg-blue-50 border-blue-300" : "bg-gray-50 border-gray-300"} 
-            border-2 rounded-lg p-3`}
+            border-2 rounded-lg p-2`}
           style={{
             width: `${Math.max(200, cellSize * baySize.columns + 32)}px`,
           }}
         >
           <div className="text-center mb-2">
-            <h5 className="text-lg font-semibold">Bay {bayIndex + 1}</h5>
+            <h5 className="text-sm font-semibold">Bay {bayIndex + 1}</h5>
           </div>
 
           <div className="w-full overflow-y-auto max-h-[400px] custom-scrollbar">
@@ -65,7 +65,7 @@ const RenderShipBayLayout = ({ bayCount, baySize, bayTypes, onBayTypeChange, rea
                 onChange={(e) => onBayTypeChange(bayIndex, e.target.checked ? "reefer" : "dry")}
                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm font-medium">Reefer</span>
+              <span className="text-xs font-medium">Reefer</span>
             </label>
           )}
         </div>

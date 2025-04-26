@@ -6,15 +6,15 @@ const CreateUserForm = ({ formData, handleChange, handleSubmit, formErrors, edit
     <div className="bg-white p-8 rounded-lg shadow-lg mb-4">
       <div className="flex items-center mb-6">
         <div className="p-2 bg-blue-100 rounded-lg">
-          <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
         <h3 className="ml-3 text-1xl font-bold text-gray-800">{editingUser ? "Edit User" : "Create New User"}</h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <form onSubmit={handleSubmit} className="space-y-2 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {/* Name Field */}
           <div className="flex flex-col">
             <div className="flex items-center">
