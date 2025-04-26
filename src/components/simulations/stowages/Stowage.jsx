@@ -101,7 +101,7 @@ const Stowage = ({
               disabled={currentRound > totalRounds}
               className={`text-xs px-2 py-1 rounded-lg transition-colors ${currentRound > totalRounds ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
             >
-              {currentRound > totalRounds ? "Final Discharge Phase" : "Proceed to Section 2"}
+              {currentRound > totalRounds ? "Final Discharge Phase" : "Proceed to Sales Calls"}
             </button>
           </div>
         )}
@@ -208,13 +208,13 @@ const Stowage = ({
               ) : (
                 <div className="text-[8px] flex flex-col items-center justify-center p-4 bg-gray-50 rounded-md">
                   <p className=" text-gray-600 mb-2">Complete discharging port containers first</p>
-                  <p className=" text-gray-500">Sales calls will be available in Section 2</p>
+                  <p className=" text-gray-500">Sales calls will be available in Section Sales Calls</p>
                 </div>
               )}
             </div>
 
             {/* Ship Dock Section - Middle Column (4/10) */}
-            <div className="md:col-span-5 bg-white rounded-lg shadow-md p-2 border border-gray-200 overflow-hidden">
+            <div className="md:col-span-4 bg-white rounded-lg shadow-md p-2 border border-gray-200 overflow-hidden">
               <h3 className="text-xs font-semibold mb-2 text-gray-800 flex items-center">
                 <svg className="w-4 h-4 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
@@ -240,7 +240,7 @@ const Stowage = ({
             </div>
 
             {/* Bay Statistics - Right Column (2/10) */}
-            <div className="col-span-2 row-span-1 bg-white rounded-lg shadow-md p-2 border border-gray-200">
+            <div className="col-span-3 row-span-1 bg-white rounded-lg shadow-md p-2 border border-gray-200">
               <h3 className="text-xs font-semibold mb-2 text-gray-800 flex items-center">
                 <svg className="w-3.5 h-3.5 mr-1.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -262,6 +262,8 @@ const Stowage = ({
                   onRefreshCards={onRefreshCards}
                   restowageMoves={restowageMoves}
                   restowagePenalty={restowagePenalty}
+                  restowageContainerCount={restowageContainers.length}
+                  formatIDR={formatIDR}
                 />
               </div>
             </div>

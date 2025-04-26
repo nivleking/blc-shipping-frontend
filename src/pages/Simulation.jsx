@@ -144,6 +144,8 @@ const Simulation = () => {
 
   // Tambahkan function handler untuk hover container
   const handleContainerHover = (containerId, isHovering) => {
+    if (draggingItem) return;
+
     if (isHovering) {
       // Cari card_id untuk container yang dihover
       const container = containers.find((c) => c.id.toString() === containerId.toString());
@@ -1178,6 +1180,8 @@ const Simulation = () => {
       }
     }
 
+    setHoveredCardId(null);
+
     setDraggingItem(event.active.id);
   };
 
@@ -1768,7 +1772,7 @@ const Simulation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 py-6">
+    <div className="min-h-screen max-w-screen bg-gradient-to-br from-blue-50 to-blue-100 p-8">
       {showSwapAlert && swapInfo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl p-6 shadow-2xl max-w-md w-full mx-4">

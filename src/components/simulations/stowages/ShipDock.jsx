@@ -22,7 +22,7 @@ const ShipDock = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [temporaryNextPage, setTemporaryNextPage] = useState(null);
   // const itemsPerPage = dockSize.rows * dockSize.columns;
-  const itemsPerPage = 44;
+  const itemsPerPage = 40;
 
   // Count dock items
   const dockItems = allItems.filter((item) => item.area && item.area.startsWith("docks-"));
@@ -85,7 +85,7 @@ const ShipDock = ({
 
   const visibleSize = {
     rows: 4,
-    columns: 11,
+    columns: 10,
   };
 
   // Calculate current page capacity stats (for UI feedback only)
@@ -333,7 +333,8 @@ const ShipDock = ({
                   isValid={true}
                   isDropTarget={isDropTarget}
                   isNewPage={isTemporaryNewCell}
-                  isHighlighted={isHighlighted} //
+                  isHighlighted={isHighlighted}
+                  draggingItem={draggingItem} //
                 >
                   {item && (
                     <DraggableContainer

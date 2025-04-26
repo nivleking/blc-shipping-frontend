@@ -143,7 +143,7 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
             ) : (
               <tr>
                 <td colSpan="8" className="px-2 py-2 text-center text-xs text-gray-500 border italic">
-                  Get your sales call cards from section 2!
+                  Get your sales call cards from section sales calls!
                 </td>
               </tr>
             )}

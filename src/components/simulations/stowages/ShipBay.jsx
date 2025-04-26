@@ -153,7 +153,8 @@ const ShipBay = ({
                       coordinates={coordinates}
                       isValid={isValid}
                       isHistoryView={isHistoryView}
-                      isHighlighted={isHighlighted} //
+                      isHighlighted={isHighlighted}
+                      draggingItem={draggingItem} //
                     >
                       {item && (
                         <DraggableContainer
