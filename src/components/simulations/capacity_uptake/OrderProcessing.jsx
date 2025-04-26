@@ -179,7 +179,7 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
         </table>
       </div>
 
-      <div className="mt-2">
+      {/* <div className="mt-2">
         {acceptedSalesCalls.length > 0 && (capacityStatus.dry < 0 || capacityStatus.reefer < 0 || capacityStatus.total < 0) && (
           <div className="mt-2 bg-red-50 border-l-4 border-red-400 p-2">
             <div className="flex">
@@ -198,7 +198,7 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
             </div>
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

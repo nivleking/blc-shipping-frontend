@@ -160,7 +160,7 @@ const CapacityEstimation = ({
         </table>
       </div>
 
-      {hasCapacityIssue && (
+      {/* {hasCapacityIssue && (
         <div className="mt-2 bg-yellow-50 border-l-4 border-yellow-400 p-2">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -179,7 +179,7 @@ const CapacityEstimation = ({
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };
