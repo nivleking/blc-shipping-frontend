@@ -39,41 +39,28 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
     setIsLoading(true);
     setError(null);
     try {
-      let allWeeklyData = [];
-      let totalRevenue = 0;
+      const response = await api.get(`/rooms/${roomId}/weekly-performance-all/${user?.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      for (let week = 1; week <= currentRound; week++) {
-        const response = await api.get(`/rooms/${roomId}/weekly-performance/${user?.id}/${week}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      if (response.data.data) {
+        const allWeeklyData = response.data.data;
 
-        if (response.data.data) {
-          // Parse JSON strings if they exist
-          const unrolledCounts = typeof response.data.data.unrolled_container_counts === "string" ? JSON.parse(response.data.data.unrolled_container_counts) : response.data.data.unrolled_container_counts || {};
+        // Set the overall cumulative revenue
+        setCumulativeRevenue(response.data.total_cumulative_revenue || 0);
 
-          const dockWarehouseCounts = typeof response.data.data.dock_warehouse_container_counts === "string" ? JSON.parse(response.data.data.dock_warehouse_container_counts) : response.data.data.dock_warehouse_container_counts || {};
+        // Update weekly data state
+        setWeeklyData(allWeeklyData);
 
-          const weekData = {
-            ...response.data.data,
-            unrolled_container_counts: unrolledCounts,
-            dock_warehouse_container_counts: dockWarehouseCounts,
-          };
-
-          allWeeklyData.push(weekData);
-          totalRevenue += response.data.data.net_result || 0;
-
-          // If this is the selected week, update performanceData
-          if (week === selectedWeek) {
-            setPerformanceData(weekData);
-          }
+        // Find and set the selected week's data
+        const selectedWeekData = allWeeklyData.find((data) => data.week === selectedWeek);
+        if (selectedWeekData) {
+          setPerformanceData(selectedWeekData);
         }
       }
-
-      setWeeklyData(allWeeklyData);
-      setCumulativeRevenue(totalRevenue);
     } catch (err) {
       setError("Failed to fetch performance data. Please try again.");
-      console.error("Error fetching all weeks data:", err);
+      console.error("Error fetching weekly performance data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -334,7 +321,7 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {weeklyData.map((week, index) => {
-                const movesPenalty = ((week.discharge_moves || 0) + (week.load_moves || 0)) * (financialSummary?.move_cost || 0) + (week.restowage_penalty);
+                const movesPenalty = ((week.discharge_moves || 0) + (week.load_moves || 0)) * (financialSummary?.move_cost || 0) + week.restowage_penalty;
 
                 return (
                   <tr key={index} className={week.week === selectedWeek ? "bg-blue-50" : ""}>
