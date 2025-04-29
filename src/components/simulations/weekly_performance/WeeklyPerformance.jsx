@@ -20,52 +20,62 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
 
   useEffect(() => {
     if (roomId && user?.id && token) {
-      fetchPerformanceData(selectedWeek);
       fetchAllWeeksData();
       fetchFinancialSummary();
     }
   }, [roomId, user?.id, token, selectedWeek]);
 
-  const fetchPerformanceData = async (week) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/rooms/${roomId}/weekly-performance/${user?.id}/${week}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setPerformanceData(response.data.data);
-    } catch (err) {
-      setError("Failed to fetch performance data. Please try again.");
-      console.error("Error fetching performance data:", err);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (weeklyData.length > 0) {
+      // Find the data for the selected week (weeks are 1-indexed, arrays are 0-indexed)
+      const selectedWeekData = weeklyData.find((data) => data.week === selectedWeek);
+      if (selectedWeekData) {
+        setPerformanceData(selectedWeekData);
+      }
     }
-  };
+  }, [selectedWeek, weeklyData]);
 
   const fetchAllWeeksData = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       let allWeeklyData = [];
       let totalRevenue = 0;
 
       for (let week = 1; week <= currentRound; week++) {
         const response = await api.get(`/rooms/${roomId}/weekly-performance/${user?.id}/${week}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.data.data) {
-          allWeeklyData.push(response.data.data);
+          // Parse JSON strings if they exist
+          const unrolledCounts = typeof response.data.data.unrolled_container_counts === "string" ? JSON.parse(response.data.data.unrolled_container_counts) : response.data.data.unrolled_container_counts || {};
+
+          const dockWarehouseCounts = typeof response.data.data.dock_warehouse_container_counts === "string" ? JSON.parse(response.data.data.dock_warehouse_container_counts) : response.data.data.dock_warehouse_container_counts || {};
+
+          const weekData = {
+            ...response.data.data,
+            unrolled_container_counts: unrolledCounts,
+            dock_warehouse_container_counts: dockWarehouseCounts,
+          };
+
+          allWeeklyData.push(weekData);
           totalRevenue += response.data.data.net_result || 0;
+
+          // If this is the selected week, update performanceData
+          if (week === selectedWeek) {
+            setPerformanceData(weekData);
+          }
         }
       }
 
       setWeeklyData(allWeeklyData);
       setCumulativeRevenue(totalRevenue);
     } catch (err) {
+      setError("Failed to fetch performance data. Please try again.");
       console.error("Error fetching all weeks data:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,14 +114,14 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-sm font-bold text-gray-800">Weekly Performance Summary</h2>
         <div className="flex items-center space-x-2">
-          <select className="border rounded-md px-1.5 py-0.5 bg-white text-xs" value={selectedWeek} onChange={(e) => setSelectedWeek(parseInt(e.target.value))}>
+          {/* <select className="border rounded-md px-1.5 py-0.5 bg-white text-xs" value={selectedWeek} onChange={(e) => setSelectedWeek(parseInt(e.target.value))}>
             {Array.from({ length: Math.min(currentRound, totalRounds) }, (_, i) => (
               <option key={i + 1} value={i + 1}>
                 Week {i + 1}
                 {i + 1 === currentRound ? " (Current)" : ""}
               </option>
             ))}
-          </select>
+          </select> */}
         </div>
       </div>
 
@@ -158,7 +168,7 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
                   </tr>
                   <tr className="hover:bg-blue-50">
                     <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-800 border-r border-blue-100">Restowage Cost (per container)</td>
-                    <td className="px-2 py-2 whitespace-nowrap text-xs text-blue-700 font-semibold text-center">{formatIDR(financialSummary.restowage_cost || 0)}</td>
+                    <td className="px-2 py-2 whitespace-nowrap text-xs text-blue-700 font-semibold text-center">{formatIDR(financialSummary.restowage_cost * 2 || 0)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -238,9 +248,9 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
         </div>
       )}
 
-      {/* Combined Weekly Performance Table */}
+      {/* Operational Cost Tracking Table */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-        <h3 className="text-sm font-semibold mb-3">Weekly Performance Summary</h3>
+        <h3 className="text-sm font-semibold mb-3">Operational Cost Tracking</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 border text-sm">
             <thead className="bg-gray-50">
@@ -259,6 +269,10 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
                 {/* Dock Warehouse Heading Group */}
                 <th colSpan="4" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">
                   Dock Warehouse
+                </th>
+                {/* NEW: Penalty Breakdown Group */}
+                <th colSpan="3" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-yellow-50">
+                  Penalty Breakdown
                 </th>
                 <th rowSpan="4" className="px-3 py-2 text-center text-xs font-medium text-gray-700 uppercase border">
                   Penalties
@@ -295,6 +309,15 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
                 <th colSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">
                   Non-Committed
                 </th>
+                <th rowSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-gray-100">
+                  Moves
+                </th>
+                <th rowSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">
+                  Unrolled
+                </th>
+                <th rowSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">
+                  Dock Werehouse
+                </th>
               </tr>
               <tr>
                 {/* Unrolled Third Level - Container Types */}
@@ -311,9 +334,7 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {weeklyData.map((week, index) => {
-                // Calculate each week's penalties
-                const moveCostPenalty = (week.discharge_moves + week.load_moves) * (financialSummary?.move_cost || 0);
-                const totalPenalty = week.move_costs + (week.extra_moves_penalty || 0);
+                const movesPenalty = ((week.discharge_moves || 0) + (week.load_moves || 0)) * (financialSummary?.move_cost || 0) + (week.restowage_penalty);
 
                 return (
                   <tr key={index} className={week.week === selectedWeek ? "bg-blue-50" : ""}>
@@ -323,45 +344,31 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.load_moves || 0}</td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.discharge_moves || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.restowage_moves || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.restowage_moves || 0}</td>
 
-                    {/* Rest of the row remains the same */}
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.committed_dry_containers_not_loaded || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.committed_reefer_containers_not_loaded || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.non_committed_dry_containers_not_loaded || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.non_committed_reefer_containers_not_loaded || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.dock_warehouse_dry_committed || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.dock_warehouse_reefer_committed || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.dock_warehouse_dry_non_committed || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{financialSummary?.dock_warehouse_reefer_non_committed || 0}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border text-red-600 font-medium">{formatIDR(totalPenalty)}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border text-green-600 font-medium">{formatIDR(week.revenue || 0)}</td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border font-medium">{formatIDR(week.net_result || 0)}</td>
+                    {/* Use the proper structure from unrolled_container_counts */}
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.unrolled_container_counts?.dry_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.unrolled_container_counts?.reefer_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.unrolled_container_counts?.dry_non_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.unrolled_container_counts?.reefer_non_committed || 0}</td>
+
+                    {/* Use the proper structure from dock_warehouse_container_counts */}
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.dock_warehouse_container_counts?.dry_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.dock_warehouse_container_counts?.reefer_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.dock_warehouse_container_counts?.dry_non_committed || 0}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{week.dock_warehouse_container_counts?.reefer_non_committed || 0}</td>
+
+                    {/* NEW: Individual penalty columns */}
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-gray-50">{formatIDR(movesPenalty)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-red-50">{formatIDR(week.unrolled_penalty || 0)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-blue-50">{formatIDR(week.dock_warehouse_penalty || 0)}</td>
+
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{formatIDR(week.total_penalty)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{formatIDR(week.revenue || 0)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs text-center border">{formatIDR(week.net_result || 0)}</td>
                   </tr>
                 );
               })}
-
-              {/* Updated summary row */}
-              <tr className="bg-black text-white font-semibold">
-                <td colSpan="12" className="px-3 py-2 whitespace-nowrap text-right text-xs border">
-                  Summary
-                </td>
-                {/* Total Penalties Column */}
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-red-700 text-white">
-                  {formatIDR(weeklyData.reduce((sum, week) => sum + (week.move_costs || 0) + (week.extra_moves_penalty || 0), 0))}
-                  <div className="text-[9px] text-gray-200 mt-0.5">Total Penalties</div>
-                </td>
-                {/* Total Revenue Column */}
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-green-700 text-white">
-                  {formatIDR(weeklyData.reduce((sum, week) => sum + (week.revenue || 0), 0))}
-                  <div className="text-[9px] text-gray-200 mt-0.5">Total Revenue</div>
-                </td>
-                {/* Net Total Column */}
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-center border bg-blue-700 text-white">
-                  {formatIDR(cumulativeRevenue)}
-                  <div className="text-[9px] text-gray-200 mt-0.5">Net Total</div>
-                </td>
-              </tr>
             </tbody>
           </table>
         </div>
@@ -370,7 +377,7 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
       {/* Financial Impact Summary Table for Current Week */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-4">
         <h3 className="text-sm font-semibold mb-3 flex items-center">
-          <span>Financial Breakdown for Week {selectedWeek}</span>
+          <span>Estimation Breakdown for Week {selectedWeek}</span>
           <span className="ml-auto text-sm font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Net Result: {formatIDR(financialSummary?.final_revenue || 0)}</span>
         </h3>
         <div className="overflow-x-auto">

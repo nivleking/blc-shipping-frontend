@@ -25,20 +25,20 @@ import useToast from "../../../toast/useToast";
 //   total_rounds: 2,
 //   cards_limit_per_round: 10,
 //   cards_must_process_per_round: 8,
-//   move_cost: 100000,
+//   move_cost: 1000000,
 //   dock_warehouse_costs: {
-//     default: 50000,
+//     default: 7000000,
 //     dry: {
-//       committed: 160000,
-//       non_committed: 800000,
+//       committed: 8000000,
+//       non_committed: 4000000,
 //     },
 //     reefer: {
-//       committed: 2400000,
-//       non_committed: 160000,
+//       committed: 15000000,
+//       non_committed: 9000000,
 //     },
 //   },
-//   restowage_cost: 50000,
-//   // extra_moves_cost: 50000,
+//   restowage_cost: 3500000,
+//   // extra_moves_cost: 7000000,
 //   // ideal_crane_split: 2,
 //   swap_config: { SBY: "MDN", MDN: "MKS", MKS: "JYP", JYP: "BPN", BPN: "SBY" },
 // };
@@ -56,21 +56,21 @@ const initialFormState = {
   total_rounds: 1,
   cards_limit_per_round: 1,
   cards_must_process_per_round: 1,
-  move_cost: 100000,
+  move_cost: 1000000,
   dock_warehouse_costs: {
-    default: 50000,
+    default: 7000000,
     dry: {
-      committed: 1600000,
-      non_committed: 800000,
+      committed: 8000000,
+      non_committed: 4000000,
     },
     reefer: {
-      committed: 2400000,
-      non_committed: 160000,
+      committed: 15000000,
+      non_committed: 9000000,
     },
   },
-  restowage_cost: 50000,
+  restowage_cost: 3500000,
   swap_config: {},
-  // extra_moves_cost: 50000,
+  // extra_moves_cost: 7000000,
   // ideal_crane_split: 2,
 };
 
@@ -676,7 +676,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               name="extra_moves_cost"
               id="extra_moves_cost"
               className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="50000"
+              placeholder="7000000"
               min="1"
               value={formData.extra_moves_cost}
               onChange={handleChange}
@@ -950,7 +950,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               name="move_cost"
               id="move_cost"
               className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="100000"
+              placeholder="1000000"
               min="1"
               value={formData.move_cost}
               onChange={handleChange}
@@ -978,7 +978,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               name="restowage_cost"
               id="restowage_cost"
               className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="50000"
+              placeholder="3500000"
               min="1"
               value={formData.restowage_cost}
               onChange={handleChange}

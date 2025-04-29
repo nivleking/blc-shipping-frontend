@@ -67,6 +67,7 @@ const Simulation = () => {
   const [showSwapAlert, setShowSwapAlert] = useState(false);
   const [section, setSection] = useState(1);
   const [dockWarehouseContainers, setDockWarehouseContainers] = useState([]);
+  const [isBayFull, setIsBayFull] = useState(false);
 
   const [targetContainers, setTargetContainers] = useState([]);
   const [containerDestinationsCache, setContainerDestinationsCache] = useState({});
@@ -481,22 +482,6 @@ const Simulation = () => {
       setWeekRevenueTotal(0);
       setProcessedCards(0);
 
-      // Update weekly performance data for the previous round
-      try {
-        await api.post(
-          `/rooms/${roomId}/users/${user.id}/weekly-performance/${currentRound}`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        console.log("Weekly performance data updated for round", currentRound);
-      } catch (error) {
-        console.error("Error updating weekly performance:", error);
-      }
-
       // Refetch sales cards after a short delay
       setTimeout(() => {
         fetchSalesCallCards();
@@ -697,6 +682,20 @@ const Simulation = () => {
       setRestowageContainers(restowageResponse.data.restowage_containers || []);
       setRestowagePenalty(restowageResponse.data.restowage_penalty || 0);
       setRestowageMoves(restowageResponse.data.restowage_moves || 0);
+
+      try {
+        if (!roomId || !user?.id || !token) return;
+
+        const response = await api.get(`/rooms/${roomId}/users/${user.id}/bay-capacity`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setIsBayFull(response.data.is_full);
+      } catch (error) {
+        console.error("Error fetching bay capacity status:", error);
+      }
 
       const currentSection = response.data.section;
       if (currentSection) {
@@ -1328,6 +1327,10 @@ const Simulation = () => {
                       row: rowIdx,
                       col: colIdx,
                       id: containerItem.id,
+                      cardId: containerItem.cardId,
+                      type: containerItem.type,
+                      origin: containerItem.card?.origin,
+                      destination: containerItem.card?.destination,
                     });
                   }
                 }
@@ -1340,12 +1343,25 @@ const Simulation = () => {
                 bay: item.bay,
                 row: item.row,
                 col: item.col,
+                type: item.type,
+                cardId: item.cardId,
+                origin: item.origin,
+                destination: item.destination,
               })),
               totalContainers: newBayData.length,
             };
             setBayData(flatBayData);
 
             showSuccess("Container dischargeed successfully!");
+
+            // Save updated bay state
+            await api.post("/ship-bays", {
+              arena: flatBayData,
+              user_id: user.id,
+              room_id: roomId,
+              revenue: revenue,
+              section: "section1",
+            });
 
             // Track discharge move - Include bay_index
             try {
@@ -1356,6 +1372,7 @@ const Simulation = () => {
                   count: 1,
                   bay_index: sourceBayIndex,
                   container_id: active.id,
+                  arena: flatBayData,
                 },
                 {
                   headers: {
@@ -1363,15 +1380,6 @@ const Simulation = () => {
                   },
                 }
               );
-
-              // Save updated bay state
-              await api.post("/ship-bays", {
-                arena: flatBayData,
-                user_id: user.id,
-                room_id: roomId,
-                revenue: revenue,
-                section: "section1",
-              });
 
               // Update section state to match the API
               await api.put(
@@ -1396,6 +1404,20 @@ const Simulation = () => {
             } catch (error) {
               console.error("API call failed", error);
               showError("Failed to update container status");
+            }
+
+            try {
+              if (!roomId || !user?.id || !token) return;
+
+              const response = await api.get(`/rooms/${roomId}/users/${user.id}/bay-capacity`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              setIsBayFull(response.data.is_full);
+            } catch (error) {
+              console.error("Error fetching bay capacity status:", error);
             }
           }
         } catch (error) {
@@ -1484,6 +1506,17 @@ const Simulation = () => {
         relevantBayIndex = destinationBayIndex;
       }
 
+      const resBay = await api.post("/ship-bays", {
+        arena: newBayData,
+        user_id: user.id,
+        room_id: roomId,
+        moved_container: {
+          id: container.id,
+          from: fromArea,
+          to: toArea,
+        },
+      });
+
       // Only track moves if they involve a bay (not just within dock)
       const isBayInvolved = fromArea.startsWith("bay") || toArea.startsWith("bay");
 
@@ -1498,6 +1531,7 @@ const Simulation = () => {
             count: 1,
             bay_index: relevantBayIndex,
             container_id: containerId,
+            arena: newBayData,
           },
           {
             headers: {
@@ -1506,17 +1540,6 @@ const Simulation = () => {
           }
         );
       }
-
-      const resBay = await api.post("/ship-bays", {
-        arena: newBayData,
-        user_id: user.id,
-        room_id: roomId,
-        moved_container: {
-          id: container.id,
-          from: fromArea,
-          to: toArea,
-        },
-      });
 
       await api.put(
         `/ship-bays/${roomId}/${user.id}/section`,
@@ -1563,6 +1586,20 @@ const Simulation = () => {
       setRestowageContainers(restowageResponse.data.restowage_containers || []);
       setRestowagePenalty(restowageResponse.data.restowage_penalty || 0);
       setRestowageMoves(restowageResponse.data.restowage_moves || 0);
+
+      try {
+        if (!roomId || !user?.id || !token) return;
+
+        const response = await api.get(`/rooms/${roomId}/users/${user.id}/bay-capacity`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setIsBayFull(response.data.is_full);
+      } catch (error) {
+        console.error("Error fetching bay capacity status:", error);
+      }
 
       // Request updated stats after move
       socket.emit("stats_requested", {
@@ -1774,19 +1811,19 @@ const Simulation = () => {
   return (
     <div className="min-h-screen max-w-screen bg-gradient-to-br from-blue-50 to-blue-100 p-8">
       {showSwapAlert && swapInfo && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-6 shadow-2xl max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center">
+          <div className="bg-white rounded-xl p-12 shadow-1xl max-w-md w-full mx-2">
             <div className="flex flex-col items-center space-y-4">
-              <div className="text-2xl font-bold text-red-600 animate-pulse mb-1">SWAP ALERT!</div>
-              <div className="text-5xl font-bold text-blue-600">{countdown}</div>
+              <div className="text-3xl font-bold text-red-600 animate-pulse mb-1">SWAP ALERT!</div>
+              <div className="text-3xl font-bold text-blue-600">{countdown}</div>
 
               {/* Port linked list visualization - now enhanced with full route */}
               <div className="w-full bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-medium text-lg text-center mb-3 text-blue-800">Container Flow Update</h3>
+                <h3 className="font-medium text-sm text-center mb-3 text-blue-800">Container Flow Update</h3>
 
                 {/* Complete port route visualization */}
                 {swapInfo.allPorts && swapInfo.allPorts.length > 0 && (
-                  <div className="mb-4 overflow-x-auto py-2">
+                  <div className="mb-2 overflow-x-auto py-1">
                     <div className="flex items-center justify-center gap-1 min-w-max">
                       {swapInfo.allPorts
                         .slice()
@@ -1819,7 +1856,7 @@ const Simulation = () => {
                 )}
               </div>
 
-              <p className="text-red-600 font-bold text-center">Please wait while containers are being swapped!</p>
+              <p className="text-red-600 font-bold text-center text-sm">Please wait while containers are being swapped!</p>
             </div>
           </div>
         </div>
@@ -1860,7 +1897,7 @@ const Simulation = () => {
                   d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                 />
               </svg>
-              <span>Capacity</span>
+              <span>Capacity & Uptake Management</span>
             </Tab>
 
             <Tab
@@ -1886,7 +1923,7 @@ const Simulation = () => {
               <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span>Weekly</span>
+              <span>Weekly Performance</span>
             </Tab>
 
             <Tab
@@ -1899,7 +1936,7 @@ const Simulation = () => {
               <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
-              <span>Market</span>
+              <span>Market Intelligence</span>
             </Tab>
           </TabList>
 
@@ -1956,6 +1993,7 @@ const Simulation = () => {
                 financialSummary={financialSummary}
                 showFinancialModal={showFinancialModal}
                 toggleFinancialModal={toggleFinancialModal}
+                isBayFull={isBayFull}
                 // bayPairs={bayPairs}
                 // idealCraneSplit={idealCraneSplit}
                 // longCraneMoves={longCraneMoves}

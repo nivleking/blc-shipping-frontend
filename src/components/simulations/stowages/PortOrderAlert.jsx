@@ -63,7 +63,7 @@ const PortOrderAlert = ({ currentPort }) => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border-l-3 border-yellow-400 p-2 mb-2 rounded-r shadow-sm">
+    <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border-l-3 border-yellow-400 p-2 mb-2 rounded-md shadow-sm">
       <div className="flex items-start">
         <div className="flex-shrink-0 mt-0.5">
           <svg className="h-4 w-4 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

@@ -57,6 +57,7 @@ const Stowage = ({
   financialSummary,
   showFinancialModal,
   toggleFinancialModal,
+  isBayFull,
   // idealCraneSplit = 2,
   // longCraneMoves = 0,
   // extraMovesOnLongCrane = 0,
@@ -95,7 +96,9 @@ const Stowage = ({
         </div>
         {section === 1 && (
           <div className="flex items-center gap-2">
-            <div className="text-xs text-gray-600">Remaining containers to discharge: {targetContainers && targetContainers.length}</div>
+            <div className="text-xs text-red-600 font-medium">
+              Remaining {port} containers to discharge: {targetContainers && targetContainers.length}
+            </div>
             <button
               onClick={onNextSection}
               disabled={currentRound > totalRounds}
@@ -117,21 +120,31 @@ const Stowage = ({
                 </svg>
                 <h3 className="text-xs font-semibold text-gray-800">Ship Bay</h3>
 
-                {section === 1 && targetContainers.length > 0 && <span className="ml-2 text-xs text-yellow-600 font-medium animate-pulse">{targetContainers.length} containers need discharging</span>}
+                {section === 1 && targetContainers.length > 0 && (
+                  // <span className="ml-2 text-xs text-yellow-600 font-medium">
+                  <span className="ml-2 text-[10px] text-red-600 font-medium rounded-full bg-red-50 px-2 py-1">
+                    {targetContainers.length} {port} containers need discharging!
+                  </span>
+                )}
               </div>
 
               <button onClick={handleFinancialButtonClick} className="inline-flex items-center px-2 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-sm transition-colors">
                 <svg className="w-3.5 h-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1.5v1A1.5 1.5 0 0114 6.5H7A1.5 1.5 0 015.5 5V4H4z" clipRule="evenodd" />
                 </svg>
-                Review
+                Review Current State
               </button>
             </div>
 
             {/* Alert container - flex row to place alerts side by side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mb-1">
               <PortOrderAlert currentPort={port} />
-              <RestowageAlert restowageContainers={restowageContainers} restowagePenalty={restowagePenalty} restowageMoves={restowageMoves} formatIDR={formatIDR} />
+              <RestowageAlert
+                restowageContainers={restowageContainers}
+                restowagePenalty={restowagePenalty}
+                restowageMoves={restowageMoves}
+                formatIDR={formatIDR} //
+              />
             </div>
 
             {/* <ContainerLegend /> */}
@@ -191,6 +204,7 @@ const Stowage = ({
                         onRefreshCards={onRefreshCards}
                         port={port}
                         unfulfilledContainers={unfulfilledContainers}
+                        isBayFull={isBayFull}
                       />
                     </div>
                   ) : (

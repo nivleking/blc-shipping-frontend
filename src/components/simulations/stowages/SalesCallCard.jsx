@@ -15,6 +15,7 @@ const SalesCallCard = ({
   isLimitExceeded,
   onRefreshCards,
   unfulfilledContainers,
+  isBayFull = false,
 }) => {
   // Cek apakah tidak ada kartu yang tersedia
   const noCardsAvailable = !salesCallCards.length || currentCardIndex >= salesCallCards.length;
@@ -92,7 +93,7 @@ const SalesCallCard = ({
           <div className="text-[9px] text-gray-600">
             <span className="font-medium">Cards Limit:</span> {cardsLimit}
           </div>
-      </div>
+        </div>
 
         {/* Progress Bar */}
         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -192,9 +193,9 @@ const SalesCallCard = ({
             <td colSpan={2} className="font-medium py-1 text-center">
               <button
                 onClick={() => handleAcceptCard(currentCard.id)}
-                disabled={isProcessingCard}
-                className={`p-2 bg-green-500 text-white rounded mr-2 transition-opacity
-                  ${isProcessingCard ? "opacity-50 cursor-not-allowed" : "hover:bg-green-600"}
+                disabled={isProcessingCard || isBayFull}
+                className={`p-2 text-white rounded mr-2 transition-opacity
+                  ${isProcessingCard || isBayFull ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}
                 `}
               >
                 {isProcessingCard ? "Processing..." : "Accept"}
@@ -209,7 +210,14 @@ const SalesCallCard = ({
               >
                 {isProcessingCard ? "Please wait..." : "Reject"}
               </button>
-              {isCommitted && <div className="text-[9px] text-gray-500 mt-2">* This is a committed booking and must be accepted</div>}
+              {isCommitted && !isBayFull && <div className="text-[9px] text-gray-500 mt-2">* This is a committed booking and must be accepted</div>}
+              {isBayFull && !isCommitted && <div className="text-[9px] text-red-500 mt-2">* Your ship bay is full, consider whether to accept or not</div>}
+              {isBayFull && isCommitted && (
+                <div className="text-[9px] text-gray-500 mt-2">
+                  * This is a committed booking and must be accepted, but the bay is full. <br />
+                  The next {mustProcessCards - processedCards} committed cards (if any) will be backlog for next week.
+                </div>
+              )}
             </td>
           </tr>
         </tbody>

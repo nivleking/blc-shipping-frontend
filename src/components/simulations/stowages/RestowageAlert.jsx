@@ -6,7 +6,7 @@ const RestowageAlert = ({ restowageContainers, restowagePenalty, restowageMoves,
   }
 
   return (
-    <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-3 border-red-400 p-2 mb-2 rounded-r shadow-sm">
+    <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-3 border-red-400 p-2 mb-2 rounded-md shadow-sm">
       <div className="flex items-start">
         <div className="flex-shrink-0 mt-0.5">
           <svg className="h-4 w-4 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -18,10 +18,10 @@ const RestowageAlert = ({ restowageContainers, restowagePenalty, restowageMoves,
           </svg>
         </div>
         <div className="ml-2">
-          <p className="text-[9px] font-medium text-red-800">Restowage Boxes: {restowageContainers.length}</p>
+          <p className="text-[9px] font-medium text-red-800">Restowage Alert</p>
           <div className="mt-0.5 flex flex-wrap gap-1">
             <div className="px-1 py-0.5 bg-white border border-red-200 rounded-md text-[9px]">
-              <span className="font-medium text-red-700">{restowageMoves}</span> <span className="text-gray-600">extra moves</span>
+              <span className="font-medium text-red-700">{restowageMoves}</span> <span className="text-gray-600">restowage moves</span>
             </div>
             <div className="px-1 py-0.5 bg-white border border-red-200 rounded-md text-[9px]">
               <span className="font-medium text-red-700">{formatIDR(restowagePenalty)}</span> <span className="text-gray-600">penalty</span>

@@ -24,7 +24,7 @@ const initialFormState = {
   cards_limit_per_round: 1,
   cards_must_process_per_round: 1,
   move_cost: 1000000,
-  extra_moves_cost: 50000,
+  extra_moves_cost: 3500000,
   ideal_crane_split: 2,
   swap_config: {},
 };

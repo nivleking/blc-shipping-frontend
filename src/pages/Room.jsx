@@ -107,85 +107,41 @@ const Room = () => {
 
   async function fetchRoomDetails() {
     try {
-      // Get room data
-      const roomResponse = await api.get(`/rooms/${roomId}`, {
+      const response = await api.get(`/rooms/${roomId}/details`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("room res", roomResponse);
-      const adminId = roomResponse.data.admin_id;
-      const deckId = roomResponse.data.deck_id;
-      setRoomStatus(roomResponse.data.status);
-      setTotalRounds(roomResponse.data.total_rounds);
-      setDeckId(deckId);
-      setRoom(roomResponse.data);
+      const data = response.data;
 
-      // Fetch everything else in parallel for better performance
-      const [adminResponse, usersResponse, originsResponse, userPortsResponse] = await Promise.all([
-        // Admin details
-        api.get(`/users/${adminId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+      // Set room data
+      setRoom(data.room);
+      setRoomStatus(data.room.status);
+      setTotalRounds(data.room.total_rounds);
+      setDeckId(data.room.deck_id);
 
-        // Users list
-        api.get(`/rooms/${roomId}/users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+      // Set admin info
+      setAdminName(data.admin.name);
 
-        // Deck origins
-        api.get(`/rooms/${roomId}/deck-origins`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+      // Set users
+      setUsers(data.users || []);
 
-        // User ports
-        api.get(`/rooms/${roomId}/user-port2`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+      // Set origins
+      setOrigins(data.deckOrigins);
 
-      // Set state with all received data
-      setAdminName(adminResponse.data.name);
-      setUsers(usersResponse.data || []);
-      setOrigins(originsResponse.data);
-
-      // Process port assignments
-      const portAssignments = {};
-      userPortsResponse.data.forEach((shipBay) => {
-        portAssignments[shipBay.user_id] = shipBay.port;
-      });
-
-      setAssignedPorts(portAssignments);
-      setPortsSet(Object.keys(portAssignments).length > 0);
-
-      const originsArray = Array.isArray(originsResponse.data) ? originsResponse.data : Object.values(originsResponse.data).filter((value) => typeof value === "string");
+      // Set port assignments
+      setAssignedPorts(data.portAssignments);
+      setPortsSet(data.portsSet);
 
       // Store deck origins for swap config
-      setDeckOrigins(originsArray);
+      setDeckOrigins(data.deckOrigins);
 
-      // Set current swap config if it exists
-      if (roomResponse.data.swap_config) {
-        try {
-          const parsedConfig = typeof roomResponse.data.swap_config === "string" ? JSON.parse(roomResponse.data.swap_config) : roomResponse.data.swap_config;
+      // Set current round
+      setCurrentRound(data.currentRound);
 
-          setCurrentSwapConfig(parsedConfig);
-          setSwapConfig(parsedConfig);
-        } catch (e) {
-          console.error("Error parsing swap config:", e);
-        }
-      }
-
-      // Get current round from first user's ship bay if room is active
-      if (roomResponse.data.status === "active") {
-        const usersArray = JSON.parse(roomResponse.data.users || "[]");
-        if (usersArray.length > 0) {
-          const firstUserId = usersArray[0];
-
-          const shipBayResponse = await api.get(`ship-bays/${roomId}/${firstUserId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          setCurrentRound(shipBayResponse.data.current_round);
-        }
+      // Set swap config if it exists
+      if (data.swapConfig) {
+        setCurrentSwapConfig(JSON.parse(data.swapConfig));
+        setSwapConfig(JSON.parse(data.swapConfig));
       }
     } catch (error) {
       console.error("There was an error fetching the room details!", error);
@@ -258,74 +214,12 @@ const Room = () => {
           },
         }
       );
+
       setRoomStatus("active");
-
-      const dockLayout = Array.from({ length: 3 }).map(() => Array(5).fill(null));
-      const dockSize = { rows: 8, columns: 6 };
-
-      for (let i = 0; i < users.length; i++) {
-        const user = users[i];
-
-        await api.post(
-          `/ship-docks`,
-          {
-            arena: dockLayout,
-            room_id: roomId,
-            user_id: user.id,
-            dock_size: dockSize,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const shipBayResponse = await api.get(`/ship-bays/${roomId}/${user.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const userShipBay = shipBayResponse.data;
-        console.log("User Ship Bay", userShipBay);
-
-        if (!userShipBay) continue;
-
-        const userPort = userShipBay.port;
-
-        const deckResponse = await api.get(`/decks/${deckId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const cards = deckResponse.data.cards;
-        const matchedCards = cards.filter((card) => card.origin === userPort);
-
-        if (matchedCards.length > 0) {
-          const batchData = {
-            room_id: roomId,
-            user_id: user.id,
-            round: 1,
-            cards: matchedCards.map((card) => ({
-              card_id: card.id,
-              deck_id: deckId,
-              status: "selected",
-            })),
-          };
-
-          await api.post(`/card-temporary/batch`, batchData, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          console.log(`Created ${matchedCards.length} card temporaries in batch`);
-        }
-      }
-
       socket.emit("start_simulation", { roomId });
     } catch (error) {
       console.error("There was an error starting the simulation!", error);
+      showError("Failed to start simulation. Please try again.");
     }
   }
 
@@ -478,6 +372,7 @@ const Room = () => {
 
   async function handleSetPorts() {
     try {
+      // Single API call that handles port assignment and card creation
       const res = await api.put(
         `/rooms/${roomId}/set-ports`,
         { ports },
@@ -488,14 +383,14 @@ const Room = () => {
         }
       );
 
-      // Emit port assignments for each user
-      Object.entries(ports).forEach(([userId, port]) => {
+      // Notify other users about port assignments
+      for (const [userId, port] of Object.entries(ports)) {
         socket.emit("port_assigned", {
           roomId,
           userId,
           port,
         });
-      });
+      }
 
       setShipBay(res.data.shipbays);
       setShowPortPopup(false);
@@ -503,6 +398,7 @@ const Room = () => {
       showSuccess("Ports assigned successfully!");
     } catch (error) {
       console.error("There was an error setting the ports!", error);
+      showError("Failed to assign ports: " + (error.response?.data?.message || error.message));
     }
   }
 
@@ -525,28 +421,28 @@ const Room = () => {
   return (
     <div className="flex flex-col items-center justify-between min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Enhanced Header */}
-      <div className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-4 shadow-lg">
+      <div className="w-full bg-gradient-to-r from-blue-600 to-blue-500 py-3 shadow-lg">
         <div className="container mx-auto">
           <div className="flex items-center justify-start text-white">
-            <h1 className="text-xl font-bold tracking-wide">{user && user.name}</h1>
+            <h1 className="text-lg font-bold tracking-wide">{user && user.name}</h1>
           </div>
         </div>
       </div>
 
-      <div className="flex-grow flex items-center justify-center w-full p-6">
+      <div className="flex-grow flex items-center justify-center w-full p-4">
         <div className="p-8 bg-white rounded-xl shadow-xl w-full max-w-4xl">
           {/* Room Info Section */}
-          <div className="flex items-center justify-between mb-8 border-b pb-4">
+          <div className="flex items-center justify-between mb-4 border-b pb-2">
             <div>
-              <h2 className="text-4xl font-bold text-gray-800 mb-2">Room #{roomId}</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Room #{roomId}</h2>
               <div className="flex items-center text-gray-600">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <span className="font-medium">Admin: {adminName}</span>
               </div>
             </div>
-            <div className="bg-gray-100 px-4 py-2 rounded-lg">
+            <div className="bg-gray-100 px-2 py-2 rounded-lg">
               <span className="font-medium">Status: </span>
               <span
                 className={`inline-block px-3 py-1 rounded-full text-sm font-medium
@@ -558,8 +454,8 @@ const Room = () => {
           </div>
 
           {roomStatus === "active" && (
-            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-              <h3 className="text-lg font-semibold text-blue-700">
+            <div className="mb-2 p-2 bg-blue-50 rounded-lg">
+              <h3 className="text-sm font-semibold text-blue-700">
                 Week {currentRound} of {totalRounds}
               </h3>
             </div>
@@ -568,7 +464,7 @@ const Room = () => {
           {/* Enhanced Users Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
-              <h3 className="text-xl font-semibold">{showRankings ? "Leaderboard" : `Users (${users.length})`}</h3>
+              <h3 className="text-sm font-semibold">{showRankings ? "Leaderboard" : `Users (${users.length})`}</h3>
               {roomStatus === "active" && (
                 <button
                   onClick={() => {
@@ -589,47 +485,47 @@ const Room = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
                       {showRankings ? "Rank" : "#"}
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
                       User
                     </th>
                     {showRankings && (
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                         Total Revenue
                       </th>
                     )}
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                       {showRankings ? "Revenue" : "Port"}
                     </th>
                     {showRankings && (
                       <>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
                           Total Penalty
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
+                        {/* <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
                           Move Cost
-                        </th>
-                        {/* <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
+                        </th> */}
+                        {/* <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
                           Extra Moves
                         </th> */}
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
+                        {/* <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
                           Dock Warehouse Cost
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-30">
                           Restowage Cost
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                           Moves
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                           Cards
-                        </th>
+                        </th> */}
                       </>
                     )}
                     {!showRankings && user && user.is_admin === true && (
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Actions
                       </th>
                     )}
@@ -640,50 +536,50 @@ const Room = () => {
                     rankings.length > 0 ? (
                       rankings.map((rank, index) => (
                         <tr key={`rank-${rank.user_id}-${index}`} className={`${index === 0 ? "bg-yellow-50" : ""} hover:bg-gray-50`}>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <span className={`px-2 py-1 text-sm font-semibold rounded-full ${index === 0 ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>#{index + 1}</span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">{rank.user_name}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm text-green-600 font-medium">{formatIDR(rank.total_revenue)}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm text-green-600">{formatIDR(rank.revenue)}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm text-red-600">{formatIDR(rank.penalty)}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          {/* <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm text-red-600">TODO</div>
-                          </td>
-                          {/* <td className="px-6 py-4 whitespace-nowrap">
+                          </td> */}
+                          {/* <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm text-red-600">{formatIDR(rank.extra_moves_penalty)}</div>
                           </td> */}
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          {/* <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm text-red-600">{formatIDR(rank.dock_warehouse_penalty)}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm text-red-600">{formatIDR(rank.restowage_penalty)}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <div className="flex flex-col text-sm text-gray-500">
                               <span>D: {rank.discharge_moves}</span>
                               <span>L: {rank.load_moves}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap">
                             <div className="flex flex-col text-sm">
                               <span className="text-green-600">A: {rank.accepted_cards}</span>
                               <span className="text-red-600">R: {rank.rejected_cards}</span>
                             </div>
-                          </td>
+                          </td> */}
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="8" className="px-6 py-4 text-center text-gray-500 italic">
+                        <td colSpan="8" className="px-4 py-3 text-center text-gray-500 italic">
                           No rankings available yet.
                         </td>
                       </tr>
@@ -691,15 +587,15 @@ const Room = () => {
                   ) : users && users.length > 0 ? (
                     users.map((singleUser, index) => (
                       <tr key={`user-${singleUser.id}-${index}`} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="text-sm font-medium text-gray-900">{singleUser.name}</div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignedPorts[singleUser.id] || "Not Assigned"}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{assignedPorts[singleUser.id] || "Not Assigned"}</td>
                         {user && user.is_admin === true && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <td className="px-4 py-3 whitespace-nowrap text-right">
                             <button
                               onClick={() => handleKickUserClick(singleUser.id)}
                               className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white 
@@ -714,7 +610,7 @@ const Room = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="px-6 py-4 text-center text-gray-500 italic">
+                      <td colSpan="4" className="px-4 py-3 text-center text-gray-500 italic">
                         No users in the room.
                       </td>
                     </tr>
@@ -725,10 +621,10 @@ const Room = () => {
           </div>
 
           {/* Enhanced Button Group */}
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
             <button
               onClick={handleBack}
-              className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -741,7 +637,7 @@ const Room = () => {
                 onClick={() => {
                   navigate(`/simulation/${roomId}`);
                 }}
-                className="inline-flex items-center justify-center px-4 py-4 border-2 border-green-500 text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors shadow-lg"
+                className="inline-flex items-center justify-center px-4 py-3 border-2 border-green-500 text-xs font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors shadow-lg"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -754,7 +650,7 @@ const Room = () => {
               <>
                 <button
                   onClick={() => setShowPortPopup(true)}
-                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -763,7 +659,7 @@ const Room = () => {
                 </button>
                 <button
                   onClick={handleStartClick}
-                  className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white 
+                  className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-medium rounded-lg text-white 
     ${!portsSet || users.length < 2 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors`}
                   disabled={!portsSet || users.length < 2}
@@ -784,7 +680,7 @@ const Room = () => {
                 <button
                   onClick={() => setShowSwapConfigModal(true)}
                   disabled={currentRound > totalRounds}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
+                  className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-400" : "bg-yellow-400 border-2 border-yellow-500 text-white hover:bg-yellow-500"} 
     shadow-sm`}
                   title={currentRound > totalRounds ? "Swap configuration disabled in final discharging phase" : "Edit swap configuration"}
@@ -802,8 +698,8 @@ const Room = () => {
                 {/* Swap Bays Button */}
                 <button
                   onClick={handleSwapBays}
-                  // disabled={currentRound > totalRounds}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
+                  disabled={currentRound > totalRounds}
+                  className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"} 
     shadow-md`}
                   title={currentRound > totalRounds ? "Bay swapping disabled in final discharging phase" : "Swap bays"}
@@ -819,7 +715,7 @@ const Room = () => {
                 <button
                   onClick={endSimulation}
                   disabled={currentRound <= totalRounds}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-md transition-all duration-200 ${
+                  className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-md transition-all duration-200 ${
                     currentRound > totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   }`}
                   title={currentRound <= totalRounds ? `Can only end simulation after the final discharging phase (Week ${totalRounds + 1})` : "End simulation"}
@@ -858,7 +754,7 @@ const Room = () => {
       {/* Bottom Marquee */}
       <div className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 py-3 shadow-md">
         <div className="relative overflow-hidden h-10">
-          <div className="absolute whitespace-nowrap animate-marquee-bottom text-white text-xl font-bold marquee-container italic flex items-center justify-center w-full">
+          <div className="absolute whitespace-nowrap animate-marquee-bottom text-white text-lg font-bold marquee-container italic flex items-center justify-center w-full">
             <span className="mr-4">⚓</span> WAITING ROOM <span className="ml-4">⚓</span>
           </div>
         </div>
@@ -869,17 +765,17 @@ const Room = () => {
 
       {showSwapConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4">Confirm Bay Swap</h3>
-            <p className="mb-4">Are you sure you want to swap bays and advance to week {currentRound + 1}? This action cannot be undone.</p>
+          <div className="bg-white p-4 rounded-lg shadow-xl max-w-3xl">
+            <h3 className="text-1xl font-bold mb-4">Confirm Bay Swap</h3>
+            <p className="mb-2 text-sm text-red-500">Are you sure you want to swap bays and advance to week {currentRound + 1}? This action cannot be undone.</p>
 
             {Object.keys(swapConfig).length > 0 && (
-              <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="mb-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <div className="p-3 bg-blue-500 text-white">
-                  <h4 className="font-semibold text-center">Week {currentRound + 1} Port Swapping</h4>
+                  <h4 className="font-semibold text-center text-sm">Week {currentRound + 1} Port Swapping</h4>
                 </div>
 
-                <div className="p-4 max-h-[250px] overflow-y-auto pr-1">
+                <div className="p-2 max-h-[500px] overflow-y-auto pr-1">
                   <div className="grid gap-3">
                     {Object.entries(swapConfig).map(([from, to], index) => {
                       // Get port colors or use default colors
@@ -921,7 +817,7 @@ const Room = () => {
               </div>
             )}
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-2 text-sm">
               <button onClick={() => setShowSwapConfirmation(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                 Cancel
               </button>
@@ -935,8 +831,8 @@ const Room = () => {
 
       {showStartConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl p-8 shadow-2xl max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Start Simulation</h3>
+          <div className="bg-white rounded-xl p-6 shadow-2xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Start Simulation</h3>
 
             {missingUsersCount > 0 ? (
               <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -962,7 +858,7 @@ const Room = () => {
 
             <p className="text-gray-600 mb-6">Are you sure you want to start the simulation?</p>
 
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-2 text-sm">
               <button onClick={() => setShowStartConfirmation(false)} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 Cancel
               </button>

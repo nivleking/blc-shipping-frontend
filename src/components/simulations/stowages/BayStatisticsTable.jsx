@@ -14,6 +14,7 @@ const BayStatisticsTable = ({
   setShowHistorical,
   restowageMoves = 0,
   restowagePenalty = 0,
+  restowageContainerCount = 0,
 }) => {
   const getBayNumber = (index) => {
     return index + 1;
@@ -32,6 +33,7 @@ const BayStatisticsTable = ({
     totalMoves: historicalStats && typeof historicalStats.discharge_moves === "number" && typeof historicalStats.load_moves === "number" ? Number(historicalStats.discharge_moves) + Number(historicalStats.load_moves) : totalMoves,
     restowageMoves: historicalStats?.restowage_moves !== undefined ? Number(historicalStats.restowage_moves) : restowageMoves,
     restowagePenalty: historicalStats?.restowage_penalty !== undefined ? Number(historicalStats.restowage_penalty) : restowagePenalty,
+    restowage_container_count: historicalStats?.restowage_container_count !== undefined ? Number(historicalStats.restowage_container_count) : restowageContainerCount,
     // bayPairs: historicalStats?.bay_pairs && historicalStats.bay_pairs !== "null" ? JSON.parse(historicalStats.bay_pairs) : bayPairs,
     // longCraneMoves: historicalStats?.long_crane_moves !== undefined ? Number(historicalStats.long_crane_moves) : longCraneMoves,
     // extraMovesOnLongCrane: historicalStats?.extra_moves_on_long_crane !== undefined ? Number(historicalStats.extra_moves_on_long_crane) : extraMovesOnLongCrane,
@@ -40,6 +42,8 @@ const BayStatisticsTable = ({
   // Safely calculate ideal average moves per crane
   // const idealAverageMovesPerCrane = idealCraneSplit > 0 ? displayData.totalMoves / idealCraneSplit : 0;
   // const formattedAverage = isNaN(idealAverageMovesPerCrane) ? "0.00" : idealAverageMovesPerCrane.toFixed(2);
+
+  const totalDisplayMoves = displayData.discharge_moves + displayData.load_moves;
 
   return (
     <div className="flex flex-col space-y-1">
@@ -134,12 +138,12 @@ const BayStatisticsTable = ({
                 ))}
               </tr>
 
-              {/* Restowage Boxes Row */}
+              {/* Restowage Containers Row */}
               <tr>
-                <td className="px-1 py-1 font-medium border border-gray-200 sticky left-0 bg-white z-10">Restow Boxes</td>
+                <td className="px-1 py-1 font-medium border border-gray-200 sticky left-0 bg-white z-10">Restow Containers</td>
                 {bayNumbers.map((_, index) => (
-                  <td key={`restowage-penalty-${index}`} className="px-1 py-1 text-center border border-gray-200">
-                    {displayData.bayMoves[index]?.restowage_penalty || 0}
+                  <td key={`restowage-containers-${index}`} className="px-1 py-1 text-center border border-gray-200">
+                    {displayData.bayMoves[index]?.restowage_container_count || 0}
                   </td>
                 ))}
               </tr>
