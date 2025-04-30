@@ -11,6 +11,7 @@ import ContainerLegend from "./ContainerLegend";
 import FinancialSummaryModal from "./FinancialSummaryModal";
 
 const Stowage = ({
+  revenue,
   bayCount,
   baySize,
   bayTypes,
@@ -75,6 +76,7 @@ const Stowage = ({
 
       {financialSummary && (
         <FinancialSummaryModal
+          existingRevenue={revenue}
           isOpen={showFinancialModal}
           onClose={() => toggleFinancialModal(false)}
           financialData={financialSummary}
@@ -179,7 +181,7 @@ const Stowage = ({
               </h3>
 
               <div>
-                <PortLegendSimulation compact={true} />
+                <PortLegendSimulation compact={true} port={port} />
               </div>
 
               {section === 2 ? (

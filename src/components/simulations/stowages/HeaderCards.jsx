@@ -5,7 +5,19 @@ const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
 };
 
-const HeaderCards = ({ roomId, revenue, penalties, rank, section, port, moves = {}, currentRound = 1, totalRounds = 1, moveCost, dockWarehouseCost, restowageCost }) => {
+const HeaderCards = ({
+  roomId,
+  revenue,
+  penalties,
+  section,
+  port,
+  moves = {},
+  currentRound = 1,
+  totalRounds = 1,
+  moveCost,
+  dockWarehouseCost,
+  restowageCost, //
+}) => {
   const { user } = useContext(AppContext);
   const [showExpenses, setShowExpenses] = useState(false);
 

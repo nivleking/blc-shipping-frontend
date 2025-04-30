@@ -1,6 +1,13 @@
 import React, { useEffect, useRef } from "react";
 
-const FinancialSummaryModal = ({ isOpen, onClose, financialData, formatIDR, currentRound = 1 }) => {
+const FinancialSummaryModal = ({
+  existingRevenue,
+  isOpen,
+  onClose,
+  financialData,
+  formatIDR,
+  currentRound = 1, //
+}) => {
   const modalRef = useRef(null);
 
   // Handle click outside modal
@@ -323,7 +330,7 @@ const FinancialSummaryModal = ({ isOpen, onClose, financialData, formatIDR, curr
                           </div>
                         </td>
                         <td className="px-3 py-2 text-[10px] text-center text-gray-500 border-r">-</td>
-                        <td className="px-3 py-2 text-[10px] text-right font-medium text-green-600">{formatIDR(revenue)}</td>
+                        <td className="px-3 py-2 text-[10px] text-right font-medium text-green-600">{formatIDR(existingRevenue)}</td>
                       </tr>
 
                       {/* Move Costs */}
