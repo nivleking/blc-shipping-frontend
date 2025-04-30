@@ -53,7 +53,7 @@ const SwapConfigModal = ({ isOpen, onClose, deckOrigins, onSave, initialConfig =
             </button>
           </div>
 
-          <div className="p-3 bg-blue-50 rounded-md mb-4">
+          <div className="p-4 bg-blue-50 rounded-md mb-2">
             <p className="text-sm text-blue-700">Configure how ports will be swapped each week. This configuration will persist until manually changed.</p>
           </div>
 
@@ -62,10 +62,10 @@ const SwapConfigModal = ({ isOpen, onClose, deckOrigins, onSave, initialConfig =
           ) : (
             <div className="flex flex-col md:flex-row md:space-x-6">
               {/* Form section */}
-              <div className="md:w-1/2 space-y-4 max-h-[60vh] overflow-y-auto pr-2 order-2 md:order-1">
-                <h4 className="font-medium text-gray-700 mb-2">Port Assignment</h4>
+              <div className="md:w-1/2 space-y-2 max-h-[60vh] overflow-y-auto pr-2 order-2 md:order-1">
+                <h4 className="font-medium text-gray-700 text-center text-sm">Port Assignment</h4>
                 {deckOrigins.map((originPort) => (
-                  <div key={originPort} className="flex items-center gap-4 bg-white p-3 rounded-lg border">
+                  <div key={originPort} className="flex items-center gap-5 bg-white p-4 text-sm rounded-lg border">
                     <span className="font-medium min-w-[100px]">{originPort}</span>
                     <span className="text-gray-500">→</span>
                     <select className="flex-1 rounded-lg border border-gray-300 p-2" value={swapConfig[originPort] || ""} onChange={(e) => handleSwapChange(originPort, e.target.value)}>
@@ -83,7 +83,7 @@ const SwapConfigModal = ({ isOpen, onClose, deckOrigins, onSave, initialConfig =
               </div>
 
               {/* Visualization section */}
-              <div className="md:w-1/2 bg-gray-50 rounded-lg order-1 md:order-2 mb-6 md:mb-0">{deckOrigins && deckOrigins.length > 0 && <SwapDiagram origins={deckOrigins} swapConfig={swapConfig} />}</div>
+              <div className="md:w-1/2 bg-gray-50 rounded-lg order-1 md:order-2 mb-2 md:mb-0">{deckOrigins && deckOrigins.length > 0 && <SwapDiagram origins={deckOrigins} swapConfig={swapConfig} />}</div>
             </div>
           )}
 

@@ -131,11 +131,11 @@ const RoomTableView = ({ rooms, currentPageData, user, admins, handleOpenRoom, h
                       </button>
                     )}
 
-                    {room.status !== "active" && room.status !== "finished" && (
+                    {/* {room.status !== "active" && room.status !== "finished" && (
                       <button onClick={() => handleEditRoom(room)} className="text-yellow-600 hover:text-yellow-900 p-1 rounded-full hover:bg-yellow-50" title="Edit room">
                         <HiPencilAlt className="w-5 h-5" />
                       </button>
-                    )}
+                    )} */}
 
                     <button onClick={(e) => handleDeleteRoom(room.id)(e)} className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50" title="Delete room">
                       <AiFillDelete className="w-5 h-5" />

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { FaHome, FaDoorOpen, FaShip } from "react-icons/fa";
+import { FaHome, FaShip, FaHistory } from "react-icons/fa";
 
 const UserSidebar = ({ isSidebarOpen }) => {
   const location = useLocation();
@@ -10,6 +10,7 @@ const UserSidebar = ({ isSidebarOpen }) => {
 
   const sidebarItems = [
     { path: "/user-home", icon: FaHome, label: "Home" },
+    { path: "/previous-simulations", icon: FaHistory, label: "Previous Simulations" },
     // { path: "/room", icon: FaDoorOpen, label: "Rooms" },
   ];
 

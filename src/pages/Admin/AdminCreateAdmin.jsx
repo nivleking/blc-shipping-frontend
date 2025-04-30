@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../axios/axios";
 import { AppContext } from "../../context/AppContext";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import PasswordConfirmationModal from "../../components/PasswordConfirmationModal";
 import AdminList from "../../components/admins/create_admin/AdminList";
 import CreateAdminForm from "../../components/admins/create_admin/CreateAdminForm";
 import LoadingOverlay from "../../components/LoadingOverlay";
 import "./AdminHome.css";
+import useToast from "../../toast/useToast";
 
-// Define loading messages for different operations
 const loadingMessages = {
   create: ["Creating new admin..."],
   update: ["Updating admin information..."],
@@ -20,39 +19,181 @@ const loadingMessages = {
 };
 
 const AdminCreateAdmin = () => {
+  const { showSuccess, showError } = useToast();
   const { user, token } = useContext(AppContext);
+  const queryClient = useQueryClient();
+
+  // Form state
   const [formData, setFormData] = useState({
     name: "",
     is_admin: true,
     password: "",
     password_confirmation: "",
   });
-  const [admins, setAdmins] = useState([]);
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 5;
 
-  // Loading states
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingOperation, setLoadingOperation] = useState("");
-  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-
+  // Modal states
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     adminId: null,
   });
-  const [passwordVisibility, setPasswordVisibility] = useState({});
-  const [visiblePasswords, setVisiblePasswords] = useState({});
   const [passwordModal, setPasswordModal] = useState({
     isOpen: false,
     adminId: null,
   });
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Effect for loading message rotation
+  // UI states
+  const [passwordVisibility, setPasswordVisibility] = useState({});
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [loadingOperation, setLoadingOperation] = useState("");
+
+  // Fetch admins query
+  const { data: adminsData, isLoading: isLoadingAdmins } = useQuery({
+    queryKey: ["users", { isAdmin: true }],
+    queryFn: async () => {
+      setLoadingOperation("fetch");
+      setLoadingMessageIndex(0);
+
+      const response = await api.get("/users", {
+        params: { is_admin: true },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return response.data.map((admin) => ({
+        ...admin,
+        status: admin.status || "active",
+        login_count: admin.login_count || 0,
+        last_login_at: admin.last_login_at || null,
+        created_by: admin.created_by || { name: "System" },
+        updated_by: admin.updated_by || null,
+      }));
+    },
+    enabled: !!token,
+    onError: (error) => {
+      console.error("Error fetching admins:", error);
+      showError("Failed to fetch admins");
+    },
+  });
+
+  const admins = adminsData || [];
+
+  // Create/update admin mutation
+  const adminMutation = useMutation({
+    mutationFn: async (data) => {
+      const isUpdate = !!editingAdmin;
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (isUpdate) {
+        const changedFields = {};
+        if (data.name !== editingAdmin.name) {
+          changedFields.name = data.name;
+        }
+        if (data.password) {
+          changedFields.password = data.password;
+          changedFields.password_confirmation = data.password_confirmation;
+        }
+
+        return api.put(`/users/${editingAdmin.id}`, changedFields, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        return api.post("/users/register", data, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    },
+    onMutate: () => {
+      setLoadingOperation(editingAdmin ? "update" : "create");
+      setLoadingMessageIndex(0);
+      return { operation: editingAdmin ? "update" : "create" };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admins"]);
+      setFormData({
+        name: "",
+        is_admin: true,
+        password: "",
+        password_confirmation: "",
+      });
+      setEditingAdmin(null);
+      setFormErrors({});
+      showSuccess(editingAdmin ? "Admin updated successfully" : "New admin created successfully");
+    },
+    onError: (error) => {
+      if (error.response?.data?.errors) {
+        setFormErrors(error.response.data.errors);
+      }
+      showError(error.response?.data?.message || "Failed to save admin");
+    },
+  });
+
+  // Delete admin mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (adminId) => {
+      setConfirmModal({ isOpen: false, adminId: null });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return api.delete(`/users/${adminId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onMutate: () => {
+      setLoadingOperation("delete");
+      setLoadingMessageIndex(0);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admins"]);
+      showSuccess("Admin deleted successfully");
+    },
+    onError: (error) => {
+      console.error("Error deleting admin:", error);
+      showError("Failed to delete admin");
+    },
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: async ({ adminId, superAdminPassword }) => {
+      return api.post(
+        `/users/${adminId}/password`,
+        { super_admin_password: superAdminPassword },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    },
+    onMutate: () => {
+      setLoadingOperation("password");
+      setLoadingMessageIndex(0);
+    },
+    onSuccess: (response, variables) => {
+      if (response.data?.password) {
+        setVisiblePasswords((prev) => ({
+          ...prev,
+          [variables.adminId]: response.data.password,
+        }));
+        setPasswordVisibility((prev) => ({
+          ...prev,
+          [variables.adminId]: false,
+        }));
+        showSuccess("Password retrieved successfully");
+      }
+    },
+    onError: (error) => {
+      console.error("Error fetching password:", error);
+      showError(error.response?.data?.message || "Failed to retrieve password");
+    },
+  });
+
   useEffect(() => {
     let interval;
+    const isLoading = adminMutation.isPending || deleteMutation.isPending || passwordMutation.isPending || isLoadingAdmins;
+
     if (isLoading && loadingOperation) {
       interval = setInterval(() => {
         setLoadingMessageIndex((prev) => {
@@ -62,9 +203,9 @@ const AdminCreateAdmin = () => {
       }, 2000);
     }
     return () => clearInterval(interval);
-  }, [isLoading, loadingOperation]);
+  }, [adminMutation.isPending, deleteMutation.isPending, passwordMutation.isPending, isLoadingAdmins, loadingOperation]);
 
-  const togglePasswordVisibility = async (adminId) => {
+  const togglePasswordVisibility = (adminId) => {
     if (visiblePasswords[adminId]) {
       setVisiblePasswords((prev) => {
         const newState = { ...prev };
@@ -79,46 +220,12 @@ const AdminCreateAdmin = () => {
     }
   };
 
-  const handlePasswordConfirm = async (superAdminPassword) => {
+  const handlePasswordConfirm = (superAdminPassword) => {
+    passwordMutation.mutate({
+      adminId: passwordModal.adminId,
+      superAdminPassword,
+    });
     setPasswordModal({ isOpen: false, adminId: null });
-
-    // Set loading state
-    setIsLoading(true);
-    setLoadingOperation("password");
-    setLoadingMessageIndex(0);
-
-    // Add delay for better UX
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    try {
-      const response = await api.post(
-        `/users/${passwordModal.adminId}/password`,
-        { super_admin_password: superAdminPassword },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data?.password) {
-        setVisiblePasswords((prev) => ({
-          ...prev,
-          [passwordModal.adminId]: response.data.password,
-        }));
-        setPasswordVisibility((prev) => ({
-          ...prev,
-          [passwordModal.adminId]: false,
-        }));
-        toast.success("Password retrieved successfully");
-      }
-    } catch (error) {
-      console.error("Error fetching password:", error);
-      toast.error(error.response?.data?.message || "Failed to retrieve password");
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleDeleteClick = (admin) => {
@@ -142,69 +249,9 @@ const AdminCreateAdmin = () => {
     });
   };
 
-  const handleConfirmDelete = async () => {
-    setConfirmModal({ isOpen: false, adminId: null });
-
-    // Set loading state
-    setIsLoading(true);
-    setLoadingOperation("delete");
-    setLoadingMessageIndex(0);
-
-    // Add delay for loading state visibility
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    try {
-      await api.delete(`/users/${confirmModal.adminId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setAdmins(admins.filter((admin) => admin.id !== confirmModal.adminId));
-      toast.success("Admin deleted successfully");
-    } catch (error) {
-      console.error("Error deleting admin:", error);
-      toast.error("Failed to delete admin");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleConfirmDelete = () => {
+    deleteMutation.mutate(confirmModal.adminId);
   };
-
-  useEffect(() => {
-    if (token) {
-      fetchAdmins();
-    }
-  }, [token]);
-
-  async function fetchAdmins() {
-    setIsLoading(true);
-    setLoadingOperation("fetch");
-    setLoadingMessageIndex(0);
-
-    try {
-      const response = await api.get("/all-admins", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const processedAdmins = response.data.map((admin) => ({
-        ...admin,
-        status: admin.status || "active",
-        login_count: admin.login_count || 0,
-        last_login_at: admin.last_login_at || null,
-        created_by: admin.created_by || { name: "System" },
-        updated_by: admin.updated_by || null,
-      }));
-
-      setAdmins(processedAdmins);
-    } catch (error) {
-      console.error("Error fetching admins:", error);
-      toast.error("Failed to fetch admins");
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -214,66 +261,9 @@ const AdminCreateAdmin = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Set loading state
-    setIsLoading(true);
-    setLoadingOperation(editingAdmin ? "update" : "create");
-    setLoadingMessageIndex(0);
-
-    // Add delay for loading state visibility
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-
-    try {
-      const dataToSubmit = { ...formData };
-
-      if (editingAdmin && !dataToSubmit.password) {
-        delete dataToSubmit.password;
-        delete dataToSubmit.password_confirmation;
-      }
-
-      if (editingAdmin) {
-        const changedFields = {};
-        if (dataToSubmit.name !== editingAdmin.name) {
-          changedFields.name = dataToSubmit.name;
-        }
-        if (dataToSubmit.password) {
-          changedFields.password = dataToSubmit.password;
-          changedFields.password_confirmation = dataToSubmit.password_confirmation;
-        }
-
-        await api.put(`/users/${editingAdmin.id}`, changedFields, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        toast.success("Admin updated successfully");
-      } else {
-        await api.post("/users/register", dataToSubmit, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        toast.success("New admin created successfully");
-      }
-
-      setFormData({
-        name: "",
-        is_admin: true,
-        password: "",
-        password_confirmation: "",
-      });
-      setEditingAdmin(null);
-      setFormErrors({});
-      fetchAdmins();
-    } catch (error) {
-      setFormErrors(error.response.data.errors);
-      console.error("Error creating/updating admin:", error);
-      toast.error(error.response.data.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
+    adminMutation.mutate(formData);
   };
 
   const handleEdit = (admin) => {
@@ -290,35 +280,17 @@ const AdminCreateAdmin = () => {
     setCurrentPage(event.selected);
   };
 
-  const offset = currentPage * itemsPerPage;
+  // Pagination and filtering logic
   const filteredAdmins = admins.filter((admin) => admin.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const offset = currentPage * itemsPerPage;
   const currentPageData = filteredAdmins.slice(offset, offset + itemsPerPage);
   const pageCount = Math.ceil(filteredAdmins.length / itemsPerPage);
 
+  // Determine if any loading state is active
+  const isLoading = adminMutation.isPending || deleteMutation.isPending || passwordMutation.isPending || isLoadingAdmins;
+
   return (
     <div className="container mx-auto p-4">
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        limit={3}
-        toastStyle={{
-          backgroundColor: "#ffffff",
-          color: "#1f2937",
-          borderRadius: "0.5rem",
-          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-          fontSize: "0.875rem",
-          padding: "1rem",
-        }}
-      />
-
       {/* Loading Overlay */}
       {isLoading && loadingOperation && (
         <LoadingOverlay

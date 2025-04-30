@@ -6,24 +6,24 @@ const CreateUserForm = ({ formData, handleChange, handleSubmit, formErrors, edit
     <div className="bg-white p-8 rounded-lg shadow-lg mb-4">
       <div className="flex items-center mb-6">
         <div className="p-2 bg-blue-100 rounded-lg">
-          <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
-        <h3 className="ml-3 text-1xl font-bold text-gray-800">{editingUser ? "Edit Group User" : "Create New Group User"}</h3>
+        <h3 className="ml-3 text-1xl font-bold text-gray-800">{editingUser ? "Edit User" : "Create New User"}</h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <form onSubmit={handleSubmit} className="space-y-2 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {/* Name Field */}
           <div className="flex flex-col">
             <div className="flex items-center">
               <label htmlFor="name" className="block text-gray-700 font-semibold">
-                Group User Name
+                User Name
               </label>
-              <Tooltip>Enter a unique name for the group user. This name will be used for identification purposes.</Tooltip>
+              <Tooltip>Enter a unique name for the user. This name will be used for identification purposes.</Tooltip>
             </div>
-            <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter group user name" />
+            <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="Enter user name" />
             {formErrors.name && <p className="text-red-500 mt-1 text-sm">{formErrors.name[0]}</p>}
           </div>
 
@@ -69,7 +69,7 @@ const CreateUserForm = ({ formData, handleChange, handleSubmit, formErrors, edit
 
         <div className="flex justify-start">
           <button type="submit" className="p-3 text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">
-            {editingUser ? "Update Group User" : "Create Group User"}
+            {editingUser ? "Update User" : "Create User"}
           </button>
         </div>
       </form>

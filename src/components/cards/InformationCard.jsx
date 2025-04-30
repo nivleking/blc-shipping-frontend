@@ -133,7 +133,7 @@ const InformationCard = () => {
               <li>Total Cards: 32 (8 per port)</li>
               <li>Total Containers: 60 (15 per port)</li>
               <li>Total Revenue: Rp 1,000,000,000 (250M per port)</li>
-              <li>Ports: SBY, MKS, MDN, JYP</li>
+              <li>Ports: SBY, MDN, MKS, JYP</li>
             </ul>
           </div>
           <div className="bg-blue-50 p-3 rounded">
@@ -142,7 +142,7 @@ const InformationCard = () => {
               <li>Total Cards: 64 (8 per port)</li>
               <li>Total Containers: 120 (15 per port)</li>
               <li>Total Revenue: Rp 2,000,000,000 (250M per port)</li>
-              <li>Ports: SBY, MKS, MDN, JYP, BPN, BKS, BGR, BTH</li>
+              <li>Ports: SBY, MDN, MKS, JYP, BPN, BKS, BGR, BTH</li>
             </ul>
           </div>
         </div>
@@ -179,7 +179,7 @@ const InformationCard = () => {
               <h4 className="font-medium text-gray-800 mb-1">Card Properties</h4>
               <ul className="list-disc pl-4 text-sm text-gray-700 space-y-1">
                 <li>
-                  <strong>Card ID:</strong> Unique identifier (1-99999)
+                  <strong>Card ID:</strong> Unique identifier
                 </li>
                 <li>
                   <strong>Origin Port:</strong> Where containers are loaded
@@ -298,7 +298,7 @@ const InformationCard = () => {
         <p className="text-purple-700 mb-2">Start with the provided template to ensure your import works correctly:</p>
         <div className="bg-white p-3 rounded border border-purple-200">
           <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
-            <li>Go to the Cards tab and select "File Generate"</li>
+            <li>Go to the Cards tab and select "Import File"</li>
             <li>Click the "Download Template" button</li>
             <li>Save the template to your computer</li>
             <li>
@@ -329,7 +329,7 @@ const InformationCard = () => {
               <h4 className="font-medium text-gray-800 mb-1">Required Columns</h4>
               <ul className="list-disc pl-4 text-sm text-gray-700 space-y-1">
                 <li>
-                  <strong>ID:</strong> Unique identifier (1-99999)
+                  <strong>ID:</strong> Unique identifier
                 </li>
                 <li>
                   <strong>Origin:</strong> Port code (SBY, MKS, etc.)
@@ -357,7 +357,7 @@ const InformationCard = () => {
                 <li>Keep the header row intact</li>
                 <li>Don't modify the column structure</li>
                 <li>Add as many rows as needed</li>
-                <li>Valid port codes: SBY, MKS, MDN, JYP, BPN, BKS, BGR, BTH, AMQ, SMR</li>
+                <li>Valid port codes: SBY, MDN, MKS, JYP, BPN, BKS, BGR, BTH, AMQ, SMR</li>
                 <li>Total Revenue is calculated automatically</li>
                 <li>Save the file as .xlsx or .xls</li>
               </ul>
@@ -375,7 +375,7 @@ const InformationCard = () => {
         <p className="text-purple-700 mb-2">Upload and review your file:</p>
         <div className="bg-white p-3 rounded border border-purple-200">
           <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
-            <li>Return to the File Generate tab in the Cards section</li>
+            <li>Return to the Import File tab in the Cards section</li>
             <li>Click "Upload Excel File" or drag and drop your file</li>
             <li>A preview will appear showing the parsed data</li>
             <li>Review the data for any errors</li>
@@ -495,7 +495,7 @@ const InformationCard = () => {
             >
               <div className="flex items-center justify-center space-x-1">
                 <BsFileEarmarkSpreadsheet />
-                <span>File Generate</span>
+                <span>Import File</span>
               </div>
             </Tab>
           </Tab.List>
