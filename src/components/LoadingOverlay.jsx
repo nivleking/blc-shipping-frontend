@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ImSpinner8 } from "react-icons/im";
 import { GiCargoShip } from "react-icons/gi";
 
 const LoadingOverlay = ({ messages, currentMessageIndex, title }) => {
@@ -31,24 +30,17 @@ const LoadingOverlay = ({ messages, currentMessageIndex, title }) => {
             <h2 className="text-2xl font-bold text-blue-800">{title}</h2>
           </div>
 
-          {/* Loading animation */}
+          {/* BLC Logo with spinning border - replacing the previous spinner */}
           <div className="flex justify-center my-6">
-            <div className="relative">
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="text-4xl text-blue-600">
-                <ImSpinner8 />
-              </motion.div>
-              <motion.div
-                animate={{
-                  y: [0, -15, 0],
-                  opacity: [1, 0.6, 1],
-                }}
-                transition={{
-                  duration: 1.8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xl text-blue-500"
-              ></motion.div>
+            <div className="relative w-24 h-24">
+              {/* Static circle behind the logo */}
+              <div className="absolute inset-0 rounded-full border-4 border-blue-200 border-opacity-30"></div>
+
+              {/* Spinning border */}
+              <motion.div className="absolute inset-0 rounded-full border-t-4 border-b-4 border-blue-500" animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}></motion.div>
+
+              {/* BLC Logo */}
+              <img src="/blc_circle.png" alt="BLC Logo" className="w-24 h-24 relative z-10" />
             </div>
           </div>
 

@@ -3,12 +3,13 @@ import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOption
 import { HiCheck, HiChevronUpDown } from "react-icons/hi2";
 import { AiFillEye } from "react-icons/ai";
 import RenderShipBayLayout from "../../simulations/RenderShipBayLayout";
-import { toast } from "react-toastify";
 import DeckPreviewModal from "./DeckPreviewModal";
 import Tooltip from "../../Tooltip";
 import SwapConfigModal from "../../rooms/SwapConfigModal";
+import useToast from "../../../toast/useToast";
 
 const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEditModal, layouts, availableUsers, decks, handleUpdateRoom, selectedDeck, setSelectedDeck, handleDeckChange }) => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [layoutQuery, setLayoutQuery] = useState("");
   const [query, setQuery] = useState("");
   const [showLayoutPreview, setShowLayoutPreview] = useState(false);
@@ -63,7 +64,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
       const processValue = parseInt(value);
 
       if (processValue > limitPerRound) {
-        toast.warning("Must process cards cannot exceed cards limit per round");
+        showWarning("Must process cards cannot exceed cards limit per round");
         return;
       }
     }
@@ -224,7 +225,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
             </div>
 
             {/* Extra Moves Cost */}
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <div className="flex items-center">
                 <label htmlFor="extra_moves_cost" className="text-gray-700 font-semibold mb-2">
                   Extra Moves Cost (IDR)
@@ -250,10 +251,10 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                 </div>
               </div>
               {errors.extra_moves_cost && <p className="text-red-500 mt-1 text-sm">{errors.extra_moves_cost}</p>}
-            </div>
+            </div> */}
 
             {/* Ideal Crane Split */}
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <div className="flex items-center">
                 <label htmlFor="ideal_crane_split" className="text-gray-700 font-semibold mb-2">
                   Ideal Crane Split
@@ -271,6 +272,64 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                 className={`p-3 border ${errors.ideal_crane_split ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:border-blue-500`}
               />
               {errors.ideal_crane_split && <p className="text-red-500 mt-1 text-sm">{errors.ideal_crane_split}</p>}
+            </div> */}
+
+            {/* Dock Warehouse Cost */}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <label htmlFor="dock_warehouse_cost" className="text-gray-700 font-semibold mb-2">
+                  Dock Warehouse Cost (IDR)
+                </label>
+                <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_cost"
+                  id="dock_warehouse_cost"
+                  className={`w-full p-3 pl-10 pr-12 border ${errors.dock_warehouse_cost ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:border-blue-500`}
+                  placeholder="50000"
+                  min="1"
+                  value={editingRoom.dock_warehouse_cost || 50000}
+                  onChange={handleChange}
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per move</span>
+                </div>
+              </div>
+              {errors.dock_warehouse_cost && <p className="text-red-500 mt-1 text-sm">{errors.dock_warehouse_cost}</p>}
+            </div>
+
+            {/* Restowage Cost */}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <label htmlFor="restowage_cost" className="text-gray-700 font-semibold mb-2">
+                  Restowage Cost (IDR)
+                </label>
+                <Tooltip></Tooltip>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="restowage_cost"
+                  id="restowage_cost"
+                  className={`w-full p-3 pl-10 pr-12 border ${errors.restowage_cost ? "border-red-500" : "border-gray-300"} rounded-lg focus:outline-none focus:border-blue-500`}
+                  placeholder="50000"
+                  min="1"
+                  value={editingRoom.restowage_cost || 50000}
+                  onChange={handleChange}
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per move</span>
+                </div>
+              </div>
+              {errors.restowage_cost && <p className="text-red-500 mt-1 text-sm">{errors.restowage_cost}</p>}
             </div>
 
             {/* Deck Selection */}
@@ -394,7 +453,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
             <div className="flex flex-col">
               <div className="flex items-center">
                 <label className="text-gray-700 font-semibold mb-2">Max Users</label>
-                <Tooltip>Maximum number of players who can join this room (determined by deck)</Tooltip>
+                <Tooltip>Maximum number of users who can join this room (determined by deck)</Tooltip>
               </div>
               <input type="number" disabled value={editingRoom.max_users || 0} className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-gray-100 text-gray-600" />
             </div>
@@ -451,7 +510,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center">
                   <label className="text-gray-700 font-semibold">Assign Users</label>
-                  <Tooltip>Select group users who can join this room</Tooltip>
+                  <Tooltip>Select users who can join this room</Tooltip>
                 </div>
                 <span className={`text-sm ${editingRoom.assigned_users?.length > editingRoom.max_users ? "text-red-600 font-medium" : "text-gray-500"}`}>
                   {editingRoom.assigned_users?.length || 0}/{editingRoom.max_users} users
@@ -461,15 +520,10 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                 multiple
                 value={editingRoom.assigned_users || []}
                 onChange={(userIds) => {
-                  // Only allow selection if not exceeding max_users
                   if (userIds.length <= editingRoom.max_users) {
                     setEditingRoom({ ...editingRoom, assigned_users: userIds });
                   } else {
-                    // If exceeding, show toast warning
-                    toast.warning(`Maximum ${editingRoom.max_users} users can be assigned to this room`, {
-                      toastId: "max-users-warning",
-                    });
-                    // Keep the current selection
+                    showWarning(`Maximum ${editingRoom.max_users} users can be assigned to this room`);
                   }
                 }}
               >
@@ -480,7 +534,7 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                         editingRoom.assigned_users?.length > editingRoom.max_users ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
                       } bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:ring-2`}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder={`Select up to ${editingRoom.max_users} group users...`}
+                      placeholder={`Select up to ${editingRoom.max_users} users...`}
                       displayValue={(selectedIds) =>
                         selectedIds
                           .map((id) => availableUsers.find((user) => user.id === id)?.name)
@@ -494,13 +548,13 @@ const EditRoomModal = ({ showEditModal, editingRoom, setEditingRoom, setShowEdit
                   </div>
                   <ComboboxOptions className="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white py-2 text-base shadow-xl ring-1 ring-black/5 focus:outline-none sm:text-sm">
                     {availableUsers.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-gray-500">No group users available</div>
+                      <div className="px-4 py-3 text-sm text-gray-500">No users available</div>
                     ) : (
                       <>
                         <div className="px-4 py-2 border-b border-gray-100">
                           <div className="flex items-center justify-between">
                             <span className={`text-sm ${editingRoom.assigned_users?.length > editingRoom.max_users ? "text-red-600" : "text-gray-500"}`}>
-                              {editingRoom.assigned_users?.length || 0}/{editingRoom.max_users} group users selected
+                              {editingRoom.assigned_users?.length || 0}/{editingRoom.max_users} users selected
                             </span>
                             {editingRoom.assigned_users?.length > 0 && (
                               <button onClick={() => setEditingRoom({ ...editingRoom, assigned_users: [] })} className="text-xs text-red-500 hover:text-red-700" type="button">

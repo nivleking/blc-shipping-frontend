@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { api } from "../../axios/axios";
+import { AppContext } from "../../context/AppContext";
 import GenerateCardsNavbar from "../../components/cards/GenerateCardsNavbar";
-import MarketIntelligencePanel from "../../components/cards/MarketIntelligencePanel";
-import ConfigurationPanel from "../../components/cards/ConfigurationPanel";
+import MarketIntelligencePanel from "../../components/cards/market_intelligence/MarketIntelligencePanel";
+import ConfigurationPanel from "../../components/cards/configuration/ConfigurationPanel";
 import InfoModal from "../../components/cards/InfoModal";
-import CardsPreviewPanel from "../../components/cards/CardsPreviewPanel";
+import CardsPreviewPanel from "../../components/cards/preview/CardsPreviewPanel";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import LoadingOverlay from "../../components/LoadingOverlay";
+import useToast from "../../toast/useToast";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", {
@@ -19,75 +20,137 @@ const formatIDR = (value) => {
   }).format(value);
 };
 
-const ALL_PORTS = {
-  2: ["SBY", "MKS"],
-  3: ["SBY", "MKS", "MDN"],
-  4: ["SBY", "MKS", "MDN", "JYP"],
-  5: ["SBY", "MKS", "MDN", "JYP", "BPN"],
-  6: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS"],
-  7: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR"],
-  8: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH"],
-  9: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ"],
-  10: ["SBY", "MKS", "MDN", "JYP", "BPN", "BKS", "BGR", "BTH", "AMQ", "SMR"],
-};
-
 const AdminCreateCards = () => {
+  const { showSuccess, showError } = useToast();
+  const { token } = useContext(AppContext);
+  const queryClient = useQueryClient();
   const { deckId } = useParams();
   const navigate = useNavigate();
+
   const [generateFormData, setGenerateFormData] = useState({
-    totalRevenueEachPort: 250_000_000,
-    totalContainerQuantityEachPort: 15,
-    salesCallCountEachPort: 8,
-    ports: 4,
+    totalRevenueEachPort: 500_000_000,
+    totalContainerQuantityEachPort: 40,
+    salesCallCountEachPort: 20,
+    ports: 5,
     quantityStandardDeviation: 1,
     revenueStandardDeviation: 500_000,
     useMarketIntelligence: false,
   });
   const [generateErrors, setGenerateErrors] = useState({});
-  const [deck, setDeck] = useState({});
-  const [salesCallCards, setSalesCallCards] = useState([]);
-  const [containers, setContainers] = useState([]);
-  const [portStats, setPortStats] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
   const loadingMessages = ["Generating sales call cards..."];
 
+  // Use React Query to fetch deck with containers
+  const {
+    data,
+    isLoading: isLoadingDeck,
+    refetch: refetchDeckData,
+  } = useQuery({
+    queryKey: ["deckWithContainers", deckId],
+    queryFn: async () => {
+      const response = await api.get(`/decks/${deckId}`, {
+        params: { include_containers: true },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    },
+    onError: (error) => {
+      console.error("Error fetching deck data:", error);
+      showError("Failed to fetch deck data");
+    },
+  });
+
+  // Extract data from the query result
+  const deck = data?.deck || {};
+  const salesCallCards = deck.cards || [];
+  const containers = data?.containers || [];
+
+  // Calculate port stats
+  const portStats = salesCallCards.reduce((acc, card) => {
+    if (!acc[card.origin]) {
+      acc[card.origin] = {
+        totalRevenue: 0,
+        totalQuantity: 0,
+        totalSalesCall: 0,
+      };
+    }
+    acc[card.origin].totalRevenue += card.revenue;
+    acc[card.origin].totalQuantity += card.quantity;
+    acc[card.origin].totalSalesCall += 1;
+    return acc;
+  }, {});
+
+  // Mutation for deleting all cards
+  const deleteCardsMutation = useMutation({
+    mutationFn: async () => {
+      return api.delete(`/decks/${deckId}/cards`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+      });
+    },
+    onSuccess: () => {
+      refetchDeckData();
+      queryClient.invalidateQueries(["decks"]);
+      showSuccess("All cards have been deleted successfully");
+      setShowDeleteConfirm(false);
+    },
+    onError: (error) => {
+      console.error("Error deleting cards:", error);
+      showError("Failed to delete cards");
+      setShowDeleteConfirm(false);
+    },
+  });
+
+  // Mutation for generating new cards
+  const generateCardsMutation = useMutation({
+    mutationFn: async (formData) => {
+      return api.post(`/decks/${deckId}/generate-cards`, formData, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+      });
+    },
+    onSuccess: () => {
+      refetchDeckData();
+      queryClient.invalidateQueries(["decks"]);
+      showSuccess("Cards generated successfully!");
+
+      setGenerateFormData({
+        totalRevenueEachPort: 250_000_000,
+        totalContainerQuantityEachPort: 15,
+        salesCallCountEachPort: 8,
+        ports: 4,
+        quantityStandardDeviation: 1,
+        revenueStandardDeviation: 500_000,
+      });
+
+      setShowGenerateConfirm(false);
+    },
+    onError: (error) => {
+      console.log("Error generating cards:", error);
+      setGenerateErrors(error.response?.data?.errors || {});
+      showError(error.response?.data?.message || "Failed to generate cards");
+      setShowGenerateConfirm(false);
+    },
+  });
+
+  // Loading message rotation effect
   useEffect(() => {
     let interval;
-    if (isLoading) {
+    if (generateCardsMutation.isPending) {
       interval = setInterval(() => {
         setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
       }, 3000);
     }
     return () => clearInterval(interval);
-  }, [isLoading]);
-
-  useEffect(() => {
-    fetchDeck();
-    fetchContainers();
-  }, []);
-
-  async function fetchDeck() {
-    try {
-      const res = await api.get(`/decks/${deckId}`);
-      setDeck(res.data);
-      setSalesCallCards(res.data.cards);
-      calculateDeckStats(res.data.cards);
-    } catch (error) {
-      console.error("Error fetching deck:", error);
-    }
-  }
-
-  async function fetchContainers() {
-    try {
-      const response = await api.get("/containers");
-      console.log("Containers:", response.data);
-      setContainers(response.data);
-    } catch (error) {
-      console.error("Error fetching containers:", error);
-    }
-  }
+  }, [generateCardsMutation.isPending]);
 
   const handleGenerateChange = (e) => {
     const { name, value } = e.target;
@@ -105,9 +168,9 @@ const AdminCreateCards = () => {
         ...prevData,
         ...config,
       }));
-      toast.success("Preset configuration applied");
+      showSuccess("Preset configuration applied");
     } catch (error) {
-      toast.error("Failed to apply preset configuration");
+      showError("Failed to apply preset configuration");
     }
   };
 
@@ -118,10 +181,9 @@ const AdminCreateCards = () => {
           ...prevData,
           ports: portCount,
         }));
-        toast.info(`Port count set to ${portCount}`);
       }
     } catch (error) {
-      toast.error("Failed to set port count");
+      showError("Failed to set port count");
     }
   };
 
@@ -131,9 +193,8 @@ const AdminCreateCards = () => {
         ...prevData,
         totalRevenueEachPort: revenue,
       }));
-      toast.info(`Revenue per port set to ${formatIDR(revenue)}`);
     } catch (error) {
-      toast.error("Failed to set revenue");
+      showError("Failed to set revenue");
     }
   };
 
@@ -143,70 +204,17 @@ const AdminCreateCards = () => {
         ...prevData,
         totalContainerQuantityEachPort: quantity,
       }));
-      toast.info(`Container quantity per port set to ${quantity}`);
     } catch (error) {
-      toast.error("Failed to set container quantity");
+      showError("Failed to set container quantity");
     }
   };
 
-  const calculateDeckStats = (cards) => {
-    const stats = cards.reduce((acc, card) => {
-      if (!acc[card.origin]) {
-        acc[card.origin] = {
-          totalRevenue: 0,
-          totalQuantity: 0,
-          totalSalesCall: 0,
-        };
-      }
-      acc[card.origin].totalRevenue += card.revenue;
-      acc[card.origin].totalQuantity += card.quantity;
-      acc[card.origin].totalSalesCall += 1;
-      return acc;
-    }, {});
-
-    setPortStats(stats);
-  };
-
-  // const handleMarketIntelligenceUpload = (data) => {
-  //   try {
-  //     if (!data.ports || !Array.isArray(data.ports)) {
-  //       throw new Error("Invalid market intelligence format");
-  //     }
-
-  //     setGenerateFormData((prevData) => ({
-  //       ...prevData,
-  //       ports: data.ports.length,
-  //       totalRevenueEachPort: data.maxRevenue || prevData.totalRevenueEachPort,
-  //       // Add other mappings as needed
-  //     }));
-  //   } catch (error) {
-  //     toast.error(error.message);
-  //   }
-  // };
-
-  const [showInfoModal, setShowInfoModal] = useState(false);
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
-
-  const navBarTitle = `${deck.name}`;
-
-  const handleDeleteAllCards = async () => {
+  const handleDeleteAllCards = () => {
     setShowDeleteConfirm(true);
   };
 
-  const handleConfirmDelete = async () => {
-    try {
-      await api.delete(`/decks/${deckId}/cards`);
-      await fetchDeck();
-      await fetchContainers();
-      toast.success("All cards have been deleted successfully");
-    } catch (error) {
-      console.error("Error deleting cards:", error);
-      toast.error("Failed to delete cards");
-    } finally {
-      setShowDeleteConfirm(false);
-    }
+  const handleConfirmDelete = () => {
+    deleteCardsMutation.mutate();
   };
 
   const handleGenerateButtonClick = (e) => {
@@ -214,63 +222,25 @@ const AdminCreateCards = () => {
     setShowGenerateConfirm(true);
   };
 
-  const handleConfirmGenerate = async () => {
-    setIsLoading(true);
-    setLoadingMessageIndex(0);
-
-    try {
-      const response = await api.post(`/generate-cards/${deckId}`, generateFormData);
-      setSalesCallCards(response.data.cards);
-      await fetchContainers();
-      calculateDeckStats(response.data.cards);
-
-      toast.success("Cards generated successfully!");
-
-      setGenerateFormData({
-        totalRevenueEachPort: 250_000_000,
-        totalContainerQuantityEachPort: 15,
-        salesCallCountEachPort: 8,
-        ports: 4,
-        quantityStandardDeviation: 1,
-        revenueStandardDeviation: 500_000,
-      });
-    } catch (error) {
-      setGenerateErrors(error.response?.data?.errors || {});
-      setSalesCallCards([]);
-      toast.error(error.response?.data?.message || "Failed to generate cards");
-    } finally {
-      setIsLoading(false);
-      setShowGenerateConfirm(false);
-    }
+  const handleConfirmGenerate = () => {
+    generateCardsMutation.mutate(generateFormData);
   };
+
+  const navBarTitle = deck.name || "Loading...";
+  const isLoading = isLoadingDeck || generateCardsMutation.isPending || deleteCardsMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <ToastContainer position="top-center" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
-
-      {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Generating Cards" />}
+      {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title={generateCardsMutation.isPending ? "Generating Cards" : "Loading..."} />}
 
       <div className="container mx-auto px-4 py-6">
         <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
+
         <TabGroup>
           <TabList className="flex space-x-1 rounded-xl bg-white shadow-sm p-1 mb-6 mt-4">
-            <Tab
-              className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
-                ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`
-              }
-            >
-              Configuration
-            </Tab>
+            <Tab className={({ selected }) => `w-full rounded-lg py-2.5 text-sm font-medium leading-5 ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`}>Configuration</Tab>
             <Tab className={({ selected }) => `w-full rounded-lg py-2.5 text-sm font-medium leading-5 ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`}>Market Intelligence</Tab>
-            <Tab
-              className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
-                ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`
-              }
-            >
-              Generated Cards
-            </Tab>
+            <Tab className={({ selected }) => `w-full rounded-lg py-2.5 text-sm font-medium leading-5 ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`}>Generated Cards</Tab>
           </TabList>
 
           <TabPanels>
@@ -287,8 +257,7 @@ const AdminCreateCards = () => {
                 handleQuantitySelect={handleQuantitySelect}
                 formatIDR={formatIDR}
                 deckId={deckId}
-                refreshCards={fetchDeck}
-                refreshContainers={fetchContainers}
+                refreshData={refetchDeckData}
                 handleGenerateButtonClick={handleGenerateButtonClick}
               />
             </TabPanel>
@@ -301,25 +270,15 @@ const AdminCreateCards = () => {
             {/* Generated Cards Tab */}
             <TabPanel>
               <div className="bg-white rounded-lg shadow">
-                <CardsPreviewPanel
-                  cards={salesCallCards}
-                  containers={containers}
-                  formatIDR={formatIDR}
-                  deckId={deckId}
-                  onCardUpdated={async () => {
-                    await fetchDeck();
-                    await fetchContainers();
-                  }}
-                />
+                <CardsPreviewPanel cards={salesCallCards} containers={containers} formatIDR={formatIDR} deckId={deckId} onCardUpdated={refetchDeckData} />
               </div>
             </TabPanel>
           </TabPanels>
         </TabGroup>
 
-        {/* Information Modal */}
+        {/* Modals */}
         {showInfoModal && <InfoModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />}
 
-        {/* Delete Confirmation Modal */}
         <ConfirmationModal
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
@@ -328,7 +287,6 @@ const AdminCreateCards = () => {
           message="Are you sure you want to delete all cards in this deck? This action cannot be undone."
         />
 
-        {/* Generate Confirmation Modal */}
         <ConfirmationModal
           isOpen={showGenerateConfirm}
           onClose={() => setShowGenerateConfirm(false)}

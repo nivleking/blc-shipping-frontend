@@ -4,20 +4,8 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { api } from "../../axios/axios";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 import { AppContext } from "../../context/AppContext";
-import ShipBay from "../../components/simulations/ShipBay";
-
-const PORT_COLORS = {
-  SBY: "#EF4444", // red
-  MKS: "#3B82F6", // blue
-  MDN: "#10B981", // green
-  JYP: "#EAB308", // yellow
-  BPN: "#8B5CF6", // purple
-  BKS: "#F97316", // orange
-  BGR: "#EC4899", // pink
-  BTH: "#92400E", // brown
-  AMQ: "#06B6D4", // cyan
-  SMR: "#059669", // teal
-};
+import ShipBay from "../../components/simulations/stowages/ShipBay";
+import { PORT_COLORS, getPortColor } from "../../assets/Colors";
 
 const RoomDetail = () => {
   const { roomId } = useParams();
@@ -183,7 +171,7 @@ const RoomDetail = () => {
               ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
-              Player Stats
+              User Stats
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -213,7 +201,7 @@ const RoomDetail = () => {
                       fetchUserLogs(e.target.value);
                     }}
                   >
-                    <option value="">Select Player</option>
+                    <option value="">Select User</option>
                     {users.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.name} ({userPorts[user.id] || "Loading..."})
@@ -261,14 +249,14 @@ const RoomDetail = () => {
                       </div>
                     ))}
 
-                  {(!Array.isArray(simulationLogs) || simulationLogs.length === 0) && selectedUserId && <div className="text-center text-gray-500 py-8">No simulation logs found for this player</div>}
+                  {(!Array.isArray(simulationLogs) || simulationLogs.length === 0) && selectedUserId && <div className="text-center text-gray-500 py-8">No simulation logs found for this user</div>}
 
-                  {!selectedUserId && <div className="text-center text-gray-500 py-8">Select a player to view their simulation logs</div>}
+                  {!selectedUserId && <div className="text-center text-gray-500 py-8">Select a user to view their simulation logs</div>}
                 </div>
               </div>
             </TabPanel>
 
-            {/* Player Stats Panel */}
+            {/* User Stats Panel */}
             {/* <TabPanel>
               <PlayerStats
                 players={[

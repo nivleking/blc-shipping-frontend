@@ -98,7 +98,7 @@ const CardsUsed = ({ cards, ports = ["JYP", "SBY", "MKS", "MDN"], formatIDR }) =
               <span className="font-medium text-green-600">{formatIDR(45000000)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Player</span>
+              <span className="text-gray-600">User</span>
               <span className="font-medium">John Doe</span>
             </div>
             <div className="flex justify-between text-sm">

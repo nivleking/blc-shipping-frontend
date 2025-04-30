@@ -8,6 +8,7 @@ import { IoCreateOutline, IoTimeOutline } from "react-icons/io5";
 import { HiPencilAlt } from "react-icons/hi";
 import ReactPaginate from "react-paginate";
 import RoomTableView from "./RoomTableView";
+import ViewToggle from "../../ViewToggle";
 
 const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, currentPage, handlePageClick, handleOpenRoom, handleEditRoom, handleDeleteRoom }) => {
   const navigate = useNavigate();
@@ -47,20 +48,12 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
   };
 
   return (
-    <div className="w-full bg-white p-6 rounded-lg shadow-md">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-3">
+    <div className="w-full bg-white p-8 rounded-lg shadow-md">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-2 ">
           <h3 className="text-1xl font-bold text-gray-800">All Rooms</h3>
 
-          {/* View Toggle Buttons */}
-          <div className="bg-gray-100 rounded-lg p-1 flex">
-            <button className={`p-1.5 rounded-md flex items-center ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("grid")} title="Grid view">
-              List
-            </button>
-            <button className={`p-1.5 rounded-md flex items-center ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-600 hover:text-gray-900"}`} onClick={() => setViewMode("table")} title="Table view">
-              Table
-            </button>
-          </div>
+          <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
         </div>
 
         {rooms.length > 0 && (
@@ -101,30 +94,30 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
               {/* Left section with room details */}
               <div className="flex items-start space-x-6 w-full">
                 {/* Room Icon and Status */}
-                <div className="flex flex-col items-center space-y-3 pt-2">
-                  <div className="flex flex-col items-center space-y-3 pt-2">
-                    <div className={`w-16 h-16 rounded-lg ${getStatusInfo(room.status).iconBg} flex items-center justify-center text-white`}>
-                      <span className="text-xl font-medium">{offset + index + 1}</span>
+                <div className="flex flex-col items-center space-y-3 pt-1">
+                  <div className="flex flex-col items-center space-y-3 pt-1">
+                    <div className={`w-12 h-12 rounded-lg ${getStatusInfo(room.status).iconBg} flex items-center justify-center text-white`}>
+                      <span className="text-base font-medium">{offset + index + 1}</span>
                     </div>
                     <div className="flex flex-col items-center space-y-2">
-                      <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusInfo(room.status).bgColor} ${getStatusInfo(room.status).textColor}`}>{getStatusInfo(room.status).text}</span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusInfo(room.status).bgColor} ${getStatusInfo(room.status).textColor}`}>{getStatusInfo(room.status).text}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Room Details */}
                 <div className="flex flex-col flex-grow">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <h3 className="text-base font-semibold text-gray-900">
                       {room.id} | {room.name}
                     </h3>
                   </div>
 
-                  <div className="text-sm text-gray-600 mb-3">
+                  <div className="text-sm text-gray-600 mb-1">
                     <p>{room.description}</p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-3 gap-2 text-xs">
                     {/* Configuration Info */}
                     <div className="flex flex-col space-y-2">
                       <div className="flex items-center text-gray-600">
@@ -165,12 +158,12 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
                     <div className="flex flex-col space-y-2">
                       <div className="flex items-center text-gray-600">
                         <GiShipBow className="w-4 h-4 text-indigo-500 mr-2" />
-                        <span className="font-medium">Max Players:</span>
+                        <span className="font-medium">Max Users:</span>
                         <span className="ml-2">{room.max_users}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <MdOutlineGridOn className="w-4 h-4 text-green-500 mr-2" />
-                        <span className="font-medium">Assigned Players:</span>
+                        <span className="font-medium">Assigned Users:</span>
                         <span className="ml-2">{room.assigned_users ? (typeof room.assigned_users === "string" ? JSON.parse(room.assigned_users).length : room.assigned_users.length) : 0}</span>
                       </div>
                     </div>
@@ -179,34 +172,35 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
               </div>
 
               {/* Right section with action buttons */}
-              <div className="flex flex-col space-y-2 mt-4 sm:mt-0 min-w-[120px]">
+              <div className="flex flex-col space-y-1 sm:mt-0 min-w-[120px]">
                 {room.status === "finished" && (
                   <button
                     onClick={() => navigate(`/rooms/${room.id}/detail`)}
-                    className="inline-flex items-center px-4 py-2 border border-indigo-300 rounded-md shadow-sm text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+                    className="inline-flex items-center px-4 py-2 border border-indigo-300 rounded-md shadow-sm text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
                   >
                     <AiFillEye className="mr-2 h-4 w-4" /> View
                   </button>
                 )}
-                {room.status !== "finished" && (
+                {user && room.status !== "finished" && (
                   <button
                     onClick={() => handleOpenRoom(room.id)}
-                    className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
+                    className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-xs font-medium ${
                       room.status === "active" && user.id !== room.admin_id ? "border-gray-300 text-gray-700 bg-gray-50 cursor-not-allowed" : "border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100"
                     }`}
                     disabled={room.status === "active" && user.id !== room.admin_id}
                   >
+                    {/* TODO: change this icon */}
                     <AiFillFolderOpen className="mr-2 h-4 w-4" /> Open
                   </button>
                 )}
 
-                {room.status !== "active" && room.status !== "finished" && (
-                  <button onClick={() => handleEditRoom(room)} className="inline-flex items-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100">
+                {/* {room.status !== "active" && room.status !== "finished" && (
+                  <button onClick={() => handleEditRoom(room)} className="inline-flex items-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-xs font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100">
                     <HiPencilAlt className="mr-2 h-4 w-4" /> Edit
                   </button>
-                )}
+                )} */}
                 {/* {room.status !== "active" && ()} */}
-                <button onClick={(e) => handleDeleteRoom(room.id)(e)} className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100">
+                <button onClick={(e) => handleDeleteRoom(room.id)(e)} className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100">
                   <AiFillDelete className="mr-2 h-4 w-4" /> Delete
                 </button>
               </div>

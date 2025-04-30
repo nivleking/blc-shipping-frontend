@@ -1,12 +1,12 @@
 import { useContext, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { api } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
 import LoadingOverlay from "../components/LoadingOverlay";
+import useToast from "../toast/useToast";
 
 const Login = () => {
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     password: "",
@@ -17,16 +17,7 @@ const Login = () => {
 
   useEffect(() => {
     if (Object.keys(errors).length > 0) {
-      toast.dismiss();
-      toast.error(errors[Object.keys(errors)[0]][0], {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
+      showError(errors[Object.keys(errors)[0]][0]);
     }
   }, [errors]);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +29,7 @@ const Login = () => {
 
     try {
       setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const response = await api.post("users/login", {
         name: formData.name,
@@ -59,16 +50,7 @@ const Login = () => {
       if (error.response && error.response.data && error.response.data.errors) {
         setErrors(error.response.data.errors);
       } else {
-        toast.dismiss(); // Dismiss any existing toasts
-        toast.error("An unexpected error occurred. Please try again.", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-        });
+        showError("An unexpected error occurred. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -95,7 +77,6 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-gradient-to-tr from-black to-[#3b82f6]">
-      <ToastContainer />
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={currentMessageIndex} title="Logging in..." />}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">

@@ -4,11 +4,44 @@ import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOption
 import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
 import { AiFillEye } from "react-icons/ai";
 import Tooltip from "../../../components/Tooltip";
-import RenderShipBayLayout from "../../../components/simulations/RenderShipBayLayout";
+import RenderShipBayLayout from "../../simulations/RenderShipBayLayout";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../axios/axios";
-import { toast } from "react-toastify";
 import SwapConfigModal from "../../rooms/SwapConfigModal";
 import DeckPreviewModal from "./DeckPreviewModal";
+import useToast from "../../../toast/useToast";
+
+// THIS IS FOR LOCAL
+// const initialFormState = {
+//   id: "001",
+//   name: "123",
+//   description: "123",
+//   deck: 1,
+//   ship_layout: 1,
+//   max_users: 0,
+//   bay_size: null,
+//   bay_count: 0,
+//   bay_types: [],
+//   total_rounds: 2,
+//   cards_limit_per_round: 10,
+//   cards_must_process_per_round: 8,
+//   move_cost: 1000000,
+//   dock_warehouse_costs: {
+//     default: 7000000,
+//     dry: {
+//       committed: 8000000,
+//       non_committed: 4000000,
+//     },
+//     reefer: {
+//       committed: 15000000,
+//       non_committed: 9000000,
+//     },
+//   },
+//   restowage_cost: 3500000,
+//   // extra_moves_cost: 7000000,
+//   // ideal_crane_split: 2,
+//   swap_config: { SBY: "MDN", MDN: "MKS", MKS: "JYP", JYP: "BPN", BPN: "SBY" },
+// };
 
 const initialFormState = {
   id: "",
@@ -23,16 +56,30 @@ const initialFormState = {
   total_rounds: 1,
   cards_limit_per_round: 1,
   cards_must_process_per_round: 1,
-  move_cost: 100000,
-  extra_moves_cost: 50000,
-  ideal_crane_split: 2,
+  move_cost: 1000000,
+  dock_warehouse_costs: {
+    default: 7000000,
+    dry: {
+      committed: 8000000,
+      non_committed: 4000000,
+    },
+    reefer: {
+      committed: 15000000,
+      non_committed: 9000000,
+    },
+  },
+  restowage_cost: 3500000,
   swap_config: {},
+  // extra_moves_cost: 7000000,
+  // ideal_crane_split: 2,
 };
 
 const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refreshRooms }) => {
   // Form state
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
+  const { showSuccess, showError, showWarning } = useToast();
+  const queryClient = useQueryClient();
 
   // Selection state
   const [selectedDeck, setSelectedDeck] = useState(null);
@@ -63,6 +110,35 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     setDeckOrigins([]);
   };
 
+  // Add this new state in CreateRoomForm after the other state variables
+  const [unrolledCosts, setUnrolledCosts] = useState({
+    dry_committed: 0,
+    dry_non_committed: 0,
+    reefer_committed: 0,
+    reefer_non_committed: 0,
+  });
+  const [isLoadingCosts, setIsLoadingCosts] = useState(false);
+
+  const createRoomMutation = useMutation({
+    mutationFn: async (newRoomData) => {
+      return api.post("/rooms", newRoomData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["rooms"]);
+      resetForm();
+      showSuccess("Room created successfully!");
+    },
+    onError: (error) => {
+      console.error("Error creating room:", error);
+      setErrors(error.response.data.errors || {});
+      showError(error.response.data.message || "Failed to create room");
+    },
+  });
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -71,7 +147,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       const processValue = parseInt(value);
 
       if (processValue > limitPerRound) {
-        toast.warning("Must process cards cannot exceed cards limit per round");
+        showWarning("Must process cards cannot exceed cards limit per round");
         return;
       }
     }
@@ -82,40 +158,69 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     }));
   };
 
-  // Handle deck selection and update max users
   const handleDeckChange = async (e) => {
     const deckId = e.target.value;
+
+    if (!deckId) {
+      setSelectedDeck(null);
+      setFormData((prevData) => ({
+        ...prevData,
+        deck_id: "",
+        max_users: 0,
+      }));
+      setDeckOrigins([]);
+      setUnrolledCosts({
+        dry_committed: 0,
+        dry_non_committed: 0,
+        reefer_committed: 0,
+        reefer_non_committed: 0,
+      });
+      return;
+    }
+
     setSelectedDeck(decks.find((deck) => deck.id === deckId));
     setFormData((prevData) => ({
       ...prevData,
       deck_id: deckId,
     }));
 
-    if (deckId) {
+    try {
+      // Fetch origins
+      const response = await api.get(`decks/${deckId}/origins`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const origins = response.data;
+
+      setFormData((prevData) => ({
+        ...prevData,
+        max_users: Object.keys(origins).length,
+      }));
+
+      setDeckOrigins(Object.values(origins));
+
+      // Also fetch market intelligence data for this deck
+      setIsLoadingCosts(true);
       try {
-        const response = await api.get(`decks/${deckId}/origins`, {
+        const miResponse = await api.get(`/market-intelligence/deck/${deckId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        const origins = response.data;
 
-        setFormData((prevData) => ({
-          ...prevData,
-          max_users: Object.keys(origins).length,
-        }));
-
-        setDeckOrigins(Object.values(origins));
-        console.log("Deck origins:", origins);
-      } catch (error) {
-        console.error("Error selecting deck:", error);
-        toast.error("Error selecting deck. Please try again.");
+        if (miResponse.data && miResponse.data.penalties) {
+          setUnrolledCosts(miResponse.data.penalties);
+        }
+      } catch (miError) {
+        console.error("Error fetching market intelligence:", miError);
+        showWarning("Could not load market intelligence data for this deck.");
+      } finally {
+        setIsLoadingCosts(false);
       }
-    } else {
-      setFormData((prevData) => ({
-        ...prevData,
-        max_users: 0,
-      }));
+    } catch (error) {
+      console.error("Error selecting deck:", error);
+      showError("Error selecting deck. Please try again.");
     }
   };
 
@@ -144,7 +249,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       setErrors({
         assigned_users: [`You can only assign up to ${formData.max_users} users to this room`],
       });
-      toast.error(`Too many users selected: max ${formData.max_users} allowed`);
+      showError(`Too many users selected: max ${formData.max_users} allowed`);
       return;
     }
 
@@ -157,33 +262,19 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       max_users: formData.max_users,
       total_rounds: formData.total_rounds,
       move_cost: formData.move_cost,
-      extra_moves_cost: formData.extra_moves_cost,
-      ideal_crane_split: formData.ideal_crane_split,
+      dock_warehouse_costs: formData.dock_warehouse_costs,
+      restowage_cost: formData.restowage_cost,
       cards_must_process_per_round: formData.cards_must_process_per_round,
       cards_limit_per_round: formData.cards_limit_per_round,
       assigned_users: selectedUsers,
       swap_config: formData.swap_config,
+      // extra_moves_cost: formData.extra_moves_cost,
+      // ideal_crane_split: formData.ideal_crane_split,
     };
 
     console.log("Create room payload:", payload);
 
-    try {
-      const response = await api.post("rooms", payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 200) {
-        await refreshRooms();
-        toast.success("Room created successfully!");
-        resetForm();
-      }
-    } catch (error) {
-      console.log("Error creating room:", error);
-      toast.error(error.response?.data?.message || "An error occurred while creating the room!");
-      setErrors(error.response?.data?.errors || {});
-    }
+    createRoomMutation.mutate(payload);
   };
 
   // Filter decks based on query
@@ -193,12 +284,12 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
   const filteredLayouts = layoutQuery === "" ? layouts : layouts.filter((layout) => layout.name.toLowerCase().includes(layoutQuery.toLowerCase()));
 
   return (
-    <form onSubmit={createRoom} className="bg-white p-8 rounded-lg shadow-lg space-y-6 mb-4">
+    <form onSubmit={createRoom} className="bg-white p-8 rounded-lg shadow-lg space-y-2 mb-4">
       <div className="w-full">
         <h3 className="text-1xl font-bold text-gray-900">Create New Room</h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
         {/* Room ID Field */}
         <div className="flex flex-col">
           <div className="flex items-center">
@@ -290,73 +381,6 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           />
         </div>
 
-        {/* Move Cost Field */}
-        <div className="flex flex-col">
-          <div className="flex items-center">
-            <label htmlFor="move_cost" className="block text-gray-700 font-semibold">
-              Move Cost (Rp)
-            </label>
-            <Tooltip>Cost per move (discharge or load)</Tooltip>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">Rp</span>
-            </div>
-            <input
-              type="number"
-              name="move_cost"
-              id="move_cost"
-              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="100000"
-              min="1"
-              value={formData.move_cost}
-              onChange={handleChange}
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">per move</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Extra Moves Cost Field */}
-        <div className="flex flex-col">
-          <div className="flex items-center">
-            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
-              Extra Moves Cost (Rp)
-            </label>
-            <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">Rp</span>
-            </div>
-            <input
-              type="number"
-              name="extra_moves_cost"
-              id="extra_moves_cost"
-              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="50000"
-              min="1"
-              value={formData.extra_moves_cost}
-              onChange={handleChange}
-            />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <span className="text-gray-500">per move</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Ideal Crane Split Field */}
-        <div className="flex flex-col">
-          <div className="flex items-center">
-            <label htmlFor="ideal_crane_split" className="block text-gray-700 font-semibold">
-              Ideal Crane Split
-            </label>
-            <Tooltip>Number of cranes to be used as a ideal value for splitting</Tooltip>
-          </div>
-          <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
-        </div>
-
         {/* Deck Selection */}
         <div className="flex flex-col relative">
           <div className="flex items-center">
@@ -368,12 +392,20 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           <Combobox
             value={selectedDeck}
             onChange={(deck) => {
-              setSelectedDeck(deck);
-              setFormData((prev) => ({
-                ...prev,
-                deck: deck.id,
-              }));
-              handleDeckChange({ target: { value: deck.id } });
+              if (deck) {
+                setSelectedDeck(deck);
+                setFormData((prev) => ({
+                  ...prev,
+                  deck: deck.id,
+                }));
+                handleDeckChange({ target: { value: deck.id } });
+              } else {
+                setSelectedDeck(null);
+                setFormData((prev) => ({
+                  ...prev,
+                  deck: "",
+                }));
+              }
             }}
           >
             <div className="relative">
@@ -441,8 +473,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         <div className="flex flex-col">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <label className="block text-gray-700 font-semibold">Assign Group Users</label>
-              <Tooltip>Select group users who can join this room</Tooltip>
+              <label className="block text-gray-700 font-semibold">Assign Users</label>
+              <Tooltip>Select users who can join this room</Tooltip>
             </div>
             <span className={`text-sm ${selectedUsers.length > formData.max_users ? "text-red-600 font-medium" : "text-gray-500"}`}>
               {selectedUsers.length}/{formData.max_users} users
@@ -452,15 +484,12 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
             multiple
             value={selectedUsers}
             onChange={(userIds) => {
-              // Only allow selection if not exceeding max_users
               if (userIds.length <= formData.max_users) {
                 setSelectedUsers(userIds);
               } else {
-                // If exceeding, show toast warning
-                toast.warning(`Maximum ${formData.max_users} users can be assigned to this room`, {
+                showWarning(`Maximum ${formData.max_users} users can be assigned to this room`, {
                   toastId: "max-users-warning",
                 });
-                // Keep the current selection
               }
             }}
           >
@@ -471,7 +500,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
                     selectedUsers.length > formData.max_users ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : "border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
                   } bg-white py-3.5 pl-4 pr-10 text-sm leading-5 text-gray-900 shadow-sm transition-all focus:ring-2`}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder={`Select up to ${formData.max_users} group users...`}
+                  placeholder={`Select up to ${formData.max_users} users...`}
                   displayValue={(selectedIds) =>
                     selectedIds
                       .map((id) => availableUsers.find((user) => user.id === id)?.name)
@@ -485,13 +514,13 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
               </div>
               <ComboboxOptions className="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white py-2 text-base shadow-xl ring-1 ring-black/5 focus:outline-none sm:text-sm">
                 {availableUsers.length === 0 ? (
-                  <div className="px-4 py-3 text-sm text-gray-500">No group users available</div>
+                  <div className="px-4 py-3 text-sm text-gray-500">No users available</div>
                 ) : (
                   <>
                     <div className="px-4 py-2 border-b border-gray-100">
                       <div className="flex items-center justify-between">
                         <span className={`text-sm ${selectedUsers.length > formData.max_users ? "text-red-600" : "text-gray-500"}`}>
-                          {selectedUsers.length}/{formData.max_users} group users selected
+                          {selectedUsers.length}/{formData.max_users} users selected
                         </span>
                         {selectedUsers.length > 0 && (
                           <button onClick={() => setSelectedUsers([])} className="text-xs text-red-500 hover:text-red-700">
@@ -629,6 +658,337 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
           {errors.ship_layout && <p className="text-red-500 mt-1">{errors.ship_layout[0]}</p>}
         </div>
+
+        {/* Extra Moves Cost Field */}
+        {/* <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
+              Extra Moves Cost (Rp)
+            </label>
+            <Tooltip>Cost per extra move (discharge or load) based on long crane calculation</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="extra_moves_cost"
+              id="extra_moves_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="7000000"
+              min="1"
+              value={formData.extra_moves_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div> */}
+
+        {/* Ideal Crane Split Field */}
+        {/* <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="ideal_crane_split" className="block text-gray-700 font-semibold">
+              Ideal Crane Split
+            </label>
+            <Tooltip>Number of cranes to be used as a ideal value for splitting</Tooltip>
+          </div>
+          <input type="number" id="ideal_crane_split" name="ideal_crane_split" value={formData.ideal_crane_split} onChange={handleChange} min="1" className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" />
+        </div> */}
+
+        {/* Unrolled Container Costs (Read-only) */}
+        <div className="flex flex-col lg:col-span-3 border border-amber-200 rounded-lg p-4 bg-amber-50">
+          <div className="flex items-center justify-between pb-2 border-b border-amber-200 mb-3">
+            <div className="flex items-center">
+              <label className="block text-amber-800 font-semibold">Unrolled Container Penalties</label>
+              <Tooltip>Penalties for containers that aren't loaded by their committed deadline (from Market Intelligence)</Tooltip>
+            </div>
+            <Link
+              to={selectedDeck ? `/admin-create-sales-call-cards/${selectedDeck.id}` : "#"}
+              className={`text-xs ${selectedDeck ? "text-amber-600 hover:text-amber-800" : "text-gray-400 cursor-not-allowed"}`}
+              onClick={(e) => !selectedDeck && e.preventDefault()}
+            >
+              Edit in Market Intelligence
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            {/* Dry Committed */}
+            <div>
+              <label className="block text-sm font-medium text-amber-700">Dry Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="unrolled_costs.dry.committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500 cursor-not-allowed"
+                  value={unrolledCosts.dry_committed || 0}
+                  disabled
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per container</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Dry Non-Committed */}
+            <div>
+              <label className="block text-sm font-medium text-amber-700">Dry Non-Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="unrolled_costs.dry.non_committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500 cursor-not-allowed"
+                  value={unrolledCosts.dry_non_committed || 0}
+                  disabled
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per container</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Reefer Committed */}
+            <div>
+              <label className="block text-sm font-medium text-amber-700">Reefer Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="unrolled_costs.reefer.committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500 cursor-not-allowed"
+                  value={unrolledCosts.reefer_committed || 0}
+                  disabled
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per container</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Reefer Non-Committed */}
+            <div>
+              <label className="block text-sm font-medium text-amber-700">Reefer Non-Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="unrolled_costs.reefer.non_committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500 cursor-not-allowed"
+                  value={unrolledCosts.reefer_non_committed || 0}
+                  disabled
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">per container</span>
+                </div>
+              </div>
+            </div>
+
+            {isLoadingCosts && (
+              <div className="col-span-2 flex justify-center">
+                <div className="animate-pulse flex space-x-2 items-center">
+                  <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-xs text-gray-500">Loading costs...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Dock Warehouse Cost Field */}
+        <div className="flex flex-col lg:col-span-3 border border-blue-200 rounded-lg p-4 bg-blue-50">
+          <div className="flex items-center pb-2 border-b border-blue-200 mb-3">
+            <label className="block text-blue-800 font-semibold">Dock Warehouse Costs</label>
+            <Tooltip>Set costs for containers that remain on the ship past their destination port</Tooltip>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            {/* Dry Committed */}
+            <div>
+              <label className="block text-sm font-medium text-blue-700">Dry Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_costs.dry.committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.dock_warehouse_costs.dry.committed}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      dock_warehouse_costs: {
+                        ...formData.dock_warehouse_costs,
+                        dry: {
+                          ...formData.dock_warehouse_costs.dry,
+                          committed: parseInt(e.target.value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Dry Non-Committed */}
+            <div>
+              <label className="block text-sm font-medium text-blue-700">Dry Non-Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_costs.dry.non_committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.dock_warehouse_costs.dry.non_committed}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      dock_warehouse_costs: {
+                        ...formData.dock_warehouse_costs,
+                        dry: {
+                          ...formData.dock_warehouse_costs.dry,
+                          non_committed: parseInt(e.target.value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Reefer Committed */}
+            <div>
+              <label className="block text-sm font-medium text-blue-700">Reefer Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_costs.reefer.committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.dock_warehouse_costs.reefer.committed}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      dock_warehouse_costs: {
+                        ...formData.dock_warehouse_costs,
+                        reefer: {
+                          ...formData.dock_warehouse_costs.reefer,
+                          committed: parseInt(e.target.value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Reefer Non-Committed */}
+            <div>
+              <label className="block text-sm font-medium text-blue-700">Reefer Non-Committed</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">Rp</span>
+                </div>
+                <input
+                  type="number"
+                  name="dock_warehouse_costs.reefer.non_committed"
+                  className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.dock_warehouse_costs.reefer.non_committed}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      dock_warehouse_costs: {
+                        ...formData.dock_warehouse_costs,
+                        reefer: {
+                          ...formData.dock_warehouse_costs.reefer,
+                          non_committed: parseInt(e.target.value),
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Move Cost Field */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="move_cost" className="block text-gray-700 font-semibold">
+              Move Cost (Rp)
+            </label>
+            <Tooltip>Cost per move (discharge or load)</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="move_cost"
+              id="move_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="1000000"
+              min="1"
+              value={formData.move_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Restowage Cost */}
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <label htmlFor="extra_moves_cost" className="block text-gray-700 font-semibold">
+              Restowage Cost (Rp)
+            </label>
+            <Tooltip>Cost per container that is not discharged on time (in weeks)</Tooltip>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">Rp</span>
+            </div>
+            <input
+              type="number"
+              name="restowage_cost"
+              id="restowage_cost"
+              className="w-full p-3 pl-10 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+              placeholder="3500000"
+              min="1"
+              value={formData.restowage_cost}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <span className="text-gray-500">per move</span>
+            </div>
+          </div>
+        </div>
+
         {/* Port Swap Configuration */}
         <div className="flex flex-col lg:col-span-3 md:col-span-2">
           <div className="flex items-center">
@@ -637,7 +997,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
           </div>
 
           <div className="flex items-center mt-2">
-            <div className={`rounded-lg border ${Object.keys(swapConfig).length > 0 ? "border-blue-200 bg-blue-50" : "border-gray-300"} px-3 py-3 w-full flex justify-between items-center`}>
+            <div className={`rounded-md border ${Object.keys(swapConfig).length > 0 ? "border-blue-200 bg-blue-50" : "border-gray-300"} px-2 py-2 w-full flex justify-between items-center`}>
               {Object.keys(swapConfig).length > 0 ? (
                 <div className="text-sm text-gray-700 flex-1 truncate">
                   {Object.keys(swapConfig).length} port {Object.keys(swapConfig).length === 1 ? "swap" : "swaps"} configured
@@ -678,8 +1038,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       </div>
 
       {/* Submit Button */}
-      <div className="flex justify-end space-x-4">
-        <button type="submit" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">
+      <div className="flex justify-end space-x-4 text-sm">
+        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">
           Create Room
         </button>
       </div>

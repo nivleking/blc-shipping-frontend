@@ -60,7 +60,7 @@ const SwapDiagram = ({ origins, swapConfig }) => {
       )}
 
       {/* Tab Navigation */}
-      <div className="flex border-b">
+      <div className="flex border-b text-sm">
         <button
           type="button" // Tambahkan ini
           onClick={(e) => {
@@ -93,8 +93,8 @@ const SwapDiagram = ({ origins, swapConfig }) => {
         </button>
       </div>
 
-      <div className="p-6">
-        <h4 className="text-sm font-medium text-gray-700 mb-4">Port Swapping Visualization</h4>
+      <div className="p-8">
+        <h4 className="text-xs font-medium text-gray-700 mb-2">Port Swapping Visualization</h4>
 
         {/* Grid View */}
         {activeTab === "grid" && (
@@ -155,12 +155,12 @@ const SwapDiagram = ({ origins, swapConfig }) => {
                       </div>
                     )}
                     <div className="max-w-full overflow-x-auto pb-2">
-                      <div className={`flex items-center space-x-4 ${isLongChain ? "min-w-max" : ""}`}>
+                      <div className={`flex items-center space-x-2 ${isLongChain ? "min-w-max" : ""}`}>
                         {chain.map((port, index) => (
                           <React.Fragment key={index}>
                             <div
                               className={`
-                                p-3 rounded-lg min-w-[80px] text-center font-medium
+                                text-xs p-1 rounded-lg min-w-[40px] text-center font-medium
                                 ${index === 0 ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"}
                                 ${index === chain.length - 1 && !swapConfig[port] && !circular ? "border-2 border-yellow-400 bg-yellow-50 text-yellow-800" : ""}
                               `}
@@ -211,7 +211,7 @@ const SwapDiagram = ({ origins, swapConfig }) => {
         {/* List View */}
         {activeTab === "list" && (
           <div className="max-h-[250px] overflow-y-auto">
-            <div className="space-y-4">
+            <div className="space-y-4 text-sm">
               {chains.map(({ chain, circular }, chainIndex) => {
                 const hasUnassignedPort = chain.length > 0 && !swapConfig[chain[chain.length - 1]] && !circular;
 
@@ -284,20 +284,20 @@ const SwapDiagram = ({ origins, swapConfig }) => {
           </div>
         )}
 
-        <div className="mt-6 flex flex-wrap items-center justify-center space-x-4 text-sm border-t pt-4">
-          <div className="flex items-center mb-1">
+        <div className="mt-2 flex flex-wrap items-center justify-center space-x-2 text-[10px] border-t pt-4">
+          <div className="flex items-center">
             <div className="w-3 h-3 bg-blue-100 rounded mr-2"></div>
             <span>Origin Port</span>
           </div>
-          <div className="flex items-center mb-1">
+          <div className="flex items-center">
             <div className="w-3 h-3 bg-green-100 rounded mr-2"></div>
             <span>Destination Port</span>
           </div>
-          <div className="flex items-center mb-1">
+          <div className="flex items-center">
             <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
             <span>Circular Link</span>
           </div>
-          <div className="flex items-center mb-1">
+          <div className="flex items-center">
             <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded mr-2"></div>
             <span>Unassigned Port</span>
           </div>
