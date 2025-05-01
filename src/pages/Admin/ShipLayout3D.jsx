@@ -1,5 +1,5 @@
-import { Canvas, useFrame, extend } from "@react-three/fiber";
-import { OrbitControls, Text, Environment, Stats, GradientTexture } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Text, Environment, Stats } from "@react-three/drei";
 import * as THREE from "three";
 import { useState, useMemo, useRef } from "react";
 
@@ -52,270 +52,399 @@ const Ocean = ({ size = 1000 }) => {
   return <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} geometry={waterGeometry} material={waterMaterial} receiveShadow />;
 };
 
-const ContainerSlot = ({ position, size, color = "#3b82f6", opacity = 0.6, label, showId, row, col, bayIndex, baySize }) => {
+// Container component
+const ContainerSlot = ({ position, size, color = "#3b82f6", opacity = 0.6, label, highlighted, containerId, onClick }) => {
   const geometry = useMemo(() => new THREE.BoxGeometry(size.width, size.height, size.depth), [size]);
   const material = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
-        color,
+        color: highlighted ? "#059669" : color,
         transparent: true,
-        opacity,
-        metalness: 0.5,
-        roughness: 0.2,
-        side: THREE.DoubleSide,
+        opacity: highlighted ? 0.4 : opacity,
+        metalness: 0.8,
+        roughness: 0.4,
       }),
-    [color, opacity]
+    [color, opacity, highlighted]
   );
 
-  if (!baySize) return null;
-
-  const containerId = `${bayIndex + 1}${baySize.rows - row - 1}${col}`;
-
   return (
-    <mesh position={position} geometry={geometry} material={material} castShadow receiveShadow>
-      {(label || showId) && (
-        <Text position={[0, size.height / 2 + 0.2, 0]} fontSize={0.3} color="#1e293b" anchorX="center" anchorY="middle">
-          {label || containerId}
+    <mesh position={position} geometry={geometry} material={material} castShadow receiveShadow onClick={onClick}>
+      {label && (
+        <Text position={[0, 0, size.depth / 2 + 0.1]} fontSize={0.3} color="#ffffff" anchorX="center" anchorY="middle">
+          {label}
         </Text>
       )}
     </mesh>
   );
 };
 
-const BaySection = ({ position, size, highlighted, label, baySize }) => {
-  const [hovered, setHovered] = useState(false);
-  const highlightColor = "#059669";
-  const defaultColor = "#3b82f6";
-
-  if (!position || !size || !baySize) return null;
-
-  return (
-    <group position={position} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
-      <ContainerSlot position={[0, 0, 0]} size={size} color={highlighted ? highlightColor : defaultColor} opacity={0.5} label={label} baySize={baySize} row={0} col={0} bayIndex={0} />
-    </group>
-  );
-};
-
-// Sky component with realistic gradient
+// Simplified Sky component
 const Sky = () => {
   return (
-    <mesh position={[0, 0, -500]} rotation={[0, 0, 0]}>
-      <planeGeometry args={[2000, 1000]} />
-      <meshBasicMaterial>
-        <GradientTexture attach="map" stops={[0, 0.3, 0.6, 1]} colors={["#87ceeb", "#6698cb", "#4682b4", "#87CEFA"]} />
-      </meshBasicMaterial>
+    <mesh>
+      <sphereGeometry args={[1000, 32, 16]} />
+      <meshBasicMaterial color="#87CEEB" side={THREE.BackSide} />
     </mesh>
   );
 };
 
-const ShipLayout3D = ({ baySize = { rows: 4, columns: 6 }, bayCount = 3 }) => {
+const ShipLayout3D = ({ baySize = { rows: 4, columns: 4 }, bayCount = 1 }) => {
   const [activeExample, setActiveExample] = useState("none");
   const [showContainerIds, setShowContainerIds] = useState(false);
 
-  // Adjusted camera position to see ship from better angle with water
-  const cameraPosition = useMemo(() => {
-    const x = Math.max(15, bayCount * 4);
-    const y = Math.max(14, baySize.rows * 2.5); // Slightly higher to see ocean
-    const z = Math.max(15, baySize.columns * 2);
-    return [x, y, z];
-  }, [bayCount, baySize]);
+  // Ship dimensions - make the ship longer for more realistic proportions
+  const shipLength = bayCount * 15 + 15; // Longer ship
+  const shipWidth = baySize.columns * 5 + 2; // Wider to accommodate container columns
+  const shipHeight = 7; // Taller hull
+  const deckHeight = 0; // Position of the deck above waterline
 
-  const ShipDetails = () => {
+  // Camera position adjusted to show entire ship
+  const cameraPosition = useMemo(() => [shipLength / 1.5, shipHeight * 2 + 10, shipWidth * 1.2], [shipLength, shipWidth, shipHeight]);
+
+  // Ship Hull component with more realistic shape
+  const ShipHull = () => {
     return (
       <group>
-        {/* Bridge/Command structure with multiple levels */}
-        <group position={[bayCount * 2 - 4, 0, 0]}>
-          {/* Main bridge structure */}
+        {/* Main hull */}
+        <mesh position={[0, -shipHeight / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[shipLength * 0.95, shipHeight, shipWidth]} />
+          <meshPhysicalMaterial color="#2c3e50" metalness={0.4} roughness={0.6} />
+        </mesh>
+
+        {/* Stern (rear) */}
+        <mesh position={[-shipLength * 0.42, -shipHeight / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[shipLength * 0.1, shipHeight, shipWidth * 0.8]} />
+          <meshPhysicalMaterial color="#2c3e50" metalness={0.4} roughness={0.6} />
+        </mesh>
+
+        {/* Deck */}
+        <mesh position={[0, deckHeight, 0]} receiveShadow>
+          <boxGeometry args={[shipLength * 0.85, 0.5, shipWidth]} />
+          <meshPhysicalMaterial color="#34495e" metalness={0.3} roughness={0.7} />
+        </mesh>
+
+        {/* Bottom of the hull (darker) */}
+        <mesh position={[0, -shipHeight, 0]} receiveShadow>
+          <boxGeometry args={[shipLength * 0.85, 1, shipWidth]} />
+          <meshPhysicalMaterial color="#1e2a3a" metalness={0.4} roughness={0.6} />
+        </mesh>
+
+        {/* Waterline accent */}
+        <mesh position={[0, -shipHeight / 2 + 0.5, 0]} receiveShadow>
+          <boxGeometry args={[shipLength * 0.85, 0.3, shipWidth + 0.1]} />
+          <meshPhysicalMaterial color="#c0392b" metalness={0.2} roughness={0.8} />
+        </mesh>
+      </group>
+    );
+  };
+
+  // Ship superstructure (bridge, etc.)
+  const ShipSuperstructure = () => {
+    return (
+      <group position={[-shipLength * 0.4, deckHeight + 4, 0]}>
+        {/* Main bridge structure */}
+        <mesh castShadow receiveShadow>
+          <boxGeometry args={[shipLength * 0.15, 8, shipWidth * 0.7]} />
+          <meshPhysicalMaterial color="#34495e" metalness={0.5} roughness={0.5} />
+        </mesh>
+
+        {/* Bridge windows */}
+        <mesh position={[0, 3, shipWidth * 0.36 - 0.1]} castShadow>
+          <boxGeometry args={[shipLength * 0.14, 1, 0.1]} />
+          <meshPhysicalMaterial color="#2980b9" metalness={0.8} roughness={0.2} transparent opacity={0.7} />
+        </mesh>
+
+        <mesh position={[0, 3, -shipWidth * 0.36 + 0.1]} castShadow>
+          <boxGeometry args={[shipLength * 0.14, 1, 0.1]} />
+          <meshPhysicalMaterial color="#2980b9" metalness={0.8} roughness={0.2} transparent opacity={0.7} />
+        </mesh>
+
+        {/* Top level of bridge */}
+        <mesh position={[0, 5, 0]} castShadow receiveShadow>
+          <boxGeometry args={[shipLength * 0.12, 2, shipWidth * 0.5]} />
+          <meshPhysicalMaterial color="#34495e" metalness={0.5} roughness={0.5} />
+        </mesh>
+
+        {/* Command/control room */}
+        <mesh position={[0, 7, 0]} castShadow receiveShadow>
+          <boxGeometry args={[shipLength * 0.08, 2, shipWidth * 0.35]} />
+          <meshPhysicalMaterial color="#34495e" metalness={0.5} roughness={0.5} />
+        </mesh>
+
+        {/* Radar/antennas */}
+        <group position={[0, 9, 0]}>
           <mesh castShadow>
-            <boxGeometry args={[5, 8, baySize.columns * 0.9]} />
-            <meshPhysicalMaterial color="#2c3e50" metalness={0.6} roughness={0.3} />
+            <cylinderGeometry args={[0.2, 0.2, 2, 8]} />
+            <meshStandardMaterial color="#7f8c8d" />
           </mesh>
 
-          {/* Bridge windows */}
-          <mesh position={[0, 5, baySize.columns * 0.46]}>
-            <boxGeometry args={[4.5, 1.5, 0.1]} />
-            <meshPhysicalMaterial color="#1e3a8a" metalness={0.9} roughness={0.1} transparent opacity={0.7} />
-          </mesh>
-
-          {/* Bridge top level */}
-          <mesh position={[0, 6, 0]}>
-            <boxGeometry args={[4, 2, baySize.columns * 0.7]} />
-            <meshPhysicalMaterial color="#3b4252" metalness={0.5} roughness={0.3} />
-          </mesh>
-
-          {/* Control room */}
-          <mesh position={[-0.5, 7.5, 0]}>
-            <boxGeometry args={[3, 1.5, baySize.columns * 0.5]} />
-            <meshPhysicalMaterial color="#2c3e50" metalness={0.4} roughness={0.4} />
+          <mesh position={[0, 1, 0]} castShadow>
+            <boxGeometry args={[1.5, 0.1, 1.5]} />
+            <meshStandardMaterial color="#7f8c8d" />
           </mesh>
         </group>
 
-        {/* Improved funnel/smokestack with details */}
-        <group position={[bayCount * 2 - 4, 8.5, 0]}>
-          {/* Main funnel */}
-          <mesh castShadow>
-            <cylinderGeometry args={[1.2, 1.6, 5, 16]} />
-            <meshPhysicalMaterial color="#e63946" roughness={0.3} />
+        {/* Smokestack/funnel */}
+        <group position={[shipLength * 0.001, 11, 0]}>
+          <mesh castShadow receiveShadow>
+            <cylinderGeometry args={[1, 1.5, 7, 16]} />
+            <meshPhysicalMaterial color="#c0392b" roughness={0.6} />
           </mesh>
 
-          {/* Funnel top rim */}
-          <mesh position={[0, 2.6, 0]}>
-            <cylinderGeometry args={[1.4, 1.4, 0.3, 16]} />
-            <meshPhysicalMaterial color="#333333" metalness={0.7} roughness={0.2} />
-          </mesh>
-
-          {/* Company logo/marking on funnel */}
-          <mesh position={[0, 1, 1.3]} rotation={[0, 0, 0]}>
-            <planeGeometry args={[1.5, 1.5]} />
-            <meshBasicMaterial color="#0369a1" />
+          <mesh position={[0, 3.6, 0]} castShadow>
+            <cylinderGeometry args={[1.2, 1.2, 0.3, 16]} />
+            <meshPhysicalMaterial color="#2c3e50" metalness={0.6} roughness={0.4} />
           </mesh>
         </group>
 
-        {/* Navigation equipment */}
-        <group position={[bayCount * 2 - 3, 9, 0]}>
-          {/* Radar/satellite equipment */}
-          <mesh castShadow>
-            <cylinderGeometry args={[0.1, 0.1, 2, 8]} />
-            <meshStandardMaterial color="#888888" />
+        {/* Life boats - port side */}
+        <group position={[-0.5, 1, shipWidth * 0.36]}>
+          <mesh castShadow receiveShadow rotation={[0, Math.PI / 2, 0]}>
+            <capsuleGeometry args={[0.4, 1.2]} />
+            <meshStandardMaterial color="#f39c12" />
           </mesh>
 
-          <mesh position={[0, 1, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.8, 0.8, 0.1, 16]} />
-            <meshStandardMaterial color="#666666" />
+          <mesh position={[1.5, 0, 0]} castShadow receiveShadow rotation={[0, Math.PI / 2, 0]}>
+            <capsuleGeometry args={[0.4, 1.2]} />
+            <meshStandardMaterial color="#f39c12" />
           </mesh>
         </group>
 
-        {/* Deck equipment */}
-        <mesh position={[bayCount * 2 - 6, 0.5, 0]} castShadow>
-          <boxGeometry args={[2, 1, baySize.columns * 0.3]} />
-          <meshPhysicalMaterial color="#607d8b" metalness={0.4} roughness={0.6} />
-        </mesh>
+        {/* Life boats - starboard side */}
+        <group position={[-0.5, 1, -shipWidth * 0.36]}>
+          <mesh castShadow receiveShadow rotation={[0, Math.PI / 2, 0]}>
+            <capsuleGeometry args={[0.4, 1.2]} />
+            <meshStandardMaterial color="#f39c12" />
+          </mesh>
 
-        {/* Life boats (simplified) */}
-        <mesh position={[bayCount * 2 - 6, 1.5, baySize.columns * 0.3]} castShadow>
-          <capsuleGeometry args={[0.5, 1.5, 2, 8]} />
-          <meshStandardMaterial color="#f59e0b" />
-        </mesh>
+          <mesh position={[1.5, 0, 0]} castShadow receiveShadow rotation={[0, Math.PI / 2, 0]}>
+            <capsuleGeometry args={[0.4, 1.2]} />
+            <meshStandardMaterial color="#f39c12" />
+          </mesh>
+        </group>
+      </group>
+    );
+  };
 
-        <mesh position={[bayCount * 2 - 6, 1.5, -baySize.columns * 0.3]} castShadow>
-          <capsuleGeometry args={[0.5, 1.5, 2, 8]} />
-          <meshStandardMaterial color="#f59e0b" />
-        </mesh>
+  // Container loading area with simplified row/column selection
+  const ContainerArea = () => {
+    // State for row/column visualization
+    const [highlightMode, setHighlightMode] = useState(null); // 'row', 'column', or null
+    const [highlightIndex, setHighlightIndex] = useState(1); // Which row/column to highlight (default to first)
+
+    // Function to generate container ID in correct format with reversed row numbering
+    const getContainerId = (bayIndex, row, col) => {
+      // Reverse the row number (highest row number at the bottom)
+      const reversedRow = baySize.rows - 1 - row;
+      return `${bayIndex + 1}${reversedRow}${col}`;
+    };
+
+    // Function to determine if a container is highlighted
+    const isContainerHighlighted = (row, col) => {
+      if (showContainerIds) return true;
+      if (highlightMode === "row" && row === highlightIndex) return true;
+      if (highlightMode === "column" && col === highlightIndex) return true;
+      return false;
+    };
+
+    // Function to determine container color based on highlight type
+    const getContainerColor = (row, col) => {
+      if (highlightMode === "row" && row === highlightIndex) {
+        return "#10b981"; // Green for row highlights
+      } else if (highlightMode === "column" && col === highlightIndex) {
+        return "#6366f1"; // Purple for column highlights
+      } else if (showContainerIds) {
+        return "#f59e0b"; // Amber for show all IDs
+      } else {
+        return "#3b82f6"; // Default blue
+      }
+    };
+
+    // Toggle row highlight mode
+    const toggleRowHighlight = () => {
+      if (highlightMode === "row") {
+        setHighlightMode(null);
+      } else {
+        setHighlightMode("row");
+        setHighlightIndex(1); // Default to first row
+      }
+    };
+
+    // Toggle column highlight mode
+    const toggleColumnHighlight = () => {
+      if (highlightMode === "column") {
+        setHighlightMode(null);
+      } else {
+        setHighlightMode("column");
+        setHighlightIndex(1); // Default to first column
+      }
+    };
+
+    // Change which row/column is highlighted
+    const changeHighlightIndex = (increment) => {
+      if (highlightMode === "row") {
+        const newIndex = highlightIndex + increment;
+        if (newIndex >= 0 && newIndex < baySize.rows) {
+          setHighlightIndex(newIndex);
+        }
+      } else if (highlightMode === "column") {
+        const newIndex = highlightIndex + increment;
+        if (newIndex >= 0 && newIndex < baySize.columns) {
+          setHighlightIndex(newIndex);
+        }
+      }
+    };
+
+    return (
+      <group position={[shipLength * 0.05, deckHeight + 0.5, 0]}>
+        {/* Control Buttons - positioned at the top of the container area */}
+        <group position={[0, baySize.rows * 2.5 + 5, 0]}>
+          {/* Row highlight button */}
+          <group position={[-8, 0, 0]}>
+            <mesh onClick={toggleRowHighlight} position={[0, 0, 0]}>
+              <boxGeometry args={[2.5, 1.5, 1]} />
+              <meshStandardMaterial color={highlightMode === "row" ? "#10b981" : "#64748b"} emissive={highlightMode === "row" ? "#10b981" : "#000000"} emissiveIntensity={0.5} />
+            </mesh>
+            <Text position={[0, 0, 0.51]} fontSize={0.6} color="#ffffff" anchorX="center" anchorY="middle">
+              {highlightMode === "row" ? "Hide Rows" : "Show Row"}
+            </Text>
+          </group>
+
+          {/* Column highlight button */}
+          <group position={[-4, 0, 0]}>
+            <mesh onClick={toggleColumnHighlight} position={[0, 0, 0]}>
+              <boxGeometry args={[2.5, 1.5, 1]} />
+              <meshStandardMaterial color={highlightMode === "column" ? "#6366f1" : "#64748b"} emissive={highlightMode === "column" ? "#6366f1" : "#000000"} emissiveIntensity={0.5} />
+            </mesh>
+            <Text position={[0, 0, 0.51]} fontSize={0.6} color="#ffffff" anchorX="center" anchorY="middle">
+              {highlightMode === "column" ? "Hide Columns" : "Show Column"}
+            </Text>
+          </group>
+
+          {/* Navigation buttons - only show when in highlight mode */}
+          {highlightMode && (
+            <>
+              <group position={[0, 0, 0]}>
+                <mesh onClick={() => changeHighlightIndex(-1)} position={[0, 0, 0]}>
+                  <boxGeometry args={[1.5, 1.5, 1]} />
+                  <meshStandardMaterial color="#64748b" />
+                </mesh>
+                <Text position={[0, 0, 0.51]} fontSize={0.6} color="#ffffff" anchorX="center" anchorY="middle">
+                  {"←"}
+                </Text>
+              </group>
+
+              <group position={[2, 0, 0]}>
+                <mesh onClick={() => changeHighlightIndex(1)} position={[0, 0, 0]}>
+                  <boxGeometry args={[1.5, 1.5, 1]} />
+                  <meshStandardMaterial color="#64748b" />
+                </mesh>
+                <Text position={[0, 0, 0.51]} fontSize={0.6} color="#ffffff" anchorX="center" anchorY="middle">
+                  {"→"}
+                </Text>
+              </group>
+
+              <Text position={[5, 0, 0]} fontSize={0.8} color="#ffffff" anchorX="center" anchorY="middle">
+                {highlightMode === "row" ? `Row ${baySize.rows - 1 - highlightIndex}` : `Column ${highlightIndex}`}
+              </Text>
+            </>
+          )}
+
+          {/* Current selection indicator */}
+          {highlightMode && (
+            <Text position={[0, 2, 0]} fontSize={0.8} fontWeight={700} color="#ffffff" anchorX="center" anchorY="middle" backgroundColor="#00000080" padding={0.5}>
+              {highlightMode === "row" ? `Showing Row ${baySize.rows - 1 - highlightIndex} across all bays` : `Showing Column ${highlightIndex} across all bays`}
+            </Text>
+          )}
+        </group>
+
+        {Array.from({ length: bayCount }).map((_, bayIndex) => {
+          const bayPosition = [bayIndex * 8 - (bayCount - 1) * 2.5, 0, 0];
+
+          return (
+            <group key={bayIndex} position={bayPosition}>
+              {/* Container Grid with reversed row ID ordering */}
+              {Array.from({ length: baySize.rows }).map((_, row) =>
+                Array.from({ length: baySize.columns }).map((_, col) => {
+                  // Calculate container position - physical layout remains the same
+                  const containerId = getContainerId(bayIndex, row, col);
+                  // Use new functions to determine highlight state and color
+                  const highlighted = isContainerHighlighted(row, col);
+                  const containerColor = getContainerColor(row, col);
+
+                  return (
+                    <ContainerSlot
+                      key={`${bayIndex}-${row}-${col}`}
+                      position={[
+                        0,
+                        row * 2.5 + 1.25, // Starting from the bottom - physical layout unchanged
+                        (col - (baySize.columns - 1) / 2) * 4,
+                      ]}
+                      size={{ width: 5.5, height: 2.5, depth: 2 }}
+                      color={containerColor}
+                      opacity={0.6}
+                      label={highlighted ? containerId : null}
+                      highlighted={highlighted}
+                      containerId={containerId}
+                    />
+                  );
+                })
+              )}
+
+              {/* Bay Label */}
+              <Text position={[0, baySize.rows * 2.5 + 3, 0]} fontSize={1} fontWeight={700} color="#ffffff" anchorX="center" anchorY="middle">
+                {`Bay ${bayIndex + 1}`}
+              </Text>
+            </group>
+          );
+        })}
       </group>
     );
   };
 
   return (
     <div
-      className="relative h-[500px] w-full"
+      className="relative h-[600px] w-full"
       style={{
         background: "linear-gradient(to bottom, #87CEEB, #1E90FF)",
         position: "relative",
         overflow: "hidden",
       }}
     >
-      <Canvas shadows gl={{ antialias: true, alpha: false }} camera={{ position: cameraPosition, fov: 45 }} dpr={[1, 2]} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}>
-        {/* Sky blue background */}
-        <color attach="background" args={["#87CEEB"]} />
+      <Canvas shadows gl={{ antialias: true, alpha: false }} camera={{ position: cameraPosition, fov: 90 }} dpr={[1, 5]}>
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[20, 30, 10]} intensity={1} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
 
-        {/* Lighting for better scene visibility */}
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[20, 30, 10]} intensity={1.2} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
-        <pointLight position={[-10, 8, -10]} intensity={0.4} />
+        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} minPolarAngle={Math.PI / 10} maxPolarAngle={Math.PI / 2.1} dampingFactor={0.05} enableDamping={true} minDistance={5} maxDistance={100} />
 
-        {/* Controls - FIXED: removed the addEventListener prop that caused errors */}
-        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.5} dampingFactor={0.05} enableDamping={true} minDistance={5} maxDistance={30} />
-
-        {/* Add sky for better atmosphere */}
+        {/* Simple sky background */}
         <Sky />
+        <Ocean size={500} />
 
-        {/* Ocean surface */}
-        <Ocean size={200} />
-
-        {/* Ship base */}
-        <mesh position={[0, -2, 0]} receiveShadow castShadow>
-          <boxGeometry args={[bayCount * 4 + 4, 3, baySize.columns * 1.2 + 4]} />
-          <meshPhysicalMaterial color="#475569" metalness={0.6} roughness={0.2} />
-        </mesh>
-
-        {/* <ShipDetails /> */}
-
-        {/* Enhanced Bays - raised position to sit on water */}
+        {/* Ship components */}
         <group position={[0, 1, 0]}>
-          {Array.from({ length: bayCount }).map((_, bayIndex) => {
-            const bayPosition = [bayIndex * 4 - (bayCount - 1) * 2, 0, 0];
-
-            return (
-              <group key={bayIndex} position={bayPosition}>
-                {/* Container Grid with IDs */}
-                {Array.from({ length: baySize.rows }).map((_, row) =>
-                  Array.from({ length: baySize.columns }).map((_, col) => (
-                    <ContainerSlot
-                      key={`${row}-${col}`}
-                      position={[0, row, col - baySize.columns / 2 + 0.5]}
-                      size={{ width: 3, height: 0.9, depth: 0.9 }}
-                      color="#94a3b8"
-                      opacity={0.2} // Slightly more visible
-                      showId={showContainerIds}
-                      row={row}
-                      col={col}
-                      bayIndex={bayIndex}
-                      baySize={baySize}
-                    />
-                  ))
-                )}
-
-                {/* Examples */}
-                {activeExample === "row" && <BaySection position={[0, 1, 0]} size={{ width: 3, height: 0.9, depth: baySize.columns * 0.9 }} highlighted={true} label="Row Example" baySize={baySize} />}
-
-                {activeExample === "column" && <BaySection position={[0, baySize.rows / 2, 0]} size={{ width: 3, height: baySize.rows, depth: 0.9 }} highlighted={true} label="Column Example" baySize={baySize} />}
-
-                {/* Bay Label */}
-                <Text position={[0, baySize.rows + 0.5, 0]} fontSize={0.8} color="#1e293b" anchorX="center" anchorY="middle">
-                  {`Bay ${bayIndex + 1}`}
-                </Text>
-              </group>
-            );
-          })}
+          <ShipHull />
+          <ShipSuperstructure />
+          <ContainerArea />
         </group>
 
         <Environment preset="sunset" />
-        <Stats />
+        {/* <Stats /> */}
       </Canvas>
 
       {/* Controls */}
-      <div className="absolute bottom-4 left-4 flex gap-2">
-        <button
-          onClick={() => setActiveExample(activeExample === "row" ? "none" : "row")}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${activeExample === "row" ? "bg-emerald-600 text-white shadow-lg" : "bg-white/90 border border-gray-200 hover:bg-gray-50"}`}
-        >
-          Show Row
+      <div className="absolute bottom-4 left-4 bg-black/60 p-4 rounded-lg text-white">
+        <button onClick={() => setShowContainerIds(!showContainerIds)} className={`px-3 py-1 rounded text-sm ${showContainerIds ? "bg-blue-600" : "bg-gray-600"}`}>
+          {showContainerIds ? "Hide All IDs" : "Show All IDs"}
         </button>
-        <button
-          onClick={() => setActiveExample(activeExample === "column" ? "none" : "column")}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${activeExample === "column" ? "bg-emerald-600 text-white shadow-lg" : "bg-white/90 border border-gray-200 hover:bg-gray-50"}`}
-        >
-          Show Column
-        </button>
-        <button
-          onClick={() => setShowContainerIds(!showContainerIds)}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${showContainerIds ? "bg-blue-600 text-white shadow-lg" : "bg-white/90 border border-gray-200 hover:bg-gray-50"}`}
-        >
-          {showContainerIds ? "Hide IDs" : "Show IDs"}
-        </button>
-      </div>
 
-      {/* Instructions */}
-      <div className="absolute top-4 right-4 bg-white/95 p-4 rounded-lg shadow-lg text-xs space-y-2">
-        <p className="flex items-center gap-2">
-          🖱️ <span className="text-gray-700">Left click + drag to rotate</span>
-        </p>
-        <p className="flex items-center gap-2">
-          🖱️ <span className="text-gray-700">Right click + drag to pan</span>
-        </p>
-        <p className="flex items-center gap-2">
-          🖱️ <span className="text-gray-700">Scroll to zoom</span>
-        </p>
+        <div className="mt-2 text-xs">
+          <div>🖱️ Left click + drag: Rotate view</div>
+          <div>🖱️ Right click + drag: Pan view</div>
+          <div>🖱️ Scroll: Zoom in/out</div>
+          <div>🖱️ Click R#: Highlight row</div>
+          <div>🖱️ Click C#: Highlight column</div>
+        </div>
       </div>
     </div>
   );

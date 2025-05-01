@@ -9,8 +9,8 @@ import RenderShipBayLayout from "../../components/simulations/RenderShipBayLayou
 const GuideModal = ({ onClose }) => {
   const [previewConfig, setPreviewConfig] = useState({
     rows: 4,
-    columns: 6,
-    bayCount: 2,
+    columns: 4,
+    bayCount: 6,
   });
 
   const handleConfigChange = (field, value) => {
