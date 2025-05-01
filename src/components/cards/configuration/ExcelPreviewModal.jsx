@@ -158,17 +158,17 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <div className="flex items-center gap-3">
-            <FiAlertTriangle className="text-amber-500 text-2xl" />
-            <h2 className="text-xl font-bold text-gray-800">Import Preview</h2>
+            <FiAlertTriangle className="text-amber-500 text-1xl" />
+            <h2 className="text-lg font-bold text-gray-800">Import Preview</h2>
           </div>
           <div>
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">{data.length} Sales Call Cards</span>
+            <span className="px-4 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{data.length} Sales Call Cards</span>
           </div>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b">
-          <button className={`px-6 py-3 font-medium text-sm ${currentTab === "preview" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"}`} onClick={() => setCurrentTab("preview")}>
+          <button className={`px-6 py-2 font-medium text-sm ${currentTab === "preview" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"}`} onClick={() => setCurrentTab("preview")}>
             <div className="flex items-center gap-2">
               <BsTable />
               <span>Data Preview</span>
@@ -183,9 +183,9 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto p-2">
           {currentTab === "preview" ? (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {/* Search and filters */}
               <div className="flex flex-wrap gap-4 items-center bg-gray-50 p-3 rounded-lg">
                 {/* Search Box */}
@@ -195,7 +195,7 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
                     placeholder="Search cards..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-xs pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <BsSearch className="absolute left-3 top-2.5 text-gray-400" />
                 </div>
@@ -203,7 +203,7 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
                 {/* Priority Filter */}
                 <div className="flex items-center space-x-2">
                   <FiFilter className="text-gray-500" />
-                  <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="border rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="border text-xs rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="all">All Priorities</option>
                     <option value="committed">Committed</option>
                     <option value="non-committed">Non-Committed</option>
@@ -213,7 +213,7 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
                 {/* Type Filter */}
                 <div className="flex items-center space-x-2">
                   <FiFilter className="text-gray-500" />
-                  <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="border text-xs rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="all">All Types</option>
                     <option value="dry">Dry</option>
                     <option value="reefer">Reefer</option>
@@ -222,8 +222,8 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
 
                 {/* Rows per page */}
                 <div className="flex items-center gap-2 ml-auto">
-                  <span className="text-sm text-gray-500">Rows per page:</span>
-                  <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} className="border rounded p-2 text-sm">
+                  <span className="text-xs text-gray-500">Rows per page:</span>
+                  <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} className="border rounded p-2 text-xs">
                     <option value={5}>5</option>
                     <option value={10}>10</option>
                     <option value={20}>20</option>
@@ -236,58 +236,58 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("id")}>
+                      <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("id")}>
                         <div className="flex items-center gap-1">
                           <span>ID</span>
                           {getSortIcon("id")}
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("origin")}>
+                      <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("origin")}>
                         <div className="flex items-center gap-1">
                           <span>Origin</span>
                           {getSortIcon("origin")}
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("destination")}>
+                      <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("destination")}>
                         <div className="flex items-center gap-1">
                           <span>Destination</span>
                           {getSortIcon("destination")}
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("priority")}>
+                      <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("priority")}>
                         <div className="flex items-center gap-1">
                           <span>Priority</span>
                           {getSortIcon("priority")}
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("container_type")}>
+                      <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("container_type")}>
                         <div className="flex items-center gap-1">
                           <span>Type</span>
                           {getSortIcon("container_type")}
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("quantity")}>
+                      <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("quantity")}>
                         <div className="flex items-center gap-1">
                           <span>Qty</span>
                           {getSortIcon("quantity")}
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("revenue_per_container")}>
+                      <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => handleSort("revenue_per_container")}>
                         <div className="flex items-center gap-1">
                           <span>Revenue/Container</span>
                           {getSortIcon("revenue_per_container")}
                         </div>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                      <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-200 text-xs">
                     {currentRows.map((row, index) => (
                       <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{row.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.origin}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{row.destination}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-6 py-2 whitespace-nowrap font-medium text-gray-900">{row.id}</td>
+                        <td className="px-6 py-2 whitespace-nowrap text-gray-900">{row.origin}</td>
+                        <td className="px-6 py-2 whitespace-nowrap text-gray-900">{row.destination}</td>
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <span
                             className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                               ${row.priority?.toLowerCase().includes("committed") && !row.priority?.toLowerCase().includes("non") ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
@@ -295,7 +295,7 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
                             {row.priority}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-6 py-2 whitespace-nowrap">
                           <span
                             className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                               ${row.container_type === "reefer" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}
@@ -303,9 +303,9 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
                             {row.container_type.toUpperCase()}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{row.quantity}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{formatIDR(row.revenue_per_container)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">{formatIDR(row.revenue_per_container * row.quantity)}</td>
+                        <td className="px-6 py-2 whitespace-nowrap">{row.quantity}</td>
+                        <td className="px-6 py-2 whitespace-nowrap">{formatIDR(row.revenue_per_container)}</td>
+                        <td className="px-6 py-2 whitespace-nowrap">{formatIDR(row.revenue_per_container * row.quantity)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -313,7 +313,7 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
 
                 {/* Empty state */}
                 {filteredData.length === 0 && (
-                  <div className="text-center py-8">
+                  <div className="text-center py-4">
                     <p className="text-gray-500">No cards match your search criteria.</p>
                   </div>
                 )}
@@ -321,11 +321,11 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
 
               {/* Pagination */}
               {filteredData.length > rowsPerPage && (
-                <div className="flex items-center justify-between border-t pt-4">
-                  <div className="flex items-center text-sm text-gray-500">
+                <div className="flex items-center justify-between border-t pt-2">
+                  <div className="flex items-center text-xs text-gray-500">
                     Showing {indexOfFirstRow + 1} to {Math.min(indexOfLastRow, filteredData.length)} of {filteredData.length} entries
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 text-xs">
                     <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className={`px-3 py-1 rounded ${currentPage === 1 ? "bg-gray-100 text-gray-400" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
                       First
                     </button>
@@ -358,33 +358,33 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
           ) : (
             <div className="space-y-6">
               {/* Summary Stats */}
-              <div className="bg-blue-50 rounded-lg p-4 flex flex-wrap gap-6 justify-between">
+              <div className="bg-blue-50 rounded-lg p-4 flex flex-wrap gap-2 justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Total Cards</p>
-                  <p className="text-2xl font-bold text-blue-700">{stats.totalCards}</p>
+                  <p className="text-sm font-bold text-blue-700">{stats.totalCards}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total Revenue</p>
-                  <p className="text-2xl font-bold text-blue-700">{formatIDR(stats.totalRevenue)}</p>
+                  <p className="text-sm font-bold text-blue-700">{formatIDR(stats.totalRevenue)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total Containers</p>
-                  <p className="text-2xl font-bold text-blue-700">{stats.totalContainers}</p>
+                  <p className="text-sm font-bold text-blue-700">{stats.totalContainers}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Dry Containers</p>
-                  <p className="text-2xl font-bold text-blue-700">{stats.byType.dry}</p>
+                  <p className="text-sm font-bold text-blue-700">{stats.byType.dry}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Reefer Containers</p>
-                  <p className="text-2xl font-bold text-blue-700">{stats.byType.reefer}</p>
+                  <p className="text-sm font-bold text-blue-700">{stats.byType.reefer}</p>
                 </div>
               </div>
 
               {/* By Port Statistics */}
               <div>
-                <h3 className="text-lg font-semibold mb-3">Port Statistics</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <h3 className="text-sm font-semibold p-2">Port Statistics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
                   {Object.entries(stats.byPort).map(([port, portStats]) => (
                     <div key={port} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <div className="flex justify-between items-center mb-2">
@@ -408,21 +408,21 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
 
               {/* Priority Distribution */}
               <div>
-                <h3 className="text-lg font-semibold mb-3">Priority Distribution</h3>
-                <div className="flex gap-4">
+                <h3 className="text-sm font-semibold p-2">Priority Distribution</h3>
+                <div className="flex gap-4 text-sm">
                   <div className="bg-green-50 rounded-lg p-4 border border-green-200 flex-1">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-green-700">Committed</span>
                       <span className="bg-green-100 text-green-800 text-xs rounded-full px-2 py-1">{stats.totalContainers > 0 ? `${((stats.byPriority.committed / stats.totalContainers) * 100).toFixed(1)}%` : "0%"}</span>
                     </div>
-                    <p className="text-2xl font-bold text-green-700">{stats.byPriority.committed}</p>
+                    <p className="text-sm font-bold text-green-700">{stats.byPriority.committed}</p>
                   </div>
                   <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200 flex-1">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-yellow-700">Non-Committed</span>
                       <span className="bg-yellow-100 text-yellow-800 text-xs rounded-full px-2 py-1">{stats.totalContainers > 0 ? `${((stats.byPriority.nonCommitted / stats.totalContainers) * 100).toFixed(1)}%` : "0%"}</span>
                     </div>
-                    <p className="text-2xl font-bold text-yellow-700">{stats.byPriority.nonCommitted}</p>
+                    <p className="text-sm font-bold text-yellow-700">{stats.byPriority.nonCommitted}</p>
                   </div>
                 </div>
               </div>
@@ -431,7 +431,7 @@ const ExcelPreviewModal = ({ isOpen, onClose, onConfirm, data, formatIDR }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50 flex justify-end space-x-4">
+        <div className="p-4 border-t bg-gray-50 flex justify-end space-x-4 text-sm">
           <button onClick={onClose} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100">
             Cancel
           </button>

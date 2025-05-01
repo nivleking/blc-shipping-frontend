@@ -219,7 +219,7 @@ const FileGeneratePanel = ({ deckId, refreshData }) => {
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("deck_id", deckId);
-    
+
     try {
       const response = await api.post(`/decks/${deckId}/import-cards`, formData, {
         headers: {
@@ -277,20 +277,20 @@ const FileGeneratePanel = ({ deckId, refreshData }) => {
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-800">Import File</h3>
-          <button onClick={downloadTemplate} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
+          <h3 className="text-sm font-semibold text-gray-800">Import File</h3>
+          <button onClick={downloadTemplate} className="flex items-center gap-2 text-xs px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
             <BsDownload /> Download Template
           </button>
         </div>
 
-        <div className="border-2 border-dashed border-gray-300 rounded-xl p-6">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-xs">
           <div className="flex flex-col items-center space-y-4">
-            <BsCloudUpload className="text-4xl text-gray-400" />
+            <BsCloudUpload className="text-2xl text-gray-400" />
             <label className="cursor-pointer">
               <span className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">{isUploading ? "Uploading..." : "Upload Excel File"}</span>
               <input id="file-upload-input" type="file" className="hidden" accept=".xlsx,.xls" onChange={handleFileSelect} disabled={isUploading} />
             </label>
-            <p className="text-sm text-gray-500">Upload your Excel file with sales call cards data</p>
+            <p className="text-xs text-gray-500">Upload your Excel file with sales call cards data</p>
           </div>
         </div>
 

@@ -10,20 +10,20 @@ const StatsPanel = ({ portStats, formatIDR }) => (
   <div className="bg-white rounded-lg shadow p-4">
     <div className="flex items-center space-x-2 text-gray-800 mb-4">
       <BsGraphUp size={18} />
-      <h2 className="text-base font-semibold">Port Information</h2>
+      <h2 className="text-sm font-semibold">Port Information</h2>
     </div>
     {Object.entries(portStats).map(([port, stats], index) => (
-      <motion.div key={port} variants={statsVariants} initial="hidden" animate="visible" transition={{ delay: index * 0.1 }} className="bg-gray-50 rounded-xl p-4 shadow-sm mb-3">
+      <motion.div key={port} variants={statsVariants} initial="hidden" animate="visible" transition={{ delay: index * 0.1 }} className="bg-gray-50 rounded-lg p-2 shadow-sm mb-2">
         <div className="flex justify-between items-center mb-3">
-          <span className="text-md font-medium text-blue-600">{port}</span>
-          <span className="text-sm text-gray-500">{stats.totalSalesCall} cards</span>
+          <span className="text-sm font-medium text-blue-600">{port}</span>
+          <span className="text-xs text-gray-500">{stats.totalSalesCall} cards</span>
         </div>
         <div className="space-y-2">
-          <div className="text-sm flex justify-between items-center">
+          <div className="text-xs flex justify-between items-center">
             <span className="text-gray-600">Revenue</span>
             <span className="font-medium">{formatIDR(stats.totalRevenue)}</span>
           </div>
-          <div className="text-sm flex justify-between items-center">
+          <div className="text-xs flex justify-between items-center">
             <span className="text-gray-600">Containers</span>
             <span className="font-medium">{stats.totalQuantity}</span>
           </div>
