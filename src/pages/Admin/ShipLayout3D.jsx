@@ -99,7 +99,7 @@ const ShipLayout3D = ({ baySize = { rows: 4, columns: 4 }, bayCount = 1 }) => {
   const deckHeight = 0; // Position of the deck above waterline
 
   // Camera position adjusted to show entire ship
-  const cameraPosition = useMemo(() => [shipLength / 1.5, shipHeight * 2 + 10, shipWidth * 1.2], [shipLength, shipWidth, shipHeight]);
+  const cameraPosition = useMemo(() => [shipLength / 7, shipHeight * 1.5, shipWidth * 2.4], [shipLength, shipWidth, shipHeight]);
 
   // Ship Hull component with more realistic shape
   const ShipHull = () => {
