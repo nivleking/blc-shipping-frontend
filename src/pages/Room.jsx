@@ -646,30 +646,33 @@ const Room = () => {
                 REJOIN
               </button>
             )}
-            {user && user.is_admin === true && roomStatus !== "active" && roomStatus !== "finished" && <></>}
-            <button
-              onClick={() => setShowPortPopup(true)}
-              className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              ASSIGN PORTS
-            </button>
-            <button
-              onClick={handleStartClick}
-              className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-medium rounded-lg text-white 
+            {user && user.is_admin === true && roomStatus !== "active" && roomStatus !== "finished" && (
+              <>
+                <button
+                  onClick={() => setShowPortPopup(true)}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-medium rounded-lg text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  ASSIGN PORTS
+                </button>
+                <button
+                  onClick={handleStartClick}
+                  className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-xs font-medium rounded-lg text-white 
     ${!portsSet || users.length < 2 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"} 
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors`}
-              disabled={!portsSet || users.length < 2}
-              title={!portsSet ? "Please set ports first" : users.length < 2 ? "Need at least one user" : ""}
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              START SIMULATION
-            </button>
+                  disabled={!portsSet || users.length < 2}
+                  title={!portsSet ? "Please set ports first" : users.length < 2 ? "Need at least one user" : ""}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  START SIMULATION
+                </button>
+              </>
+            )}
 
             {user?.is_admin && roomStatus === "active" && (
               <>
