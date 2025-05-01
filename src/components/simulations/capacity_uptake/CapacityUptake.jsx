@@ -5,7 +5,12 @@ import { useParams } from "react-router-dom";
 import CapacityEstimation from "./CapacityEstimation";
 import OrderProcessing from "./OrderProcessing";
 
-const CapacityUptake = ({ currentRound, totalRounds }) => {
+const CapacityUptake = ({
+  currentRound,
+  totalRounds,
+  containers,
+  unfulfilledContainers, //
+}) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
   const [isLoading, setIsLoading] = useState(true);
@@ -203,6 +208,10 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
           totalContainers: card.quantity,
           handledAt: card.handled_at,
           isBacklog: card.is_backlog,
+          origin: card.origin,
+          destination: card.destination,
+          type: card.type,
+          quantity: card.quantity,
         })),
         ...rejectedCalls.map((card) => ({
           id: card.id,
@@ -214,6 +223,10 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
           totalContainers: card.quantity,
           handledAt: card.handled_at,
           isBacklog: card.is_backlog,
+          origin: card.origin,
+          destination: card.destination,
+          type: card.type,
+          quantity: card.quantity,
         })),
       ];
 
@@ -303,7 +316,8 @@ const CapacityUptake = ({ currentRound, totalRounds }) => {
         pointG={pointG}
         pointH={pointH}
         capacityStatus={capacityStatus}
-        utilizationOutOfThisPort={utilizationOutOfThisPort} //
+        containers={containers}
+        unfulfilledContainers={unfulfilledContainers} //
       />
     </div>
   );

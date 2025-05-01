@@ -1597,7 +1597,6 @@ const Simulation = () => {
           moveCost={moveCost}
           dockWarehouseCost={dockWarehouseCost}
           restowageCost={restowageCost}
-          // extraMovesCost={extraMovesCost}
         />
 
         <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
@@ -1663,7 +1662,12 @@ const Simulation = () => {
           <TabPanels className="mt-4">
             {/* Capacity Uptake */}
             <TabPanel>
-              <CapacityUptake port={port} currentRound={currentRound} totalRounds={totalRounds} />
+              <CapacityUptake
+                currentRound={currentRound}
+                totalRounds={totalRounds}
+                containers={containers}
+                unfulfilledContainers={unfulfilledContainers} //
+              />
             </TabPanel>
 
             <TabPanel>
@@ -1743,7 +1747,7 @@ const Simulation = () => {
             {/* Market Intelligence Tab */}
             <TabPanel>
               <div className="bg-white rounded-xl shadow-lg p-6">
-                <MarketIntelligenceSimulation port={port} roomId={roomId} moveCost={moveCost} />
+                <MarketIntelligenceSimulation port={port} roomId={roomId} />
               </div>
             </TabPanel>
           </TabPanels>

@@ -16,7 +16,7 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-const MarketIntelligenceSimulation = ({ port, roomId, deckId, moveCost }) => {
+const MarketIntelligenceSimulation = ({ port, roomId, deckId }) => {
   const { token } = useContext(AppContext);
   const [viewMode, setViewMode] = useState("matrix");
   const [filterType, setFilterType] = useState("all");
