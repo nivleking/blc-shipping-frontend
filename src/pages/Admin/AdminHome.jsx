@@ -164,6 +164,17 @@ const AdminHome = () => {
   function handleDeleteRoom(roomId) {
     return async (e) => {
       e.preventDefault();
+      const room = rooms.find((r) => r.id === roomId);
+
+      if (!room) {
+        showError("Room not found");
+        return;
+      }
+
+      if (room.admin_id !== user.id) {
+        showError("You can only delete rooms that you created");
+        return;
+      }
       setRoomToDelete(roomId);
       setShowDeleteModal(true);
     };
@@ -174,6 +185,11 @@ const AdminHome = () => {
   };
 
   const handleEditRoom = (room) => {
+    if (room.admin_id !== user.id) {
+      showError("You can only edit rooms that you created");
+      return;
+    }
+
     setEditingRoom({
       ...room,
       assigned_users: typeof room.assigned_users === "string" ? JSON.parse(room.assigned_users) : room.assigned_users,
@@ -247,6 +263,19 @@ const AdminHome = () => {
   }
 
   function handleOpenRoom(roomId) {
+    const room = rooms.find((r) => r.id === roomId);
+
+    if (!room) {
+      showError("Room not found");
+      return;
+    }
+
+    // Check if the current user is the creator admin
+    if (room.admin_id !== user.id) {
+      showError("You can only manage rooms that you created");
+      return;
+    }
+
     navigate(`/rooms/${roomId}`);
   }
 
