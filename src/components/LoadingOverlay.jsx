@@ -16,23 +16,23 @@ const LoadingOverlay = ({ messages, currentMessageIndex, title }) => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg w-full mx-4 relative overflow-hidden">
+      <div className="bg-white rounded-lg shadow-2xl p-6 max-w-lg w-full mx-4 relative overflow-hidden">
         {/* Background effects - changed to blue tones */}
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-gradient-to-r from-gray-200 to-gray-600 opacity-20"></div>
         <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-gradient-to-r from-gray-300 to-gray-700 opacity-20"></div>
 
         <div className="relative z-10">
           {/* Title with icon */}
-          <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center justify-center mb-4">
             <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="mr-3">
               <GiCargoShip className="text-blue-600 text-2xl" />
             </motion.div>
-            <h2 className="text-2xl font-bold text-blue-800">{title}</h2>
+            <h2 className="text-lg font-bold text-blue-800">{title}</h2>
           </div>
 
           {/* BLC Logo with spinning border - replacing the previous spinner */}
-          <div className="flex justify-center my-6">
-            <div className="relative w-24 h-24">
+          <div className="flex justify-center my-2">
+            <div className="relative w-20 h-20">
               {/* Static circle behind the logo */}
               <div className="absolute inset-0 rounded-full border-4 border-blue-200 border-opacity-30"></div>
 
@@ -40,12 +40,12 @@ const LoadingOverlay = ({ messages, currentMessageIndex, title }) => {
               <motion.div className="absolute inset-0 rounded-full border-t-4 border-b-4 border-blue-500" animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}></motion.div>
 
               {/* BLC Logo */}
-              <img src="/blc_circle.png" alt="BLC Logo" className="w-24 h-24 relative z-10" />
+              <img src="/blc_circle.png" alt="BLC Logo" className="w-20 h-20 relative z-10" />
             </div>
           </div>
 
           {/* Loading messages with fade transition */}
-          <div className="h-16 flex items-center justify-center mb-2">
+          <div className="h-16 flex items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.p
                 key={currentMessageIndex}
@@ -64,7 +64,7 @@ const LoadingOverlay = ({ messages, currentMessageIndex, title }) => {
           </div>
 
           {/* Animated progress bar */}
-          <div className="w-full bg-blue-50 rounded-full h-1.5 mt-4 overflow-hidden">
+          <div className="w-full bg-blue-50 rounded-full h-1.5 mt-2 overflow-hidden">
             <motion.div
               className="bg-gradient-to-r from-blue-400 to-blue-600 h-1.5"
               initial={{ width: "0%" }}

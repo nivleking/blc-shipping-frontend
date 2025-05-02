@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppContext } from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import CreateRoomForm from "../../components/admins/home/CreateRoomForm";
 import RoomList from "../../components/admins/home/RoomList";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import useToast from "../../toast/useToast";
+import LoadingOverlay from "../../components/LoadingOverlay";
 
 const initialFormState = {
   id: "",
@@ -46,6 +47,27 @@ const AdminHome = () => {
   const [roomToDelete, setRoomToDelete] = useState(null);
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
 
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+
+  const deleteMessages = ["Deleting room..."];
+
+  const editMessages = ["Updating room configuration..."];
+
+  useEffect(() => {
+    let interval;
+    if (isDeleting || isEditing) {
+      interval = setInterval(() => {
+        setLoadingMessageIndex((prev) => {
+          const messages = isDeleting ? deleteMessages : editMessages;
+          return (prev + 1) % messages.length;
+        });
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isDeleting, isEditing, deleteMessages.length, editMessages.length]);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () => {
@@ -72,6 +94,11 @@ const AdminHome = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (roomId) => {
+      setShowDeleteModal(false);
+      setIsDeleting(true);
+      setLoadingMessageIndex(0);
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       const usersResponse = await api.get(`rooms/${roomId}/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -90,26 +117,30 @@ const AdminHome = () => {
     },
     onSuccess: ({ roomId, userIds }) => {
       queryClient.invalidateQueries(["rooms"]);
-
       showSuccess("Room deleted successfully!");
 
       userIds.forEach((userId) => {
         socket.emit("user_kicked", { roomId, userId });
       });
 
-      setShowDeleteModal(false);
+      setIsDeleting(false);
       setRoomToDelete(null);
     },
     onError: (error) => {
       console.error("Error deleting room:", error);
       showError("Failed to delete room");
-      setShowDeleteModal(false);
+      setIsDeleting(false);
       setRoomToDelete(null);
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async (updatedFields) => {
+      setShowEditConfirmModal(false);
+      setIsEditing(true);
+      setLoadingMessageIndex(0);
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       return api.put(`/rooms/${editingRoom.id}`, updatedFields, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -119,20 +150,31 @@ const AdminHome = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(["rooms"]);
       showSuccess("Room updated successfully!");
-      setShowEditConfirmModal(false);
       setEditingRoom(null);
+      setIsEditing(false);
     },
     onError: (error) => {
       console.error("Error updating room:", error);
       showError(error.response?.data?.message || "Failed to update room");
       setShowEditModal(true);
-      setShowEditConfirmModal(false);
+      setIsEditing(false);
     },
   });
 
   function handleDeleteRoom(roomId) {
     return async (e) => {
       e.preventDefault();
+      const room = rooms.find((r) => r.id === roomId);
+
+      if (!room) {
+        showError("Room not found");
+        return;
+      }
+
+      if (room.admin_id !== user.id) {
+        showError("You can only delete rooms that you created");
+        return;
+      }
       setRoomToDelete(roomId);
       setShowDeleteModal(true);
     };
@@ -143,6 +185,11 @@ const AdminHome = () => {
   };
 
   const handleEditRoom = (room) => {
+    if (room.admin_id !== user.id) {
+      showError("You can only edit rooms that you created");
+      return;
+    }
+
     setEditingRoom({
       ...room,
       assigned_users: typeof room.assigned_users === "string" ? JSON.parse(room.assigned_users) : room.assigned_users,
@@ -216,6 +263,19 @@ const AdminHome = () => {
   }
 
   function handleOpenRoom(roomId) {
+    const room = rooms.find((r) => r.id === roomId);
+
+    if (!room) {
+      showError("Room not found");
+      return;
+    }
+
+    // Check if the current user is the creator admin
+    if (room.admin_id !== user.id) {
+      showError("You can only manage rooms that you created");
+      return;
+    }
+
     navigate(`/rooms/${roomId}`);
   }
 
@@ -253,6 +313,10 @@ const AdminHome = () => {
 
   return (
     <div className="container mx-auto p-4">
+      {isDeleting && <LoadingOverlay messages={deleteMessages} currentMessageIndex={loadingMessageIndex} title="Deleting Room" />}
+
+      {isEditing && <LoadingOverlay messages={editMessages} currentMessageIndex={loadingMessageIndex} title="Updating Room" />}
+
       <CreateRoomForm token={token} decks={decks} layouts={layouts} availableUsers={availableUsers} refreshRooms={refreshRooms} />
 
       <EditRoomModal

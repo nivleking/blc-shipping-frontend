@@ -362,7 +362,7 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
       </div>
 
       {/* Financial Impact Summary Table for Current Week */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+      {/* <div className="bg-white rounded-lg shadow-md p-4 mb-4">
         <h3 className="text-sm font-semibold mb-3 flex items-center">
           <span>Estimation Breakdown for Week {selectedWeek}</span>
           <span className="ml-auto text-sm font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Net Result: {formatIDR(financialSummary?.final_revenue || 0)}</span>
@@ -433,7 +433,7 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
             </tbody>
           </table>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

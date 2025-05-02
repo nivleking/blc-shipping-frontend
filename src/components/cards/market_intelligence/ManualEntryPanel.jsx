@@ -17,66 +17,24 @@ const parseFromIDR = (formattedValue) => {
   return parseInt(formattedValue.replace(/[^\d]/g, "")) || 0;
 };
 
-const PriceTable = ({ origin, prices, onPriceChange }) => (
-  <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-    <h3 className="text-lg font-semibold text-gray-800 mb-3">Origin: {origin}</h3>
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Destination</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Reefer</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Dry</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {prices.map((price, index) => (
-            <tr key={index} className="hover:bg-gray-50">
-              <td className="px-4 py-3 text-sm text-gray-900">{price.destination}</td>
-              <td className="px-4 py-3 text-sm text-right">
-                <input
-                  type="text"
-                  value={formatToIDR(price.reefer)}
-                  onChange={(e) => onPriceChange(origin, price.destination, "reefer", parseFromIDR(e.target.value))}
-                  className="w-32 p-1 border border-gray-300 rounded text-blue-600 font-medium text-right"
-                  step="50000"
-                />
-              </td>
-              <td className="px-4 py-3 text-sm text-right">
-                <input
-                  type="text"
-                  value={formatToIDR(price.dry)}
-                  onChange={(e) => onPriceChange(origin, price.destination, "dry", parseFromIDR(e.target.value))}
-                  className="w-32 p-1 border border-gray-300 rounded text-green-600 font-medium text-right"
-                  step="50000"
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-);
-
 const PenaltyTable = ({ penalties = {}, onPenaltyChange }) => {
   const safePenalties = penalties || {};
   return (
-    <div className="bg-red-50 rounded-lg shadow-sm p-4 mb-4">
-      <h3 className="text-lg font-semibold text-red-800 mb-3">Unrolled Container Penalties</h3>
+    <div className="bg-red-50 rounded-lg shadow-sm p-4 mb-2">
+      <h3 className="text-sm font-semibold text-red-800 mb-3">Unrolled Container Penalties</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-red-200">
           <thead className="bg-red-100">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-red-700 uppercase">Type</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-red-700 uppercase">Committed</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-red-700 uppercase">Non-Committed</th>
+              <th className="px-2 py-2 text-left text-xs font-medium text-red-700 uppercase">Type</th>
+              <th className="px-2 py-2 text-right text-xs font-medium text-red-700 uppercase">Committed</th>
+              <th className="px-2 py-2 text-right text-xs font-medium text-red-700 uppercase">Non-Committed</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-red-200">
             <tr className="hover:bg-red-50">
-              <td className="px-4 py-3 text-sm text-red-900">Dry</td>
-              <td className="px-4 py-3 text-sm text-right">
+              <td className="px-2 py-2 text-sm text-red-900">Dry</td>
+              <td className="px-2 py-2 text-sm text-right">
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">IDR</span>
                   <input
@@ -87,7 +45,7 @@ const PenaltyTable = ({ penalties = {}, onPenaltyChange }) => {
                   />
                 </div>
               </td>
-              <td className="px-4 py-3 text-sm text-right">
+              <td className="px-2 py-2 text-sm text-right">
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">IDR</span>
                   <input
@@ -100,8 +58,8 @@ const PenaltyTable = ({ penalties = {}, onPenaltyChange }) => {
               </td>
             </tr>
             <tr className="hover:bg-red-50">
-              <td className="px-4 py-3 text-sm text-red-900">Reefer</td>
-              <td className="px-4 py-3 text-sm text-right">
+              <td className="px-2 py-2 text-sm text-red-900">Reefer</td>
+              <td className="px-2 py-2 text-sm text-right">
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">IDR</span>
                   <input
@@ -112,7 +70,7 @@ const PenaltyTable = ({ penalties = {}, onPenaltyChange }) => {
                   />
                 </div>
               </td>
-              <td className="px-4 py-3 text-sm text-right">
+              <td className="px-2 py-2 text-sm text-right">
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">IDR</span>
                   <input
@@ -171,16 +129,16 @@ const ManualEntryPanel = ({ marketIntelligenceName, setMarketIntelligenceName, s
   });
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6 space-y-4">
+    <div className="space-y-4">
+      <div className="mb-4 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Market Intelligence Name</label>
-          <input type="text" value={marketIntelligenceName} onChange={(e) => setMarketIntelligenceName(e.target.value)} className="mt-1 p-2 w-full border border-gray-300 rounded-md" placeholder="Enter a name" />
+          <input type="text" value={marketIntelligenceName} onChange={(e) => setMarketIntelligenceName(e.target.value)} className="mt-1 p-2 w-full border border-gray-300 rounded-md text-sm" placeholder="Enter a name" />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Port Count</label>
-          <select value={selectedPorts} onChange={(e) => handlePortCountChange(parseInt(e.target.value))} className="mt-1 p-2 w-full border border-gray-300 rounded-md">
+          <select value={selectedPorts} onChange={(e) => handlePortCountChange(parseInt(e.target.value))} className="mt-1 p-2 w-full border border-gray-300 rounded-md text-sm">
             {Object.keys(availablePorts).map((count) => (
               <option key={count} value={count}>
                 {count} Ports
@@ -191,21 +149,16 @@ const ManualEntryPanel = ({ marketIntelligenceName, setMarketIntelligenceName, s
         </div>
       </div>
 
-      <div className="mb-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-3">Price Configuration</h3>
-        <p className="text-sm text-gray-600 mb-4">Set the base rates for container shipping between ports. These rates will be used as reference values during sales call generation.</p>
-      </div>
-
       {/* Enhanced Matrix Price Editor */}
       <div className="mb-8 overflow-x-auto rounded-lg border border-gray-200 shadow">
         <table className="min-w-full">
           <thead>
             <tr className="bg-gray-100">
-              <th className="py-3 px-4 border-b border-r border-gray-200 text-sm font-medium text-gray-700 sticky left-0 z-10 bg-gray-100">From \ To</th>
+              <th className="py-2 px-2 border-b border-r border-gray-200 text-sm font-medium text-gray-700 sticky left-0 z-10 bg-gray-100">From \ To</th>
               {ports.map((port) => (
                 <th
                   key={port}
-                  className={`py-3 px-4 border-b border-r border-gray-200 text-sm font-medium text-center
+                  className={`py-2 px-2 border-b border-r border-gray-200 text-sm font-medium text-center
                     ${hoveredCell?.col === port ? "bg-blue-50" : ""}`}
                   onMouseEnter={() => highlightColumn(port)}
                   onMouseLeave={clearHighlight}
@@ -218,11 +171,11 @@ const ManualEntryPanel = ({ marketIntelligenceName, setMarketIntelligenceName, s
           <tbody>
             {ports.map((origin) => (
               <tr key={origin} className={hoveredCell?.row === origin ? "bg-blue-50" : "hover:bg-gray-50"} onMouseEnter={() => highlightRow(origin)} onMouseLeave={clearHighlight}>
-                <th className="py-3 px-4 border-b border-r border-gray-200 text-sm font-medium text-gray-700 sticky left-0 z-10 bg-gray-50">{origin}</th>
+                <th className="py-2 px-2 border-b border-r border-gray-200 text-sm font-medium text-gray-700 sticky left-0 z-10 bg-gray-50">{origin}</th>
                 {ports.map((destination) => {
                   if (origin === destination) {
                     return (
-                      <td key={destination} className="py-3 px-4 border-b border-r border-gray-200 text-center bg-gray-100">
+                      <td key={destination} className="py-2 px-2 border-b border-r border-gray-200 text-center bg-gray-100">
                         <span className="text-gray-400">—</span>
                       </td>
                     );

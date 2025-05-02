@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useContext } from "react";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import ShipBay from "./ShipBay";
 import ShipDock from "./ShipDock";
@@ -9,6 +10,8 @@ import RestowageAlert from "./RestowageAlert";
 import PortOrderAlert from "./PortOrderAlert";
 import ContainerLegend from "./ContainerLegend";
 import FinancialSummaryModal from "./FinancialSummaryModal";
+import { FiLifeBuoy } from "react-icons/fi";
+import GuideModal from "../../../pages/Admin/GuideModal";
 
 const Stowage = ({
   revenue,
@@ -63,10 +66,15 @@ const Stowage = ({
   // longCraneMoves = 0,
   // extraMovesOnLongCrane = 0,
 }) => {
+  const [showGuideModal, setShowGuideModal] = useState(false);
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
 
   const handleFinancialButtonClick = () => {
     toggleFinancialModal();
+  };
+
+  const handleGuideButtonClick = () => {
+    setShowGuideModal(true);
   };
 
   // console.log(containerDestinationsCache);
@@ -135,6 +143,11 @@ const Stowage = ({
                   <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1.5v1A1.5 1.5 0 0114 6.5H7A1.5 1.5 0 015.5 5V4H4z" clipRule="evenodd" />
                 </svg>
                 Review Current State
+              </button>
+
+              <button onClick={handleGuideButtonClick} className="flex items-center bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
+                <FiLifeBuoy className="mr-1" />
+                Ship Bay Guide
               </button>
             </div>
 
@@ -284,6 +297,8 @@ const Stowage = ({
               </div>
             </div>
           </div>
+
+          {showGuideModal && <GuideModal onClose={() => setShowGuideModal(false)} isSimulationMode={true} />}
         </div>
 
         <DragOverlay>

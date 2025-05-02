@@ -14,9 +14,6 @@ const HeaderCards = ({
   moves = {},
   currentRound = 1,
   totalRounds = 1,
-  moveCost,
-  dockWarehouseCost,
-  restowageCost, //
 }) => {
   const { user } = useContext(AppContext);
   const [showExpenses, setShowExpenses] = useState(false);
@@ -60,9 +57,6 @@ const HeaderCards = ({
             <div className="text-white">
               <p className="text-xs font-medium opacity-80">Expenses</p>
               <h3 className="text-sm font-bold">{formatIDR(penalties)}</h3>
-              <button onClick={() => setShowExpenses(!showExpenses)} className="text-[10px] font-bold underline mt-0.5 text-white/80 hover:text-white">
-                {showExpenses ? "Hide details" : "Show details"}
-              </button>
             </div>
             <div className="p-1.5 bg-white/20 rounded-md">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,26 +64,6 @@ const HeaderCards = ({
               </svg>
             </div>
           </div>
-
-          {/* Dropdown detail */}
-          {showExpenses && (
-            <div className="absolute left-0 right-0 top-full mt-0.5 bg-red-700 z-10 p-2 rounded-md shadow-md animate-fadeIn text-[10px]">
-              <div className="grid grid-cols-1 gap-1">
-                <div className="flex justify-between">
-                  <span className="text-white">Move Cost:</span>
-                  <span className="text-white font-bold">{formatIDR(moveCost)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white">Dock Warehouse:</span>
-                  <span className="text-white font-bold">{formatIDR(dockWarehouseCost)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white">Restowage:</span>
-                  <span className="text-white font-bold">{formatIDR(restowageCost)}</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Total Revenue Card */}

@@ -65,17 +65,17 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {/* Generation Summary at the top */}
-      <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
-        <h3 className="text-lg font-semibold text-blue-800 mb-4">Generation Summary</h3>
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+        <h3 className="text-xs font-semibold text-blue-800 mb-2">Generation Summary</h3>
 
         {/* Market Intelligence Toggle moved to top section */}
-        <div className="bg-white p-4 rounded-lg border border-blue-100 mb-4">
+        <div className="bg-white p-4 rounded-lg border border-blue-100 mb-2 text-xs">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <h4 className="font-medium text-gray-800">Use Market Intelligence</h4>
-              <p className="text-sm text-gray-600">Use price data from market intelligence for card generation</p>
+              <p className="text-xs text-gray-600">Use price data from market intelligence for card generation</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" checked={generateFormData.useMarketIntelligence} onChange={handleMarketIntelligenceToggle} className="sr-only peer" />
@@ -85,7 +85,7 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
 
           {/* Market Intelligence Status */}
           {generateFormData.useMarketIntelligence && (
-            <div className="mt-3 flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-1 text-xs">
               {isLoadingMI ? (
                 <div className="flex items-center gap-2 text-yellow-600">
                   <div className="animate-spin h-4 w-4 border-2 border-yellow-500 rounded-full border-t-transparent"></div>
@@ -108,7 +108,7 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-4 mb-2 text-xs">
           <div>
             <p className="text-gray-600">
               Total Cards: <span className="font-medium text-blue-800">{generateFormData.ports * generateFormData.salesCallCountEachPort}</span>
@@ -133,20 +133,20 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
         {/* Generate Button */}
         <div className="flex justify-center">
           <button onClick={onGenerate} className="px-6 py-2.5 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-md">
-            <BsLightning className="text-lg" />
-            <span className="font-medium">Generate Cards</span>
+            <BsLightning className="text-xs" />
+            <span className="font-medium text-xs">Generate Cards</span>
           </button>
         </div>
       </div>
 
       {/* Auto Form with the requested UI style */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+      <div className="bg-white rounded-xl shadow-sm p-2 space-y-2">
         <hr />
 
         {/* Total Ports */}
-        <div className="space-y-4">
-          <h3 className="text-md font-semibold text-gray-800">Total Ports</h3>
-          <div className="space-y-4">
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-gray-800">Total Ports</h3>
+          <div className="space-y-2">
             <div className="relative">
               <input
                 type="number"
@@ -155,18 +155,18 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
                 value={generateFormData.ports}
                 onChange={(e) => handlePortSelect(parseInt(e.target.value) || 2)}
                 disabled={generateFormData.useMarketIntelligence && miPortCount > 0}
-                className={`text-base w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500 ${generateFormData.useMarketIntelligence && miPortCount > 0 ? "bg-gray-100 text-gray-500" : ""}`}
+                className={`text-xs w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500 ${generateFormData.useMarketIntelligence && miPortCount > 0 ? "bg-gray-100 text-gray-500" : ""}`}
                 placeholder="Enter total ports (2-10)"
               />
               <span className="absolute bottom-2 right-2 text-xs text-gray-500">{generateFormData.useMarketIntelligence && miPortCount > 0 ? "Port count set by Market Intelligence" : "Enter total ports (2-10)"}</span>
             </div>
 
             {/* Available Ports Display */}
-            <div className="mt-4 p-3 bg-white rounded-lg border border-blue-200">
-              <div className="text-sm text-gray-600 mb-2">Available Ports:</div>
+            <div className="mt-2 p-4 bg-white rounded-lg border border-blue-200">
+              <div className="text-xs text-gray-600 mb-2">Available Ports:</div>
               <div className="flex flex-wrap gap-2">
                 {availablePorts[generateFormData.ports]?.map((port) => (
-                  <span key={port} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                  <span key={port} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
                     {port}
                   </span>
                 ))}
@@ -178,8 +178,8 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
         <hr />
 
         {/* Sales Call Revenue Configuration */}
-        <div className="space-y-4">
-          <h3 className="text-md font-semibold text-gray-800">Total Revenues per Port</h3>
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-gray-800">Total Revenues per Port</h3>
           <div className="grid grid-cols-3 gap-4">
             {[250_000_000, 500_000_000, 750_000_000].map((revenue) => (
               <button
@@ -198,7 +198,7 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
                 value={generateFormData.totalRevenueEachPort}
                 onChange={(e) => handleRevenueSelect(parseInt(e.target.value) || 0)}
                 placeholder="Edit revenue manually"
-                className="text-base w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500"
+                className="text-xs w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500"
               />
               <span className="absolute bottom-2 right-2 text-xs text-gray-500">Edit revenue manually</span>
             </div>
@@ -208,8 +208,8 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
         <hr />
 
         {/* Sales Call Quantity Configuration */}
-        <div className="space-y-4">
-          <h3 className="text-md font-semibold text-gray-800">Total Containers per Port</h3>
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-gray-800">Total Containers per Port</h3>
           <div className="grid grid-cols-3 gap-4">
             {[15, 20, 25].map((quantity) => (
               <button
@@ -230,7 +230,7 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
                 placeholder="Edit container quantity manually"
                 min="1"
                 max="100"
-                className="text-base w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500"
+                className="text-xs w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500"
               />
               <span className="absolute bottom-2 right-2 text-xs text-gray-500">Edit container quantity manually</span>
             </div>
@@ -240,8 +240,8 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
         <hr />
 
         {/* Sales Call Count Per Port */}
-        <div className="space-y-4">
-          <h3 className="text-md font-semibold text-gray-800">Total Cards per Port</h3>
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-gray-800">Total Cards per Port</h3>
           <div className="relative">
             <input
               type="number"
@@ -250,7 +250,7 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
               onChange={handleGenerateChange}
               min="2"
               max="15"
-              className="text-base w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500"
+              className="text-xs w-full p-4 border-2 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="Sales calls per port (2-15)"
             />
             <span className="absolute bottom-2 right-2 text-xs text-gray-500">Recommended: 5-10 calls</span>
@@ -261,10 +261,10 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
 
         {/* Standard Deviation */}
         <div>
-          <h3 className="text-md font-semibold text-gray-800 mb-4">Distribution Variance</h3>
+          <h3 className="text-xs font-semibold text-gray-800 mb-2">Distribution Variance</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="quantityStandardDeviation" className="text-sm text-gray-600">
+              <label htmlFor="quantityStandardDeviation" className="text-xs text-gray-600">
                 Quantity Variance
               </label>
               <input
@@ -276,12 +276,12 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
                 step="0.1"
                 min="0"
                 max="2"
-                className="w-full p-2 border-2 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full text-xs p-2 border-2 rounded-lg focus:outline-none focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">0 = Even distribution, 2 = Highly varied</p>
             </div>
             <div>
-              <label htmlFor="revenueStandardDeviation" className="text-sm text-gray-600">
+              <label htmlFor="revenueStandardDeviation" className="text-xs text-gray-600">
                 Revenue Variance
               </label>
               <input
@@ -293,7 +293,7 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
                 min="0"
                 max="2000000"
                 step="100000"
-                className="w-full p-2 border-2 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full text-xs p-2 border-2 rounded-lg focus:outline-none focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">0 = Even pricing, Higher = More varied</p>
             </div>

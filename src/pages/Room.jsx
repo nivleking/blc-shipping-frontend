@@ -6,6 +6,7 @@ import AssignPortModal from "../components/rooms/AssignPortModal";
 import SwapConfigModal from "../components/rooms/SwapConfigModal";
 import useToast from "../toast/useToast";
 import ConfirmationModal from "../components/ConfirmationModal";
+import LoadingOverlay from "../components/LoadingOverlay";
 import { PORT_COLORS, getPortColor } from "../assets/Colors";
 
 const formatIDR = (value) => {
@@ -43,6 +44,47 @@ const Room = () => {
   const [currentSwapConfig, setCurrentSwapConfig] = useState(null);
   const [showKickConfirmation, setShowKickConfirmation] = useState(false);
   const [userToKick, setUserToKick] = useState(null);
+
+  const [isAssigningPorts, setIsAssigningPorts] = useState(false);
+  const [portAssignmentMessageIndex, setPortAssignmentMessageIndex] = useState(0);
+  const portAssignmentMessages = ["Assigning ports to participants..."];
+  const [isStartingSimulation, setIsStartingSimulation] = useState(false);
+  const [simulationStartMessageIndex, setSimulationStartMessageIndex] = useState(0);
+  const simulationStartMessages = ["Starting simulation..."];
+
+  const [isSwappingBays, setIsSwappingBays] = useState(false);
+  const [baySwapMessageIndex, setBaySwapMessageIndex] = useState(0);
+  const baySwapMessages = ["Swapping bay configurations..."];
+
+  useEffect(() => {
+    let interval;
+    if (isAssigningPorts) {
+      interval = setInterval(() => {
+        setPortAssignmentMessageIndex((prev) => (prev + 1) % portAssignmentMessages.length);
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isAssigningPorts, portAssignmentMessages.length]);
+
+  useEffect(() => {
+    let interval;
+    if (isStartingSimulation) {
+      interval = setInterval(() => {
+        setSimulationStartMessageIndex((prev) => (prev + 1) % simulationStartMessages.length);
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isStartingSimulation, simulationStartMessages.length]);
+
+  useEffect(() => {
+    let interval;
+    if (isSwappingBays) {
+      interval = setInterval(() => {
+        setBaySwapMessageIndex((prev) => (prev + 1) % baySwapMessages.length);
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isSwappingBays, baySwapMessages.length]);
 
   useEffect(() => {
     socket.on("user_added", ({ roomId: receivedRoomId, newUser }) => {
@@ -203,6 +245,11 @@ const Room = () => {
 
   async function startSimulation() {
     try {
+      if (user && user.is_admin) {
+        setIsStartingSimulation(true);
+        setSimulationStartMessageIndex(0);
+      }
+
       const res = await api.put(
         `/rooms/${roomId}`,
         {
@@ -215,11 +262,17 @@ const Room = () => {
         }
       );
 
+      showSuccess("Simulation started");
       setRoomStatus("active");
       socket.emit("start_simulation", { roomId });
     } catch (error) {
       console.error("There was an error starting the simulation!", error);
       showError("Failed to start simulation. Please try again.");
+      if (user && user.is_admin) {
+        setIsStartingSimulation(false);
+      }
+    } finally {
+      setIsStartingSimulation(false);
     }
   }
 
@@ -323,6 +376,11 @@ const Room = () => {
 
   const executeSwap = async () => {
     setShowSwapConfirmation(false);
+    if (user && user.is_admin) {
+      setIsSwappingBays(true);
+      // await new Promise((resolve) => setTimeout(resolve, 2000));
+      setBaySwapMessageIndex(0);
+    }
 
     try {
       await api.put(
@@ -351,6 +409,8 @@ const Room = () => {
     } catch (error) {
       console.error("Error swapping bays:", error);
       showError("Failed to swap bays");
+    } finally {
+      setIsSwappingBays(false);
     }
   };
 
@@ -372,7 +432,11 @@ const Room = () => {
 
   async function handleSetPorts() {
     try {
-      // Single API call that handles port assignment and card creation
+      if (user && user.is_admin) {
+        setIsAssigningPorts(true);
+        setPortAssignmentMessageIndex(0);
+      }
+
       const res = await api.put(
         `/rooms/${roomId}/set-ports`,
         { ports },
@@ -399,6 +463,8 @@ const Room = () => {
     } catch (error) {
       console.error("There was an error setting the ports!", error);
       showError("Failed to assign ports: " + (error.response?.data?.message || error.message));
+    } finally {
+      setIsAssigningPorts(false);
     }
   }
 
@@ -875,6 +941,12 @@ const Room = () => {
           </div>
         </div>
       )}
+
+      {isAssigningPorts && user && user.is_admin && <LoadingOverlay messages={portAssignmentMessages} currentMessageIndex={portAssignmentMessageIndex} title="Setting Up Ports" />}
+
+      {isStartingSimulation && user && user.is_admin && <LoadingOverlay messages={simulationStartMessages} currentMessageIndex={simulationStartMessageIndex} title="Starting Simulation" />}
+
+      {isSwappingBays && user && user.is_admin && <LoadingOverlay messages={baySwapMessages} currentMessageIndex={baySwapMessageIndex} title="Swapping Bays" />}
 
       <ConfirmationModal
         isOpen={showKickConfirmation}
