@@ -679,6 +679,9 @@ const Simulation = () => {
       // Process bay capacity data
       setIsBayFull(data.bay_capacity.is_full);
 
+      // Process target containers data
+      setContainerDestinationsCache(data.container_destinations);
+
       // Get section from ship bay data
       const currentSection = shipBayData.section;
       if (currentSection) {
@@ -1273,27 +1276,35 @@ const Simulation = () => {
               arena: flatBayData,
               user_id: user.id,
               room_id: roomId,
-              revenue: revenue,
               section: "section1",
+              moved_container: {
+                id: container.id,
+                from: activeItem.area,
+                to: over.id,
+              },
+              move_type: "discharge",
+              count: 1,
+              bay_index: sourceBayIndex,
+              container_id: active.id,
             });
 
             // Track discharge move - Include bay_index
             try {
-              await api.post(
-                `/ship-bays/${roomId}/${user.id}/moves`,
-                {
-                  move_type: "discharge",
-                  count: 1,
-                  bay_index: sourceBayIndex,
-                  container_id: active.id,
-                  arena: flatBayData,
-                },
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
-              );
+              // await api.post(
+              //   `/ship-bays/${roomId}/${user.id}/moves`,
+              //   {
+              //     move_type: "discharge",
+              //     count: 1,
+              //     bay_index: sourceBayIndex,
+              //     container_id: active.id,
+              //     arena: flatBayData,
+              //   },
+              //   {
+              //     headers: {
+              //       Authorization: `Bearer ${token}`,
+              //     },
+              //   }
+              // );
 
               // Request updated stats
               socket.emit("stats_requested", {
@@ -1393,6 +1404,9 @@ const Simulation = () => {
         relevantBayIndex = destinationBayIndex;
       }
 
+      // Only track moves if they involve a bay (not just within dock)
+      const isBayInvolved = fromArea.startsWith("bay") || toArea.startsWith("bay");
+
       const resBay = await api.post("/ship-bays", {
         arena: newBayData,
         user_id: user.id,
@@ -1403,31 +1417,36 @@ const Simulation = () => {
           to: toArea,
         },
         section: section === 1 ? "section1" : "section2",
+        ...(isBayInvolved && relevantBayIndex !== null
+          ? {
+              move_type: moveType,
+              count: 1,
+              bay_index: relevantBayIndex,
+              container_id: containerId,
+            }
+          : {}),
       });
 
-      // Only track moves if they involve a bay (not just within dock)
-      const isBayInvolved = fromArea.startsWith("bay") || toArea.startsWith("bay");
+      // if (isBayInvolved && relevantBayIndex !== null) {
+      //   console.log(`Move type: ${moveType}, Source bay: ${sourceBayIndex}, Destination bay: ${destinationBayIndex}, Using bay_index: ${relevantBayIndex}`);
 
-      if (isBayInvolved && relevantBayIndex !== null) {
-        console.log(`Move type: ${moveType}, Source bay: ${sourceBayIndex}, Destination bay: ${destinationBayIndex}, Using bay_index: ${relevantBayIndex}`);
-
-        // Track the move with bay_index
-        await api.post(
-          `/ship-bays/${roomId}/${user.id}/moves`,
-          {
-            move_type: moveType,
-            count: 1,
-            bay_index: relevantBayIndex,
-            container_id: containerId,
-            arena: newBayData,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      }
+      //   // Track the move with bay_index
+      //   await api.post(
+      //     `/ship-bays/${roomId}/${user.id}/moves`,
+      //     {
+      //       move_type: moveType,
+      //       count: 1,
+      //       bay_index: relevantBayIndex,
+      //       container_id: containerId,
+      //       arena: newBayData,
+      //     },
+      //     {
+      //       headers: {
+      //         Authorization: `Bearer ${token}`,
+      //       },
+      //     }
+      //   );
+      // }
 
       console.log("API call successful for bays", resBay.data);
 
@@ -1476,27 +1495,27 @@ const Simulation = () => {
     setTargetContainers(containersToDischarge);
   }, [droppedItems, containerDestinationsCache, port, section]);
 
-  useEffect(() => {
-    if (droppedItems.length > 0 && token) {
-      fetchContainerDestinations();
-    }
-  }, [droppedItems, token]);
+  // useEffect(() => {
+  //   if (droppedItems.length > 0 && token) {
+  //     fetchContainerDestinations();
+  //   }
+  // }, [droppedItems, token]);
 
-  async function fetchContainerDestinations() {
-    try {
-      const containerIds = droppedItems.map((item) => item.id);
+  // async function fetchContainerDestinations() {
+  //   try {
+  //     const containerIds = droppedItems.map((item) => item.id);
 
-      if (containerIds.length === 0) return;
+  //     if (containerIds.length === 0) return;
 
-      const response = await api.post("/containers/destinations", { containerIds, deckId: deckId }, { headers: { Authorization: `Bearer ${token}` } });
+  //     const response = await api.post("/containers/destinations", { containerIds, deckId: deckId }, { headers: { Authorization: `Bearer ${token}` } });
 
-      console.log("Fetched container destinations:", response.data);
-      setContainerDestinationsCache(response.data);
-    } catch (error) {
-      console.error("Error fetching container destinations:", error);
-      showError("Failed to get container destination information");
-    }
-  }
+  //     console.log("Fetched container destinations:", response.data);
+  //     setContainerDestinationsCache(response.data);
+  //   } catch (error) {
+  //     console.error("Error fetching container destinations:", error);
+  //     showError("Failed to get container destination information");
+  //   }
+  // }
 
   const canProceedToSectionTwo = () => {
     return targetContainers.length === 0;
