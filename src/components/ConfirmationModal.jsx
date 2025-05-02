@@ -35,23 +35,23 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
                   {/* Icon and Title */}
                   <div className="flex items-center justify-center mb-6">
                     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="bg-blue-100 rounded-full p-4">
-                      <FiAlertTriangle className="text-blue-500 text-3xl animate-pulse" />
+                      <FiAlertTriangle className="text-blue-500 text-2xl animate-pulse" />
                     </motion.div>
                   </div>
-                  <h3 className="text-2xl font-bold text-center text-blue-800 mb-4">{title}</h3>
+                  <h3 className="text-lg font-bold text-center text-blue-800 mb-4">{title}</h3>
 
                   {/* Message */}
                   <div className="mt-4">
-                    <p className="text-center text-gray-700">{message}</p>
+                    <p className="text-center text-base text-gray-700">{message}</p>
                   </div>
 
                   {/* Buttons */}
-                  <div className="mt-8 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                  <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 text-sm">
                     <button
                       type="button"
                       onClick={onClose}
-                      className="inline-flex justify-center items-center px-6 py-3 border border-gray-300 
-                                rounded-md shadow-sm text-base font-medium text-gray-700 bg-white
+                      className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 
+                                rounded-md shadow-sm font-medium text-gray-700 bg-white
                                 hover:bg-gray-50 focus:outline-none focus:ring-2 
                                 focus:ring-offset-2 focus:ring-blue-500 
                                 transition-colors duration-200"
@@ -61,8 +61,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
                     <button
                       type="button"
                       onClick={onConfirm}
-                      className="inline-flex justify-center items-center px-6 py-3 rounded-md 
-                                shadow-sm text-base font-medium text-white bg-blue-600 
+                      className="inline-flex justify-center items-center px-4 py-2 rounded-md 
+                                shadow-sm font-medium text-white bg-blue-600 
                                 hover:bg-blue-700 focus:outline-none focus:ring-2 
                                 focus:ring-offset-2 focus:ring-blue-500 
                                 transition-all duration-200 transform hover:scale-105"

@@ -244,22 +244,22 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
       <form onSubmit={handleManualCardSubmit}>
         <div className="">
           {/* Header */}
-          <div className="p-6 border-b border-gray-200 bg-gray-50">
+          <div className="rounded-lg p-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center">
-              <FaShip className="text-blue-500 text-xl mr-2" />
-              <h3 className="text-xl font-bold text-gray-800">Create Card</h3>
+              <FaShip className="text-blue-500 text-lg mr-2" />
+              <h3 className="text-xs font-bold text-gray-800">Create Card Manually</h3>
             </div>
           </div>
 
           {/* Main Form Content */}
-          <div className="p-6">
+          <div className="mt-2">
             {/* Card Details Section */}
-            <div className="space-y-6">
+            <div className="space-y-2">
               <div className="p-4 bg-white rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-800">Use Market Intelligence</h4>
-                    <p className="text-sm text-gray-600">Apply market intelligence data to your manual card generation</p>
+                    <h4 className="text-xs font-medium text-gray-800">Use Market Intelligence</h4>
+                    <p className="text-xs text-gray-600">Apply market intelligence data to your manual card generation</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" checked={useMarketIntelligenceToggle} onChange={handleMarketIntelligenceToggle} className="sr-only peer" />
@@ -275,8 +275,8 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
               </div>
 
               {isLoadingMI ? (
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-                  <div className="flex items-center text-sm text-yellow-700">
+                <div className="p-2 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <div className="flex items-center text-xs text-yellow-700">
                     <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -285,8 +285,8 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                   </div>
                 </div>
               ) : usingMarketIntelligence && activeMarketIntelligence ? (
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                  <div className="flex items-center text-sm text-blue-700">
+                <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+                  <div className="flex items-center text-xs text-blue-700">
                     <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
@@ -298,11 +298,11 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
               ) : null}
 
               {/* Port Configuration Section */}
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Total Ports</label>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Total Ports</label>
                       <div className="flex items-center">
                         <input
                           type="number"
@@ -322,7 +322,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                               }
                             }
                           }}
-                          className={`w-full p-2.5 border-2 rounded-lg focus:outline-none focus:border-blue-500 text-sm
+                          className={`w-full p-2.5 border-2 rounded-lg focus:outline-none focus:border-blue-500 text-xs
     ${usingMarketIntelligence ? "bg-gray-100 cursor-not-allowed" : ""}`}
                           placeholder="2-10"
                           disabled={usingMarketIntelligence}
@@ -331,7 +331,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                       <p className="mt-1 text-xs text-gray-500">Enter a value between 2-10</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
                         Available Ports
                         {usingMarketIntelligence && <span className="ml-2 text-xs text-blue-600 font-normal">(from Market Intelligence)</span>}
                       </label>
@@ -350,11 +350,11 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
               </div>
 
               {/* Card ID Builder Section */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-4 text-xs">
                   {/* Origin Port Selection */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Origin Port</label>
+                    <label className="block text-xs font-medium text-gray-700">Origin Port</label>
                     <select
                       name="origin"
                       value={manualCardForm.origin}
@@ -375,7 +375,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
                   {/* Week Number */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Week/Round</label>
+                    <label className="block text-xs font-medium text-gray-700">Week/Round</label>
                     <input
                       type="number"
                       name="week"
@@ -393,7 +393,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
                   {/* Card Number */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Card Number (01-99)</label>
+                    <label className="block text-xs font-medium text-gray-700">Card Number (01-99)</label>
                     <input
                       type="number"
                       name="cardNumber"
@@ -416,7 +416,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex justify-between items-center">
                     <div>
-                      <label className="text-sm font-semibold text-gray-700">Generated Card ID:</label>
+                      <label className="text-xs font-semibold text-gray-700">Generated Card ID:</label>
                       <p className="text-lg font-bold text-blue-700">{manualCardForm.id || "___"}</p>
                     </div>
                     <div className="text-xs text-gray-500">
@@ -428,10 +428,10 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
               </div>
 
               {/* Container Type and Priority */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 text-xs">
                 {/* Container Type - NEW SELECT INPUT */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Container Type</label>
+                  <label className="block text-xs font-medium text-gray-700">Container Type</label>
                   <select
                     name="type"
                     value={manualCardForm.type}
@@ -447,7 +447,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
                 {/* Priority Level */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Priority Level</label>
+                  <label className="block text-xs font-medium text-gray-700">Priority Level</label>
                   <select
                     name="priority"
                     value={manualCardForm.priority}
@@ -462,10 +462,10 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
               </div>
 
               {/* Ports Section */}
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 gap-6 text-xs">
                 {/* Destination Port */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Destination Port</label>
+                  <label className="block text-xs font-medium text-gray-700">Destination Port</label>
                   <select
                     name="destination"
                     value={manualCardForm.destination}
@@ -488,12 +488,12 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
               </div>
 
               {/* Container Details Section */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-gray-700 border-b pb-2">Container Details</h4>
+              <div className="space-y-4 text-xs">
+                <h4 className="text-xs font-semibold text-gray-700 border-b pb-2">Container Details</h4>
                 <div className="grid grid-cols-3 gap-6">
                   {/* Quantity */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                    <label className="block text-xs font-medium text-gray-700">Quantity</label>
                     <input
                       type="number"
                       name="quantity"
@@ -508,7 +508,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
                   {/* Revenue per Container */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Revenue/Container</label>
+                    <label className="block text-xs font-medium text-gray-700">Revenue/Container</label>
                     <input
                       type="number"
                       name="revenuePerContainer"
@@ -523,7 +523,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
                   {/* Total Revenue (Read-only) */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Total Revenue</label>
+                    <label className="block text-xs font-medium text-gray-700">Total Revenue</label>
                     <div
                       className="p-3 bg-gray-50 border-2 border-gray-200 rounded-lg 
                       font-medium text-gray-800"
@@ -537,7 +537,7 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
           </div>
 
           {/* Submit Button Section */}
-          <div className="p-6 bg-gray-50 border-t border-gray-200">
+          <div className="p-4 text-xs bg-gray-50 border-t border-gray-200">
             <button
               type="submit"
               disabled={isSubmitting}

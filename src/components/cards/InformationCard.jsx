@@ -17,7 +17,7 @@ const InformationCard = () => {
   const AutoGenerateGuide = () => (
     <div className="space-y-6">
       <div className="border-l-4 border-blue-500 pl-4">
-        <h2 className="text-xl font-bold text-gray-800 mb-2">Auto Generate - Complete Workflow</h2>
+        <h2 className="text-lg font-bold text-gray-800 mb-2">Auto Generate - Complete Workflow</h2>
         <p className="text-gray-600">Auto Generate creates multiple cards at once with balanced distribution. Follow these steps for best results:</p>
       </div>
 
@@ -153,7 +153,7 @@ const InformationCard = () => {
   const ManualGenerateGuide = () => (
     <div className="space-y-6">
       <div className="border-l-4 border-green-500 pl-4">
-        <h2 className="text-xl font-bold text-gray-800 mb-2">Manual Card Creation</h2>
+        <h2 className="text-lg font-bold text-gray-800 mb-2">Manual Card Creation</h2>
         <p className="text-gray-600">Manual generation gives you complete control over each card's properties. Ideal for creating specific test scenarios.</p>
       </div>
 
@@ -285,7 +285,7 @@ const InformationCard = () => {
   const FileGenerateGuide = () => (
     <div className="space-y-6">
       <div className="border-l-4 border-purple-500 pl-4">
-        <h2 className="text-xl font-bold text-gray-800 mb-2">Excel Import Method</h2>
+        <h2 className="text-lg font-bold text-gray-800 mb-2">Excel Import Method</h2>
         <p className="text-gray-600">Import many cards at once using an Excel spreadsheet. Perfect for bulk creation or reusing card sets.</p>
       </div>
 
@@ -451,7 +451,7 @@ const InformationCard = () => {
   );
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+    <div className="bg-white rounded-xl shadow-sm p-2 space-y-6">
       {/* Tabbed Navigation */}
       <div className="border-b border-gray-200">
         <Tab.Group selectedIndex={activeTab} onChange={handleTabChange}>

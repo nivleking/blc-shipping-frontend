@@ -237,7 +237,7 @@ const AdminCreateCards = () => {
         <GenerateCardsNavbar title={navBarTitle} onBack={() => navigate(-1)} onInfoClick={() => setShowInfoModal(true)} onDeleteAllCards={handleDeleteAllCards} />
 
         <TabGroup>
-          <TabList className="flex space-x-1 rounded-xl bg-white shadow-sm p-1 mb-6 mt-4">
+          <TabList className="flex space-x-1 rounded-lg bg-white shadow-sm p-1 mb-4 mt-4">
             <Tab className={({ selected }) => `w-full rounded-lg py-2.5 text-sm font-medium leading-5 ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`}>Configuration</Tab>
             <Tab className={({ selected }) => `w-full rounded-lg py-2.5 text-sm font-medium leading-5 ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`}>Market Intelligence</Tab>
             <Tab className={({ selected }) => `w-full rounded-lg py-2.5 text-sm font-medium leading-5 ${selected ? "bg-blue-500 text-white shadow" : "text-blue-600 hover:bg-blue-50"}`}>Generated Cards</Tab>

@@ -12,7 +12,7 @@ const formatPrice = (price) => {
 };
 
 const PenaltyTable = ({ penalties = {} }) => (
-  <div className="bg-red-50 rounded-lg shadow-sm p-3 mb-4 w-full lg:max-w-md ml-auto">
+  <div className="bg-red-50 rounded-lg shadow-sm p-3 w-full lg:max-w-md">
     <h3 className="text-sm font-semibold text-red-800 mb-2">Unrolled Container Penalties</h3>
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-red-200">
@@ -130,9 +130,9 @@ const PriceTablePanel = ({ marketIntelligenceData, selectedPorts, isGenerating, 
 
   return (
     <div>
-      <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
-        <div className="bg-blue-50 rounded-lg p-4 flex-grow">
-          <h3 className="text-lg font-semibold text-blue-800">Market Intelligence</h3>
+      <div className="flex grid-cols-2 justify-between gap-2 mb-2">
+        <div className="bg-blue-50 rounded-lg p-4 flex-grow text-sm w-1/2">
+          <h3 className="text-sm font-bold text-blue-800">Market Intelligence</h3>
           <p className="text-blue-700">
             <span className="font-medium">Name:</span> {marketIntelligenceData?.name || "Untitled"}
           </p>
@@ -144,24 +144,21 @@ const PriceTablePanel = ({ marketIntelligenceData, selectedPorts, isGenerating, 
           </p>
         </div>
 
-        <PenaltyTable penalties={penalties} />
-      </div>
-
-      <div className="mb-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-3">Price Configuration</h3>
-        <p className="text-sm text-gray-600 mb-4">These are the current base rates for container shipping between ports. These rates are used as reference values during sales call generation.</p>
+        <div className="w-1/2">
+          <PenaltyTable penalties={penalties} />
+        </div>
       </div>
 
       {/* Horizontal Matrix Price Table */}
-      <div className="overflow-x-auto mb-8 shadow rounded-lg">
+      <div className="overflow-x-auto mb-4 shadow rounded-lg">
         <table className="min-w-full border border-gray-200">
           <thead>
             <tr className="bg-gray-50">
-              <th className="py-3 px-4 border-b border-r border-gray-200 text-sm font-medium text-gray-700 sticky left-0 bg-gray-100 z-10">From \ To</th>
+              <th className="py-2 px-2 border-b border-r border-gray-200 text-xs font-medium text-gray-700 sticky left-0 bg-gray-100 z-10">From \ To</th>
               {ports.map((port) => (
                 <th
                   key={port}
-                  className={`py-3 px-4 border-b border-r border-gray-200 text-sm font-medium text-center
+                  className={`py-2 px-2 border-b border-r border-gray-200 text-xs font-medium text-center
                     ${hoveredCell?.col === port ? "bg-blue-50" : "bg-gray-50"}`}
                   onMouseEnter={() => highlightColumn(port)}
                   onMouseLeave={clearHighlight}
@@ -174,11 +171,11 @@ const PriceTablePanel = ({ marketIntelligenceData, selectedPorts, isGenerating, 
           <tbody>
             {ports.map((origin) => (
               <tr key={origin} className={hoveredCell?.row === origin ? "bg-blue-50" : "hover:bg-gray-50"} onMouseEnter={() => highlightRow(origin)} onMouseLeave={clearHighlight}>
-                <th className="py-3 px-4 border-b border-r border-gray-200 text-sm font-medium text-gray-700 bg-gray-100 sticky left-0 z-10">{origin}</th>
+                <th className="py-2 px-2 border-b border-r border-gray-200 text-xs font-medium text-gray-700 bg-gray-100 sticky left-0 z-10">{origin}</th>
                 {ports.map((destination) => {
                   if (origin === destination) {
                     return (
-                      <td key={destination} className="py-3 px-4 border-b border-r border-gray-200 text-center bg-gray-100">
+                      <td key={destination} className="py-2 px-2 border-b border-r border-gray-200 text-center bg-gray-100">
                         <span className="text-gray-400">—</span>
                       </td>
                     );

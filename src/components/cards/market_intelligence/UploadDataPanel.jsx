@@ -137,15 +137,15 @@ const UploadDataPanel = ({ handleUpload }) => {
 
   return (
     <div>
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-lg font-medium text-gray-800">Upload Market Intelligence</h3>
-          <button onClick={downloadExcelTemplate} className="flex items-center space-x-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+      <div className="mb-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-bold text-gray-800">Upload Market Intelligence</h3>
+          <button onClick={downloadExcelTemplate} className="flex items-center space-x-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs">
             <BsFiletypeXlsx className="text-blue-600" />
             <span>Download Excel Template</span>
           </button>
         </div>
-        <p className="text-sm text-gray-600 mb-4">Upload an Excel file containing market intelligence pricing data or select from existing data.</p>
+        <p className="text-xs text-gray-600">Upload an Excel file containing market intelligence pricing data or select from existing data.</p>
 
         <MarketIntelligenceUpload onUpload={handleFileUpload} />
       </div>

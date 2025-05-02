@@ -169,13 +169,13 @@ const MarketIntelligenceUpload = ({ onUpload }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-sm p-4 mb-2 mt-2">
+      <div className="flex items-center justify-between mb-2 ">
         <div className="flex items-center space-x-2">
           <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
             <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z" />
           </svg>
-          <h2 className="text-lg font-semibold text-gray-800">Upload Excel File</h2>
+          <h2 className="text-sm font-semibold text-gray-800">Upload Excel File</h2>
         </div>
       </div>
 

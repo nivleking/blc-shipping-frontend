@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from "@headlessui/react";
 import { HiCheck, HiChevronUpDown, HiDocumentCheck, HiPlus } from "react-icons/hi2";
@@ -10,6 +10,7 @@ import { api } from "../../../axios/axios";
 import SwapConfigModal from "../../rooms/SwapConfigModal";
 import DeckPreviewModal from "./DeckPreviewModal";
 import useToast from "../../../toast/useToast";
+import LoadingOverlay from "../../LoadingOverlay";
 
 // THIS IS FOR LOCAL
 // const initialFormState = {
@@ -110,6 +111,20 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
     setDeckOrigins([]);
   };
 
+  const [isCreating, setIsCreating] = useState(false);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const loadingMessages = ["Creating new room..."];
+
+  useEffect(() => {
+    let interval;
+    if (isCreating) {
+      interval = setInterval(() => {
+        setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [isCreating, loadingMessages.length]);
+
   // Add this new state in CreateRoomForm after the other state variables
   const [unrolledCosts, setUnrolledCosts] = useState({
     dry_committed: 0,
@@ -121,6 +136,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
   const createRoomMutation = useMutation({
     mutationFn: async (newRoomData) => {
+      setIsCreating(true);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       return api.post("/rooms", newRoomData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -131,11 +148,13 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
       queryClient.invalidateQueries(["rooms"]);
       resetForm();
       showSuccess("Room created successfully!");
+      setIsCreating(false);
     },
     onError: (error) => {
       console.error("Error creating room:", error);
       setErrors(error.response.data.errors || {});
       showError(error.response.data.message || "Failed to create room");
+      setIsCreating(false);
     },
   });
 
@@ -285,6 +304,8 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
 
   return (
     <form onSubmit={createRoom} className="bg-white p-8 rounded-lg shadow-lg space-y-2 mb-4">
+      {isCreating && <LoadingOverlay messages={loadingMessages} currentMessageIndex={loadingMessageIndex} title="Creating Room" />}
+
       <div className="w-full">
         <h3 className="text-1xl font-bold text-gray-900">Create New Room</h3>
       </div>

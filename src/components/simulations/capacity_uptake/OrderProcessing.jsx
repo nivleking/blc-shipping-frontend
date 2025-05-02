@@ -1,6 +1,15 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import SalesCallCardPreview from "./SalesCallCardPreview";
 
-const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTotal: 0 }, pointG = { dry: 0, reefer: 0, total: 0 }, pointH = { dry: 0, reefer: 0, total: dry + reefer }, capacityStatus = { dry: 0, reefer: 0, total: 0 } }) => {
+const OrderProcessing = ({
+  salesCallsData = { weekSalesCalls: [], weekRevenueTotal: 0 },
+  pointG = { dry: 0, reefer: 0, total: 0 },
+  pointH = { dry: 0, reefer: 0, total: dry + reefer },
+  containers,
+  unfulfilledContainers, //
+}) => {
+  const [hoveredCard, setHoveredCard] = useState(null);
+
   // Sort the sales calls by presumed order of handling
   const sortedSalesCalls = useMemo(() => {
     // Create a single array without pre-filtering by status
@@ -37,6 +46,27 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
 
   const formatIDR = (value) => {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
+  };
+
+  const isCardFulfilled = (cardId) => {
+    // If there are no unfulfilled containers at all
+    if (!unfulfilledContainers) {
+      return true;
+    }
+
+    // Check if cardId exists in unfulfilled containers
+    if (!unfulfilledContainers[cardId]) {
+      return true;
+    }
+
+    // Handle case when unfulfilledContainers[cardId] is an array (current format)
+    if (Array.isArray(unfulfilledContainers[cardId])) {
+      return unfulfilledContainers[cardId].length === 0;
+    }
+
+    // Handle case when unfulfilledContainers[cardId] is a direct value (like a number)
+    // If it's a non-null value (container ID), the card is not fulfilled
+    return unfulfilledContainers[cardId] === null || unfulfilledContainers[cardId] === undefined;
   };
 
   const pointI = {
@@ -120,29 +150,55 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
               <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Dry</th>
               <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Reefer</th>
               <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Total</th>
+              <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Fulfilled</th>
               <th className="px-2 py-1.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border">Code</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedSalesCalls.length > 0 ? (
-              sortedSalesCalls.map((card) => (
-                <tr key={card.id} className={card.status === "rejected" ? "bg-red-200 text-gray-600" : "bg-green-200"}>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center font-medium border">{card.id}</td>
-                  <td className={`px-2 py-1 whitespace-nowrap text-xs text-center border ${card.status === "accepted" ? "text-green-600" : "text-red-600"}`}>{card.status === "accepted" ? "Accepted" : "Rejected"}</td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">
-                    {card.priority}
-                    {card.isBacklog ? " (Backlog)" : ""}
-                  </td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{formatIDR(card.revenue)}</td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.dryContainers || 0}</td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.reeferContainers || 0}</td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.totalContainers || card.quantity || 0}</td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border"></td>
-                </tr>
-              ))
+              sortedSalesCalls.map((card) => {
+                const isHovered = hoveredCard && hoveredCard.id === card.id;
+                const fulfilled = card.status === "accepted" ? isCardFulfilled(card.id) : null;
+
+                // Set base colors and hover highlight
+                const baseColor = card.status === "rejected" ? "bg-red-200" : "bg-green-200";
+                const highlightColor = card.status === "rejected" ? "bg-red-300 shadow-inner" : "bg-green-300 shadow-inner";
+
+                return (
+                  <tr key={card.id} className={`${isHovered ? highlightColor : baseColor} relative transition-colors duration-150`} onMouseEnter={() => setHoveredCard(card)} onMouseLeave={() => setHoveredCard(null)}>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs text-center font-medium border">{card.id}</td>
+                    <td className={`px-2 py-1 whitespace-nowrap text-xs text-center border ${card.status === "accepted" ? "text-green-600" : "text-red-600"}`}>{card.status === "accepted" ? "Accepted" : "Rejected"}</td>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">
+                      {card.priority}
+                      {card.isBacklog ? " (Backlog)" : ""}
+                    </td>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{formatIDR(card.revenue)}</td>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.dryContainers || 0}</td>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.reeferContainers || 0}</td>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">{card.totalContainers || card.quantity || 0}</td>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">
+                      {card.status === "accepted" &&
+                        (fulfilled ? (
+                          <span className="inline-flex items-center justify-center w-5 h-5 bg-green-100 rounded-full">
+                            <svg className="w-3 h-3 text-green-600" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                              <path d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-100 rounded-full">
+                            <svg className="w-3 h-3 text-amber-600" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                          </span>
+                        ))}
+                    </td>
+                    <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border"></td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan="8" className="px-2 py-2 text-center text-xs text-gray-500 border italic">
+                <td colSpan="9" className="px-2 py-2 text-center text-xs text-gray-500 border italic">
                   Get your sales call cards from section sales calls!
                 </td>
               </tr>
@@ -152,7 +208,7 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
             {acceptedSalesCalls.length > 0 && (
               <>
                 <tr className="bg-blue-100">
-                  <td colSpan="3" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-blue-900 border">
+                  <td colSpan="4" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-blue-900 border">
                     Final Bookings for the Week
                     <br />
                     (Total Accepted Bookings)
@@ -164,7 +220,7 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border">J</td>
                 </tr>
                 <tr className="bg-gray-100">
-                  <td colSpan="3" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900 border">
+                  <td colSpan="4" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900 border">
                     Estimated Total Revenue for Accepted Bookings and Final Capacity Status for the Ship (I-J)
                   </td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{formatIDR(salesCallsSummary.revenue)}</td>
@@ -199,6 +255,7 @@ const OrderProcessing = ({ salesCallsData = { weekSalesCalls: [], weekRevenueTot
           </div>
         )}
       </div> */}
+      {hoveredCard && <SalesCallCardPreview card={hoveredCard} containers={containers} />}
     </div>
   );
 };

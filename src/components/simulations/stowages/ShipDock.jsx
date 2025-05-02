@@ -282,7 +282,7 @@ const ShipDock = ({
         <div className="mb-1">
           <div className="text-[9px] flex items-center justify-between">
             <div className="flex items-center">
-              <span className="font-medium text-blue-800">Containers to Load: {unfulfilledSummary.total}</span>
+              <span className="font-medium text-blue-800">Total containers need to be loaded to get revenue: {unfulfilledSummary.total}</span>
             </div>
             <div className="flex space-x-1">
               {unfulfilledSummary.dry > 0 && <span className="px-1.5 py-0.5 bg-gray-100 text-gray-800 text-[9px] font-medium rounded-full">Dry: {unfulfilledSummary.dry}</span>}

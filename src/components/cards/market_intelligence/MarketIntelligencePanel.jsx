@@ -228,26 +228,26 @@ const MarketIntelligencePanel = ({ deckId }) => {
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-white shadow rounded-lg p-8">
+      <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-800">Market Intelligence</h2>
         <div className="space-x-2">
-          <button onClick={handleSave} disabled={saveMutation.isPending || !deckId} className={`px-4 py-2 rounded text-white ${saveMutation.isPending || !deckId ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"}`}>
+          <button onClick={handleSave} disabled={saveMutation.isPending || !deckId} className={`px-4 py-2 text-sm rounded-lg text-white ${saveMutation.isPending || !deckId ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"}`}>
             {saveMutation.isPending ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
 
       {!deckId ? (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
           <p className="text-yellow-700">Please select a deck to manage market intelligence data.</p>
         </div>
       ) : (
         <TabGroup>
-          <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1 mb-6">
+          <TabList className="flex space-x-1 rounded-xl bg-blue-900/20 p-1 mb-4">
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+                `w-full rounded-lg py-1 text-sm font-medium leading-5 
                 ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
               }
             >
@@ -255,7 +255,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+                `w-full rounded-lg py-1 text-sm font-medium leading-5 
                 ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
               }
             >
@@ -263,7 +263,7 @@ const MarketIntelligencePanel = ({ deckId }) => {
             </Tab>
             <Tab
               className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 
+                `w-full rounded-lg py-1 text-sm font-medium leading-5 
                 ${selected ? "bg-white shadow text-blue-700" : "text-blue-600 hover:bg-white/[0.12] hover:text-blue-700"}`
               }
             >
