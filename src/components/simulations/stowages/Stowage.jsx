@@ -338,8 +338,8 @@ const Stowage = ({
                 style={{
                   zIndex: 9999,
                   transform: "scale(1.05)",
-                  // opacity: 0.9,
                 }}
+                color={containers.find((c) => c.id === draggingItem)?.color}
                 type={containers.find((c) => c.id === draggingItem)?.type?.toLowerCase() || "dry"}
                 destination={containerDestinationsCache[draggingItem] || ""}
               />
