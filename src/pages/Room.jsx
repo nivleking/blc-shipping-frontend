@@ -764,7 +764,7 @@ const Room = () => {
                 {/* Swap Bays Button */}
                 <button
                   onClick={handleSwapBays}
-                  // disabled={currentRound > totalRounds}
+                  disabled={currentRound > totalRounds}
                   className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"} 
     shadow-md`}

@@ -4,6 +4,7 @@ import { api } from "../../../axios/axios";
 import { useParams } from "react-router-dom";
 import CapacityEstimation from "./CapacityEstimation";
 import OrderProcessing from "./OrderProcessing";
+import LoadingSpinner from "../LoadingSpinner";
 
 const CapacityUptake = ({
   currentRound,
@@ -13,7 +14,7 @@ const CapacityUptake = ({
 }) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [capacityData, setCapacityData] = useState(null);
   const [selectedWeek, setSelectedWeek] = useState(currentRound);
   const [error, setError] = useState(null);
@@ -24,7 +25,6 @@ const CapacityUptake = ({
   const [maxCapacity, setMaxCapacity] = useState({ dry: 0, reefer: 0, total: 0 });
   const [capacityStatus, setCapacityStatus] = useState({ dry: 0, reefer: 0, total: 0 });
   const [hasCapacityIssue, setHasCapacityIssue] = useState(false);
-
   // -- CENTRALIZED CAPACITY CALCULATION LOGIC --
 
   // Point A: Containers on board heading to next port
@@ -257,13 +257,13 @@ const CapacityUptake = ({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex justify-center items-center h-32">
+  //       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -319,6 +319,8 @@ const CapacityUptake = ({
         containers={containers}
         unfulfilledContainers={unfulfilledContainers} //
       />
+
+      {isLoading && <LoadingSpinner />}
     </div>
   );
 };

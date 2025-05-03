@@ -24,7 +24,7 @@ const Simulation = () => {
   const [deckId, setDeckId] = useState("");
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedTab, setSelectedTab] = useState(1);
 
   // Market Intelligence states
@@ -39,7 +39,7 @@ const Simulation = () => {
   const [bayTypes, setBayTypes] = useState([]);
   const [bayData, setBayData] = useState([]);
   const [dockData, setDockData] = useState([]);
-  const [dockSize, setDockSize] = useState({ rows: 6, columns: 6 });
+  const [dockSize, setDockSize] = useState({ rows: 5, columns: 10 });
   const [currentPage, setCurrentPage] = useState(0);
   const [draggingItem, setDraggingItem] = useState(null);
   const itemsPerPage = 30;
@@ -114,10 +114,13 @@ const Simulation = () => {
 
   // Add a function to toggle the financial modal visibility
   const toggleFinancialModal = () => {
-    // Fetch latest data when opening
+    setSelectedTab(2);
+
     if (!showFinancialModal) {
-      fetchFinancialSummary();
+      // fetchFinancialSummary();
     }
+
+    // Toggle modal visibility
     setShowFinancialModal(!showFinancialModal);
   };
 
@@ -135,32 +138,6 @@ const Simulation = () => {
       setHoveredCardId(null);
     }
   };
-
-  // const fetchBayStatistics = async () => {
-  //   try {
-  //     const response = await api.get(`/ship-bays/${roomId}/${user.id}/statistics`, {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     });
-
-  //     const data = response.data;
-  //     // console.log("Bay Statistics:", data);
-  //     setBayMoves(data.bay_moves || {});
-  //     setDockWarehouseContainers(data.dock_warehouse_containers || []);
-
-  //     // setBayPairs(data.bay_pairs || []);
-  //     // setLongCraneMoves(data.long_crane_moves || 0);
-  //     // setExtraMovesOnLongCrane(data.extra_moves_on_long_crane || 0);
-  //   } catch (error) {
-  //     console.error("Error fetching bay statistics:", error);
-  //   }
-  // };
-
-  // Call this in useEffect after data changes
-  // useEffect(() => {
-  //   if (user && token && roomId) {
-  //     fetchBayStatistics();
-  //   }
-  // }, [droppedItems, section, moveStats.loadMoves, moveStats.dischargeMoves]);
 
   const [selectedHistoricalWeek, setSelectedHistoricalWeek] = useState(currentRound);
   const [historicalStats, setHistoricalStats] = useState(null);
@@ -442,6 +419,7 @@ const Simulation = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
       // Single API call to get all arena data
       const response = await api.get(`/arena-data/${roomId}/${user.id}`, {
@@ -698,6 +676,8 @@ const Simulation = () => {
         );
       setBayData(emptyBayData);
       setDroppedItems([]);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -730,6 +710,7 @@ const Simulation = () => {
       return;
     }
 
+    setIsLoading(true);
     try {
       setIsProcessingCard(true);
       setIsCardVisible(false);
@@ -739,68 +720,13 @@ const Simulation = () => {
         console.log("No more cards to process");
         setIsProcessingCard(false);
         setIsCardVisible(true);
+        setIsLoading(false);
         return;
       }
 
-      const shipBayResponse = await api.get(`ship-bays/${roomId}/${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const currentProcessed = shipBayResponse.data.processed_cards;
-
-      if (currentProcessed + 1 >= mustProcessCards) {
+      if (processedCards + 1 >= mustProcessCards) {
         setIsLimitExceeded(true);
       }
-
-      const cardResponse = await api.post(
-        `/ship-bays/${roomId}/${user.id}/cards`,
-        {
-          card_action: "accept",
-          count: 1,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setProcessedCards(cardResponse.data.processed_cards);
-
-      await api.post(
-        `/capacity-uptakes/${roomId}/${user.id}/${currentRound}`,
-        {
-          card_action: "accept",
-          card: salesCallCards[currentCardIndex],
-          port: port,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
-
-      // const cardRevenue = parseFloat(currentCard.revenue) || 0;
-      // const newRevenue = parseFloat(revenue) + cardRevenue;
-
-      console.log("Current Round:", currentRound);
-      await api.post(
-        "/card-temporary/accept",
-        {
-          room_id: roomId,
-          card_temporary_id: cardId,
-          round: currentRound,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      // setRevenue(newRevenue);
 
       const newContainers = containers.filter((container) => container.card_id === cardId);
       const updatedDroppedItems = [...droppedItems];
@@ -822,18 +748,6 @@ const Simulation = () => {
         });
       });
 
-      setDroppedItems(updatedDroppedItems);
-
-      const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
-        return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
-          return Array.from({ length: baySize.columns }).map((_, colIndex) => {
-            const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
-            const item = updatedDroppedItems.find((item) => item.area === cellId);
-            return item ? item.id : null;
-          });
-        });
-      });
-
       const dockItems = updatedDroppedItems
         .filter((item) => item.area && item.area.startsWith("docks-"))
         .map((item) => ({
@@ -846,55 +760,34 @@ const Simulation = () => {
         totalContainers: dockItems.length,
       };
 
-      // Update states
-      setBayData(newBayData);
-      setDockData(dockArenaData);
-
-      setCurrentCardIndex((prevIndex) => {
-        const nextIndex = prevIndex < salesCallCards.length - 1 ? prevIndex : 0;
-        return nextIndex;
-      });
-
-      // await api.put(
-      //   `/ship-bays/${roomId}/${user.id}/section`,
-      //   {
-      //     section: "section2",
-      //   },
-      //   {
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //     },
-      //   }
-      // );
-
-      const unfulfilledResponse = await api.get(`/card-temporary/unfulfilled/${roomId}/${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("Unfulfilled containers:", unfulfilledResponse.data);
-      setUnfulfilledContainers(unfulfilledResponse.data);
-
-      await Promise.all([
-        api.post("/ship-bays", {
-          arena: newBayData,
-          user_id: user.id,
-          room_id: roomId,
-          section: "section2",
-          // revenue: newRevenue,
-        }),
-        api.post("/ship-docks", {
-          arena: dockArenaData,
-          user_id: user.id,
-          room_id: roomId,
+      const cardResponse = await api.post(
+        `/ship-bays/${roomId}/${user.id}/cards`,
+        {
+          card_action: "accept",
+          count: 1,
+          card_temporary_id: cardId,
+          card: salesCallCards[currentCardIndex],
+          port: port,
+          dock_arena: dockArenaData,
           dock_size: dockSize,
-        }),
-      ]);
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      await checkLimitCard();
+      setProcessedCards(cardResponse.data.processed_cards);
+      setUnfulfilledContainers(cardResponse.data.unfulfilled_containers);
+      setSalesCallCards((prevCards) => prevCards.filter((card) => card.id !== cardId));
+      setDroppedItems(updatedDroppedItems);
+      setDockData(dockArenaData);
 
       setTimeout(() => {
         setCurrentCardIndex((prevIndex) => (prevIndex < salesCallCards.length - 1 ? prevIndex : 0));
         setIsCardVisible(true);
-      }, 1500);
+      }, 2000);
 
       showSuccess(`Card accepted! Move all containers to ship bay to earn revenue.`);
 
@@ -905,134 +798,55 @@ const Simulation = () => {
     } catch (error) {
       console.error("Error accepting card:", error);
       showError("Failed to process card");
-      setIsCardVisible(true);
     } finally {
       setIsProcessingCard(false);
-      setTimeout(() => {
-        setIsCardVisible(true);
-      }, 300);
+      setSelectedTab(0);
+      showInfo("Redirecting to Capacity Uptake to check available capacity");
+      setIsLoading(false);
     }
   }
-
-  // Perbaiki fungsi checkLimitCard
-  const checkLimitCard = async () => {
-    try {
-      const [shipBayResponse, roomResponse] = await Promise.all([
-        api.get(`ship-bays/${roomId}/${user.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        api.get(`rooms/${roomId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-
-      const shipBay = shipBayResponse.data;
-      const room = roomResponse.data;
-
-      // cards_must_process_per_round limit
-      const hasReachedMustProcess = shipBay.processed_cards >= room.cards_must_process_per_round;
-
-      // cards_limit_per_round limit
-      const hasReachedMaxCards = shipBay.current_round_cards >= room.cards_limit_per_round;
-
-      // Gabungkan hasil pengecekan
-      const isExceeded = hasReachedMustProcess || hasReachedMaxCards;
-
-      console.log("Limit check details:", {
-        processedCards: shipBay.processed_cards,
-        mustProcess: room.cards_must_process_per_round,
-        currentRoundCards: shipBay.current_round_cards,
-        cardsLimit: room.cards_limit_per_round,
-        hasReachedMustProcess,
-        hasReachedMaxCards,
-        isExceeded,
-      });
-
-      // Update state dengan hasil pengecekan
-      setIsLimitExceeded(isExceeded);
-
-      return isExceeded;
-    } catch (error) {
-      console.error("Error checking card limit:", error);
-      return false;
-    }
-  };
 
   useEffect(() => {
     if (section === 2) {
       fetchSalesCallCards();
-      checkLimitCard();
     }
   }, [section, moveStats.acceptedCards, moveStats.rejectedCards]);
 
   async function handleRejectCard(cardId) {
+    setIsLoading(true);
     try {
       if (section !== 2) {
         showError("Please complete section 1 first!");
+        setIsLoading(false);
         return;
       }
 
       if (isLimitExceeded) {
         showError("Card limit reached for this round!");
+        setIsLoading(false);
         return;
       }
 
       if (isProcessingCard) {
+        setIsLoading(false);
         return;
       }
 
       if (!salesCallCards[currentCardIndex]) {
         console.log("No more cards to process");
+        setIsLoading(false);
         return;
       }
 
+      setIsProcessingCard(true);
       setIsCardVisible(false);
 
-      await api.post(
+      const response = await api.post(
         `/ship-bays/${roomId}/${user.id}/cards`,
         {
           card_action: "reject",
           count: 1,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      await api.post(
-        "/card-temporary/reject",
-        {
-          room_id: roomId,
           card_temporary_id: cardId,
-          round: currentRound,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      await api.put(
-        `/ship-bays/${roomId}/${user.id}/section`,
-        {
-          section: "section2",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      await checkLimitCard();
-
-      await api.post(
-        `/capacity-uptakes/${roomId}/${user.id}/${currentRound}`,
-        {
-          card_action: "reject",
           card: salesCallCards[currentCardIndex],
           port: port,
         },
@@ -1042,6 +856,8 @@ const Simulation = () => {
           },
         }
       );
+
+      setIsLimitExceeded(response.data.is_limit_exceeded);
 
       setSalesCallCards((prevCards) => {
         const updatedCards = prevCards.filter((card) => card.id !== cardId);
@@ -1069,9 +885,9 @@ const Simulation = () => {
       console.error("Error rejecting card:", error);
     } finally {
       setIsProcessingCard(false);
-      setTimeout(() => {
-        setIsCardVisible(true);
-      }, 300);
+      setSelectedTab(0);
+      showInfo("Redirecting to Capacity Uptake to check available capacity");
+      setIsLoading(false);
     }
   }
 
@@ -1188,16 +1004,26 @@ const Simulation = () => {
   }
 
   async function handleDragEnd(event) {
+    setIsLoading(true);
     const { active, over } = event;
     setDraggingItem(null);
 
-    if (!over) return;
+    if (!over) {
+      setIsLoading(false);
+      return;
+    }
 
     const container = containers.find((c) => c.id === active.id);
-    if (!container) return;
+    if (!container) {
+      setIsLoading(false);
+      return;
+    }
 
     const activeItem = droppedItems.find((item) => item.id === active.id);
-    if (activeItem && activeItem.area === over.id) return;
+    if (activeItem && activeItem.area === over.id) {
+      setIsLoading(false);
+      return;
+    }
 
     // Extract bay indexes for tracking
     let sourceBayIndex = null;
@@ -1271,40 +1097,23 @@ const Simulation = () => {
 
             showSuccess("Container dischargeed successfully!");
 
-            // Save updated bay state
-            await api.post("/ship-bays", {
-              arena: flatBayData,
-              user_id: user.id,
-              room_id: roomId,
-              section: "section1",
-              moved_container: {
-                id: container.id,
-                from: activeItem.area,
-                to: over.id,
-              },
-              move_type: "discharge",
-              count: 1,
-              bay_index: sourceBayIndex,
-              container_id: active.id,
-            });
-
-            // Track discharge move - Include bay_index
             try {
-              // await api.post(
-              //   `/ship-bays/${roomId}/${user.id}/moves`,
-              //   {
-              //     move_type: "discharge",
-              //     count: 1,
-              //     bay_index: sourceBayIndex,
-              //     container_id: active.id,
-              //     arena: flatBayData,
-              //   },
-              //   {
-              //     headers: {
-              //       Authorization: `Bearer ${token}`,
-              //     },
-              //   }
-              // );
+              // Save updated bay state
+              await api.post("/ship-bays", {
+                arena: flatBayData,
+                user_id: user.id,
+                room_id: roomId,
+                section: "section1",
+                moved_container: {
+                  id: container.id,
+                  from: activeItem.area,
+                  to: over.id,
+                },
+                move_type: "discharge",
+                count: 1,
+                bay_index: sourceBayIndex,
+                container_id: active.id,
+              });
 
               // Request updated stats
               socket.emit("stats_requested", {
@@ -1316,6 +1125,8 @@ const Simulation = () => {
             } catch (error) {
               console.error("API call failed", error);
               showError("Failed to update container status");
+            } finally {
+              setIsLoading(false);
             }
           }
         } catch (error) {
@@ -1330,18 +1141,21 @@ const Simulation = () => {
       console.log("Container:", container);
       if (!isValidContainerForBay(container, parseInt(bayIndex))) {
         showError(container.type?.toLowerCase() === "reefer" ? "Reefer containers can only be placed in reefer bays" : "Invalid container placement");
+        setIsLoading(false);
         return;
       }
     }
 
     if (activeItem && isDirectUpperMove(activeItem.area, over.id, baySize)) {
       showError("Invalid placement - container cannot float");
+      setIsLoading(false);
       return;
     }
 
     const isSourceBlocked = isBlockedByContainerAbove(droppedItems, activeItem.area);
     if (isSourceBlocked) {
       showError("Cannot move container - blocked by container above");
+      setIsLoading(false);
       return;
     }
 
@@ -1350,11 +1164,13 @@ const Simulation = () => {
 
     if (!isAboveClear) {
       showError("Cannot place container - blocked by container above");
+      setIsLoading(false);
       return;
     }
 
     if (!isSpaceValid) {
       showError("Invalid placement - container cannot float");
+      setIsLoading(false);
       return;
     }
 
@@ -1407,56 +1223,39 @@ const Simulation = () => {
       // Only track moves if they involve a bay (not just within dock)
       const isBayInvolved = fromArea.startsWith("bay") || toArea.startsWith("bay");
 
-      const resBay = await api.post("/ship-bays", {
-        arena: newBayData,
-        user_id: user.id,
-        room_id: roomId,
-        moved_container: {
-          id: container.id,
-          from: fromArea,
-          to: toArea,
-        },
-        section: section === 1 ? "section1" : "section2",
-        ...(isBayInvolved && relevantBayIndex !== null
-          ? {
-              move_type: moveType,
-              count: 1,
-              bay_index: relevantBayIndex,
-              container_id: containerId,
-            }
-          : {}),
-      });
+      try {
+        const resBay = await api.post("/ship-bays", {
+          arena: newBayData,
+          user_id: user.id,
+          room_id: roomId,
+          moved_container: {
+            id: container.id,
+            from: fromArea,
+            to: toArea,
+          },
+          section: section === 1 ? "section1" : "section2",
+          ...(isBayInvolved && relevantBayIndex !== null
+            ? {
+                move_type: moveType,
+                count: 1,
+                bay_index: relevantBayIndex,
+                container_id: containerId,
+              }
+            : {}),
+        });
 
-      // if (isBayInvolved && relevantBayIndex !== null) {
-      //   console.log(`Move type: ${moveType}, Source bay: ${sourceBayIndex}, Destination bay: ${destinationBayIndex}, Using bay_index: ${relevantBayIndex}`);
-
-      //   // Track the move with bay_index
-      //   await api.post(
-      //     `/ship-bays/${roomId}/${user.id}/moves`,
-      //     {
-      //       move_type: moveType,
-      //       count: 1,
-      //       bay_index: relevantBayIndex,
-      //       container_id: containerId,
-      //       arena: newBayData,
-      //     },
-      //     {
-      //       headers: {
-      //         Authorization: `Bearer ${token}`,
-      //       },
-      //     }
-      //   );
-      // }
-
-      console.log("API call successful for bays", resBay.data);
-
-      const resDock = await api.post("/ship-docks", {
-        arena: dockArenaData, // Send new format
-        user_id: user.id,
-        room_id: roomId,
-        dock_size: dockSize,
-      });
-      console.log("API call successful for docks", resDock.data);
+        const resDock = await api.post("/ship-docks", {
+          arena: dockArenaData, // Send new format
+          user_id: user.id,
+          room_id: roomId,
+          dock_size: dockSize,
+        });
+      } catch (error) {
+        console.error("Error during container movement:", error);
+        showError("Failed to move container. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
 
       const fromDock = fromArea.startsWith("docks-");
       const toDock = toArea.startsWith("docks-");
@@ -1494,28 +1293,6 @@ const Simulation = () => {
     // Update the target containers state
     setTargetContainers(containersToDischarge);
   }, [droppedItems, containerDestinationsCache, port, section]);
-
-  // useEffect(() => {
-  //   if (droppedItems.length > 0 && token) {
-  //     fetchContainerDestinations();
-  //   }
-  // }, [droppedItems, token]);
-
-  // async function fetchContainerDestinations() {
-  //   try {
-  //     const containerIds = droppedItems.map((item) => item.id);
-
-  //     if (containerIds.length === 0) return;
-
-  //     const response = await api.post("/containers/destinations", { containerIds, deckId: deckId }, { headers: { Authorization: `Bearer ${token}` } });
-
-  //     console.log("Fetched container destinations:", response.data);
-  //     setContainerDestinationsCache(response.data);
-  //   } catch (error) {
-  //     console.error("Error fetching container destinations:", error);
-  //     showError("Failed to get container destination information");
-  //   }
-  // }
 
   const canProceedToSectionTwo = () => {
     return targetContainers.length === 0;
@@ -1619,64 +1396,66 @@ const Simulation = () => {
         />
 
         <TabGroup selectedIndex={selectedTab} onChange={setSelectedTab}>
-          <TabList className="flex w-full h-6 items-center rounded-md bg-gray-200 p-0.5 shadow-inner">
-            <Tab
-              className={({ selected }) =>
-                `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
-                  selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
-                }`
-              }
-            >
-              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-              <span>Capacity & Uptake Management</span>
-            </Tab>
+          <div className="sticky top-24 z-10 bg-gradient-to-br from-blue-50 to-blue-100 pt-2 pb-2">
+            <TabList className="flex w-full h-6 items-center rounded-md bg-gray-200 p-0.5 shadow-inner">
+              <Tab
+                className={({ selected }) =>
+                  `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                    selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                  }`
+                }
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                <span>Capacity & Uptake Management</span>
+              </Tab>
 
-            <Tab
-              className={({ selected }) =>
-                `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
-                  selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
-                }`
-              }
-            >
-              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              <span>Stowage</span>
-            </Tab>
+              <Tab
+                className={({ selected }) =>
+                  `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                    selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                  }`
+                }
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <span>Stowage</span>
+              </Tab>
 
-            <Tab
-              className={({ selected }) =>
-                `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
-                  selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
-                }`
-              }
-            >
-              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Weekly Performance</span>
-            </Tab>
+              <Tab
+                className={({ selected }) =>
+                  `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                    selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                  }`
+                }
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Weekly Performance</span>
+              </Tab>
 
-            <Tab
-              className={({ selected }) =>
-                `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
-                  selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
-                }`
-              }
-            >
-              <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-              <span>Market Intelligence</span>
-            </Tab>
-          </TabList>
+              <Tab
+                className={({ selected }) =>
+                  `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                    selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                  }`
+                }
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                <span>Market Intelligence</span>
+              </Tab>
+            </TabList>
+          </div>
 
           <TabPanels className="mt-4">
             {/* Capacity Uptake */}
@@ -1734,8 +1513,6 @@ const Simulation = () => {
                 unfulfilledContainers={unfulfilledContainers}
                 hoveredCardId={hoveredCardId}
                 onContainerHover={handleContainerHover}
-                financialSummary={financialSummary}
-                showFinancialModal={showFinancialModal}
                 toggleFinancialModal={toggleFinancialModal}
                 isBayFull={isBayFull}
                 // bayPairs={bayPairs}
@@ -1754,6 +1531,8 @@ const Simulation = () => {
                   totalRounds={totalRounds}
                   totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
                   bayMoves={bayMoves}
+                  showFinancialModal={showFinancialModal}
+                  toggleFinancialModal={toggleFinancialModal}
                   // bayPairs={bayPairs}
                   // extraMovesOnLongCrane={extraMovesOnLongCrane}
                   // longCraneMoves={longCraneMoves}
