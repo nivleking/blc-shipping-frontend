@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import PriceTable from "./PriceTable";
 import PenaltiesPanel from "./PenaltiesPanel";
 import ViewControls from "./ViewControls";
+import LoadingSpinner from "../LoadingSpinner";
 
 // Format currency function
 const formatCurrency = (value) => {
@@ -58,13 +59,13 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId }) => {
   // Handle loading states for both queries
   const isLoading = deckQuery.isLoading || marketQuery.isLoading || (!deckId && deckQuery.isInitialLoading) || (effectiveDeckId && marketQuery.isInitialLoading);
 
-  if (isLoading) {
-    return (
-      <div className="py-8 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="py-8 flex justify-center items-center">
+  //       <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+  //     </div>
+  //   );
+  // }
 
   // Handle error states
   const error = deckQuery.error || marketQuery.error;
@@ -106,6 +107,8 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId }) => {
       <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
         <PriceTable priceData={getFilteredPriceData()} viewMode={viewMode} port={port} formatCurrency={formatCurrency} />
       </div>
+
+      {isLoading && <LoadingSpinner />}
     </div>
   );
 };

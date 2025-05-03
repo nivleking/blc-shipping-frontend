@@ -22,7 +22,12 @@ const ShipDock = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [temporaryNextPage, setTemporaryNextPage] = useState(null);
   // const itemsPerPage = dockSize.rows * dockSize.columns;
-  const itemsPerPage = 40;
+  const itemsPerPage = 50;
+
+  const visibleSize = {
+    rows: 5,
+    columns: 10,
+  };
 
   // Count dock items
   const dockItems = allItems.filter((item) => item.area && item.area.startsWith("docks-"));
@@ -82,11 +87,6 @@ const ShipDock = ({
 
   const visibleItems = getVisibleItems();
   const hasContainersOnPage = visibleItems.length > 0 || temporaryNextPage !== null;
-
-  const visibleSize = {
-    rows: 4,
-    columns: 10,
-  };
 
   // Calculate current page capacity stats (for UI feedback only)
   const currentPageItems = visibleItems.length;
@@ -295,7 +295,7 @@ const ShipDock = ({
 
       {/* Container Grid */}
       <div
-        className={`relative ${!hasContainersOnPage && totalContainers > 0 ? "min-h-[300px] flex items-center justify-center" : ""}`}
+        className={`relative w-full bg-gray-100 ${!hasContainersOnPage && totalContainers > 0 ? "min-h-[500px] flex items-center justify-center" : ""}`}
         style={{
           height: "100%",
           maxWidth: "100%",

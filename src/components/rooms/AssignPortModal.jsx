@@ -36,7 +36,15 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
   };
 
   const handleManualPortChange = (userId, port) => {
-    // Check if port is already assigned to another user
+    if (!port) {
+      setPorts((prev) => {
+        const newPorts = { ...prev };
+        delete newPorts[userId];
+        return newPorts;
+      });
+      return;
+    }
+
     const isPortAssigned = Object.entries(ports).some(([key, value]) => value === port && key !== userId.toString());
 
     if (isPortAssigned) {
@@ -48,6 +56,11 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
       ...prev,
       [userId]: port,
     }));
+  };
+
+  const handleResetAll = () => {
+    setPorts({});
+    showSuccess("All port assignments cleared!");
   };
 
   return (
@@ -68,11 +81,18 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
               </button>
             </div>
 
-            {assignmentMode === "random" && (
-              <button onClick={handleRandomAssignment} className="w-full py-1 px-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 mt-4">
-                Randomly Assign Ports
+            <div className="flex gap-2 mt-4">
+              {assignmentMode === "random" && (
+                <button onClick={handleRandomAssignment} className="flex-1 py-1 px-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600">
+                  Randomly Assign Ports
+                </button>
+              )}
+
+              {/* Add Reset All button */}
+              <button onClick={handleResetAll} className="flex-1 py-1 px-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600">
+                Reset All Ports
               </button>
-            )}
+            </div>
           </div>
 
           <div className="space-y-2 max-h-[60vh] overflow-y-auto">

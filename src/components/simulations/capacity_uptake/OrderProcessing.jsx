@@ -208,7 +208,7 @@ const OrderProcessing = ({
             {acceptedSalesCalls.length > 0 && (
               <>
                 <tr className="bg-blue-100">
-                  <td colSpan="4" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-blue-900 border">
+                  <td colSpan="3" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-blue-900 border">
                     Final Bookings for the Week
                     <br />
                     (Total Accepted Bookings)
@@ -217,16 +217,18 @@ const OrderProcessing = ({
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-900 text-center font-bold border">{pointJ.dry}</td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-900 text-center font-bold border">{pointJ.reefer}</td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-900 text-center font-bold border">{pointJ.total}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border"></td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border">J</td>
                 </tr>
                 <tr className="bg-gray-100">
-                  <td colSpan="4" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900 border">
+                  <td colSpan="3" className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900 border">
                     Estimated Total Revenue for Accepted Bookings and Final Capacity Status for the Ship (I-J)
                   </td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{formatIDR(salesCallsSummary.revenue)}</td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{pointK.dry}</td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{pointK.reefer}</td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border">{pointK.total}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 text-center font-bold border"></td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-blue-600 font-medium text-center border">K</td>
                 </tr>
               </>
