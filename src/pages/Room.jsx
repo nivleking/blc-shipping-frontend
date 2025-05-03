@@ -117,18 +117,13 @@ const Room = () => {
       }
     });
 
-    socket.on("rankings_updated", ({ roomId: updatedRoomId, rankings: updatedRankings }) => {
+    socket.on("rankings_updated", ({ roomId: updatedRoomId, rankings }) => {
       if (roomId === updatedRoomId) {
-        console.log("Receiving rankings update:", updatedRankings);
-        setRankings(updatedRankings);
-
-        setShowRankings((prev) => {
-          if (prev) {
-            setShowRankings(false);
-            setTimeout(() => setShowRankings(true), 0);
-          }
-          return prev;
-        });
+        if (rankings) {
+          setRankings(rankings);
+        } else {
+          fetchRankings();
+        }
       }
     });
 
