@@ -12,6 +12,8 @@ import ContainerLegend from "./ContainerLegend";
 import FinancialSummaryModal from "./FinancialSummaryModal";
 import { FiLifeBuoy } from "react-icons/fi";
 import GuideModal from "../../../pages/Admin/GuideModal";
+import "./Stowage.css";
+import LoadingSpinner from "../LoadingSpinner";
 
 const Stowage = ({
   revenue,
@@ -58,8 +60,6 @@ const Stowage = ({
   unfulfilledContainers = [],
   hoveredCardId,
   onContainerHover,
-  financialSummary,
-  showFinancialModal,
   toggleFinancialModal,
   isBayFull,
   // idealCraneSplit = 2,
@@ -68,6 +68,7 @@ const Stowage = ({
 }) => {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
+  const [isSectionTransitioning, setIsSectionTransitioning] = useState(false);
 
   const handleFinancialButtonClick = () => {
     toggleFinancialModal();
@@ -77,21 +78,29 @@ const Stowage = ({
     setShowGuideModal(true);
   };
 
+  // Wrap the onNextSection with our own function to show loading state
+  const handleNextSection = () => {
+    if (targetContainers.length > 0 || currentRound > totalRounds) {
+      return; // Button should be disabled in this case anyway
+    }
+
+    setIsSectionTransitioning(true); // Show loading spinner
+
+    onNextSection().finally(() => {
+      // Hide spinner when done (whether successful or not)
+      setTimeout(() => {
+        setIsSectionTransitioning(false);
+      }, 2000); // Small delay to prevent flashing if the operation is very fast
+    });
+  };
+
   // console.log(containerDestinationsCache);
   return (
     <>
       {/* <PortLegendSimulation /> */}
 
-      {financialSummary && (
-        <FinancialSummaryModal
-          existingRevenue={revenue}
-          isOpen={showFinancialModal}
-          onClose={() => toggleFinancialModal(false)}
-          financialData={financialSummary}
-          formatIDR={formatIDR}
-          currentRound={currentRound} //
-        />
-      )}
+      {/* Add loading overlay when transitioning */}
+      {isSectionTransitioning && <LoadingSpinner />}
 
       {/* Section Header */}
       <div className="flex justify-between items-center mb-1 bg-white rounded-lg shadow-sm p-4">
@@ -110,11 +119,19 @@ const Stowage = ({
               Remaining {port} containers to discharge: {targetContainers && targetContainers.length}
             </div>
             <button
-              onClick={onNextSection}
-              disabled={currentRound > totalRounds}
-              className={`text-xs px-2 py-1 rounded-lg transition-colors ${currentRound > totalRounds ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+              onClick={handleNextSection}
+              disabled={targetContainers.length > 0 || currentRound > totalRounds || isSectionTransitioning}
+              className={`text-xs font-bold px-3 py-1.5 transition-all duration-300 ${
+                targetContainers.length === 0 && currentRound <= totalRounds ? "relative shadow-md hover:scale-105 border-animated-button" : "bg-gray-300 text-gray-600 cursor-not-allowed rounded-lg"
+              }`}
             >
-              {currentRound > totalRounds ? "Final Discharge Phase" : "Proceed to Sales Calls"}
+              {currentRound > totalRounds ? (
+                "Final Discharge Phase"
+              ) : targetContainers.length > 0 ? (
+                `Discharge ${targetContainers.length} ${port} Container${targetContainers.length !== 1 ? "s" : ""} First`
+              ) : (
+                <span className="rainbow-text">Proceed to Sales Calls</span>
+              )}
             </button>
           </div>
         )}
@@ -184,8 +201,8 @@ const Stowage = ({
 
           {/* Three Column Layout: Sales Calls (Left) + Ship Dock (Middle) + Bay Stats (Right) */}
           <div className="grid md:grid-cols-10 gap-2">
-            {/* Sales Call Section - Left Column (4/10) */}
-            <div className="md:col-span-3 bg-white rounded-lg shadow-md p-2 border border-gray-200 overflow-hidden">
+            {/* Sales Call Section - Left Column (3/10) */}
+            <div className="md:col-span-4 bg-white rounded-lg shadow-md p-2 border border-gray-200 overflow-hidden">
               <h3 className="text-xs font-semibold mb-2 text-gray-800 flex items-center">
                 <svg className="w-4 h-4 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
@@ -197,6 +214,7 @@ const Stowage = ({
                 <PortLegendSimulation compact={true} port={port} />
               </div>
 
+              {/* Sales Calls content */}
               {section === 2 ? (
                 <div className="overflow-y-auto" style={{ maxHeight: "450px" }}>
                   {isLimitExceeded ? (
@@ -242,58 +260,68 @@ const Stowage = ({
               )}
             </div>
 
-            {/* Ship Dock Section - Middle Column (4/10) */}
-            <div className="md:col-span-4 bg-white rounded-lg shadow-md p-2 border border-gray-200 overflow-hidden">
-              <h3 className="text-xs font-semibold mb-2 text-gray-800 flex items-center">
-                <svg className="w-4 h-4 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
-                </svg>
-                Ship Dock
-                {section === 1 && targetContainers.length > 0 && draggingTargetContainer && <span className="ml-2 text-xs text-yellow-600 font-semibold">Drop container here</span>}
-              </h3>
-              <div className="bg-gray-50 p-2 rounded-lg border border-gray-200 overflow-auto" style={{ maxHeight: "510px" }}>
-                <ShipDock
-                  dockSize={dockSize}
-                  allItems={droppedItems}
-                  draggingItem={draggingItem}
-                  containers={containers}
-                  section={section}
-                  dockWarehouseContainers={dockWarehouseContainers}
-                  draggingTargetContainer={draggingTargetContainer}
-                  containerDestinationsCache={containerDestinationsCache}
-                  onContainerHover={onContainerHover}
-                  hoveredCardId={hoveredCardId}
-                  unfulfilledContainers={unfulfilledContainers}
-                />
-              </div>
-            </div>
+            {/* Right Column (7/10) - Contains Ship Dock and Bay Stats stacked vertically */}
+            <div className="md:col-span-6 flex flex-col gap-2">
+              {/* Ship Dock Section - Full width of right column */}
+              <div className="bg-white rounded-lg shadow-md p-2 border border-gray-200 overflow-hidden">
+                <h3 className="text-xs space-x-2 font-semibold text-gray-800 flex items-center">
+                  <svg className="w-4 h-4 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
+                  </svg>
+                  Ship Dock
+                  {section === 1 && targetContainers.length > 0 && draggingTargetContainer && <span className="ml-2 text-xs text-yellow-600 font-semibold">Drop container here</span>}
+                </h3>
+                {section === 1 && (
+                  <div className="text-[10px] text-red-600 font-medium">
+                    Remaining {port} containers to discharge: {targetContainers && targetContainers.length}
+                  </div>
+                )}
 
-            {/* Bay Statistics - Right Column (2/10) */}
-            <div className="col-span-3 row-span-1 bg-white rounded-lg shadow-md p-2 border border-gray-200">
-              <h3 className="text-xs font-semibold mb-2 text-gray-800 flex items-center">
-                <svg className="w-3.5 h-3.5 mr-1.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                Bay Stats
-              </h3>
-              <div className="bg-gray-50 p-1 rounded-lg border border-gray-200 overflow-auto text-xs" style={{ maxHeight: "350px" }}>
-                <BayStatisticsTable
-                  bayCount={bayCount}
-                  bayMoves={bayMoves}
-                  bayPairs={bayPairs}
-                  totalMoves={totalMoves}
-                  currentRound={currentRound}
-                  selectedWeek={selectedHistoricalWeek}
-                  setSelectedWeek={setSelectedHistoricalWeek}
-                  historicalStats={historicalStats}
-                  showHistorical={showHistorical}
-                  setShowHistorical={setShowHistorical}
-                  onRefreshCards={onRefreshCards}
-                  restowageMoves={restowageMoves}
-                  restowagePenalty={restowagePenalty}
-                  restowageContainerCount={restowageContainers.length}
-                  formatIDR={formatIDR}
-                />
+                <div className="bg-gray-50 p-2 rounded-lg border border-gray-200 mt-2" style={{ maxHeight: "350px" }}>
+                  <ShipDock
+                    dockSize={dockSize}
+                    allItems={droppedItems}
+                    draggingItem={draggingItem}
+                    containers={containers}
+                    section={section}
+                    dockWarehouseContainers={dockWarehouseContainers}
+                    draggingTargetContainer={draggingTargetContainer}
+                    containerDestinationsCache={containerDestinationsCache}
+                    onContainerHover={onContainerHover}
+                    hoveredCardId={hoveredCardId}
+                    unfulfilledContainers={unfulfilledContainers}
+                  />
+                </div>
+              </div>
+
+              {/* Bay Statistics - Below Ship Dock */}
+              <div className="bg-white rounded-lg shadow-md p-2 border border-gray-200">
+                <h3 className="text-xs font-semibold mb-2 text-gray-800 flex items-center">
+                  <svg className="w-3.5 h-3.5 mr-1.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Bay Stats
+                </h3>
+
+                <div className="bg-gray-50 p-1 rounded-lg border border-gray-200 overflow-auto text-xs" style={{ maxHeight: "200px" }}>
+                  <BayStatisticsTable
+                    bayCount={bayCount}
+                    bayMoves={bayMoves}
+                    bayPairs={bayPairs}
+                    totalMoves={totalMoves}
+                    currentRound={currentRound}
+                    selectedWeek={selectedHistoricalWeek}
+                    setSelectedWeek={setSelectedHistoricalWeek}
+                    historicalStats={historicalStats}
+                    showHistorical={showHistorical}
+                    setShowHistorical={setShowHistorical}
+                    onRefreshCards={onRefreshCards}
+                    restowageMoves={restowageMoves}
+                    restowagePenalty={restowagePenalty}
+                    restowageContainerCount={restowageContainers.length}
+                    formatIDR={formatIDR}
+                  />
+                </div>
               </div>
             </div>
           </div>

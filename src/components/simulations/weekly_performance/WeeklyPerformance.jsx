@@ -2,15 +2,26 @@ import React, { useState, useEffect, useContext } from "react";
 import { AppContext } from "../../../context/AppContext";
 import { api } from "../../../axios/axios";
 import { useParams } from "react-router-dom";
+import LoadingSpinner from "../LoadingSpinner";
+import FinancialSummaryModal from "../stowages/FinancialSummaryModal";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value);
 };
 
-const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, totalMoves = 0 }) => {
+const WeeklyPerformance = ({
+  port,
+  currentRound,
+  totalRounds,
+  bayMoves = {},
+  totalMoves = 0,
+  showFinancialModal,
+  toggleFinancialModal,
+  //
+}) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [performanceData, setPerformanceData] = useState(null);
   const [selectedWeek, setSelectedWeek] = useState(currentRound);
   const [error, setError] = useState(null);
@@ -24,6 +35,10 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
       fetchFinancialSummary();
     }
   }, [roomId, user?.id, token, selectedWeek]);
+
+  const handleFinancialButtonClick = () => {
+    toggleFinancialModal();
+  };
 
   useEffect(() => {
     if (weeklyData.length > 0) {
@@ -79,13 +94,13 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex justify-center items-center min-h-[400px]">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -98,6 +113,11 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
 
   return (
     <div className="space-y-6">
+      {/* Add the Financial Summary Modal */}
+      {showFinancialModal && (
+        <FinancialSummaryModal isOpen={showFinancialModal} onClose={toggleFinancialModal} financialData={financialSummary} formatIDR={formatIDR} currentRound={currentRound} existingRevenue={performanceData?.revenue || 0} />
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-sm font-bold text-gray-800">Weekly Performance Summary</h2>
         <div className="flex items-center space-x-2">
@@ -109,6 +129,12 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
               </option>
             ))}
           </select> */}
+          <button onClick={handleFinancialButtonClick} className="inline-flex items-center px-2 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-sm transition-colors">
+            <svg className="w-3.5 h-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1.5v1A1.5 1.5 0 0114 6.5H7A1.5 1.5 0 015.5 5V4H4z" clipRule="evenodd" />
+            </svg>
+            Review Current State
+          </button>
         </div>
       </div>
 
@@ -434,6 +460,8 @@ const WeeklyPerformance = ({ port, currentRound, totalRounds, bayMoves = {}, tot
           </table>
         </div>
       </div> */}
+
+      {isLoading && <LoadingSpinner />}
     </div>
   );
 };
