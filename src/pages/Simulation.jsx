@@ -1099,7 +1099,7 @@ const Simulation = () => {
 
             try {
               // Save updated bay state
-              await api.post("/ship-bays", {
+              const bayResponse = await api.post("/ship-bays", {
                 arena: flatBayData,
                 user_id: user.id,
                 room_id: roomId,
@@ -1119,6 +1119,11 @@ const Simulation = () => {
               socket.emit("stats_requested", {
                 roomId,
                 userId: user.id,
+              });
+
+              socket.emit("rankings_updated", {
+                roomId,
+                rankings: bayResponse.data.rankings,
               });
 
               return;
@@ -1250,22 +1255,24 @@ const Simulation = () => {
           room_id: roomId,
           dock_size: dockSize,
         });
+
+        const fromDock = fromArea.startsWith("docks-");
+        const toDock = toArea.startsWith("docks-");
+
+        if (!(fromDock && toDock)) {
+          // If not a dock-to-dock move, request stats update
+          socket.emit("stats_requested", {
+            roomId,
+            userId: user.id,
+          });
+        }
+
+        socket.emit("rankings_updated", { roomId, rankings: resBay.data.rankings });
       } catch (error) {
         console.error("Error during container movement:", error);
         showError("Failed to move container. Please try again.");
       } finally {
         setIsLoading(false);
-      }
-
-      const fromDock = fromArea.startsWith("docks-");
-      const toDock = toArea.startsWith("docks-");
-
-      if (!(fromDock && toDock)) {
-        // If not a dock-to-dock move, request stats update
-        socket.emit("stats_requested", {
-          roomId,
-          userId: user.id,
-        });
       }
     } catch (error) {
       console.error("API call failed", error);
