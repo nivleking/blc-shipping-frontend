@@ -119,11 +119,11 @@ const Room = () => {
 
     socket.on("rankings_updated", ({ roomId: updatedRoomId, rankings }) => {
       if (roomId === updatedRoomId) {
-        if (rankings) {
-          setRankings(rankings);
-        } else {
-          fetchRankings();
-        }
+        // if (rankings) {
+        //   setRankings(rankings);
+        // } else {
+        // }
+        fetchRankings();
       }
     });
 
