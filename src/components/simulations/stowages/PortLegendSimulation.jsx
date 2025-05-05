@@ -3,29 +3,38 @@ import { useParams } from "react-router-dom";
 import { api, socket } from "../../../axios/axios";
 import { AppContext } from "../../../context/AppContext";
 import { PORT_COLORS, getPortColor } from "../../../assets/Colors";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const PortLegendSimulation = ({ compact = false }) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
-  const [portInfo, setPortInfo] = useState({
-    userPort: "",
-    receivesFrom: "",
-    sendsTo: "",
-    allPorts: [],
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  // const [portInfo, setPortInfo] = useState({
+  //   userPort: "",
+  //   receivesFrom: "",
+  //   sendsTo: "",
+  //   allPorts: [],
+  // });
   const [isExpanded, setIsExpanded] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchPortConfiguration = async () => {
-    try {
-      setIsLoading(true);
-
+  const {
+    data: portInfo = {
+      userPort: "",
+      receivesFrom: "",
+      sendsTo: "",
+      allPorts: [],
+    },
+    isLoading,
+  } = useQuery({
+    queryKey: ["portConfiguration", roomId, user?.id],
+    queryFn: async () => {
       // Get user port
       const portResponse = await api.get(`/rooms/${roomId}/user-port`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
       const userPort = portResponse.data.port;
 
       // Get room swap config
@@ -45,6 +54,7 @@ const PortLegendSimulation = ({ compact = false }) => {
       }
 
       const receivesFrom = Object.entries(swapConfig).find(([from, to]) => to === userPort)?.[0] || "Unknown";
+
       const sendsTo = swapConfig[userPort] || "Unknown";
 
       // Build the complete port route
@@ -79,35 +89,30 @@ const PortLegendSimulation = ({ compact = false }) => {
         }
       }
 
-      // No need to reverse allPorts as we're now building it in the correct order
-      setPortInfo({
+      return {
         userPort,
         receivesFrom,
         sendsTo,
         allPorts,
-      });
-    } catch (error) {
-      console.error("Error fetching port configuration:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      };
+    },
+    enabled: !!user && !!token && !!roomId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   useEffect(() => {
-    if (user && token && roomId) {
-      fetchPortConfiguration();
-    }
-
-    socket.on("port_config_updated", ({ roomId: updatedRoomId }) => {
+    const handlePortConfigUpdate = ({ roomId: updatedRoomId }) => {
       if (updatedRoomId === roomId) {
-        fetchPortConfiguration();
+        queryClient.invalidateQueries(["portConfiguration", roomId, user?.id]);
       }
-    });
+    };
+
+    socket.on("port_config_updated", handlePortConfigUpdate);
 
     return () => {
-      socket.off("port_config_updated");
+      socket.off("port_config_updated", handlePortConfigUpdate);
     };
-  }, [user, token, roomId]);
+  }, [roomId, user?.id, queryClient]);
 
   if (isLoading) {
     return (

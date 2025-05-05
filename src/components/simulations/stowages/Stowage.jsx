@@ -329,7 +329,7 @@ const Stowage = ({
             </div>
           </div>
 
-          {showGuideModal && <GuideModal onClose={() => setShowGuideModal(false)} isSimulationMode={true} />}
+          {showGuideModal && <GuideModal onClose={() => setShowGuideModal(false)} isSimulationMode={false} />}
         </div>
 
         <DragOverlay>
