@@ -14,7 +14,7 @@ import AdminCreateCards from "./pages/Admin/AdminCreateCards";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import AdminDecks from "./pages/Admin/AdminDecks";
-import RoomDetail from "./pages/Admin/RoomDetail";
+import RoomDetail from "./components/simulations/simulation_details/RoomDetail";
 import AdminCreateLayouts from "./pages/Admin/AdminCreateLayouts";
 import NotFound from "./pages/NotFound";
 import "react-toastify/dist/ReactToastify.css";

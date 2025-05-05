@@ -17,10 +17,13 @@ const WeeklyPerformance = ({
   totalMoves = 0,
   showFinancialModal,
   toggleFinancialModal,
+  userId = null,
+  isAdminView = false,
   //
 }) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
+  const effectiveUserId = isAdminView ? userId : user?.id;
   const [isLoading, setIsLoading] = useState(false);
   const [performanceData, setPerformanceData] = useState(null);
   const [selectedWeek, setSelectedWeek] = useState(currentRound);
@@ -30,11 +33,11 @@ const WeeklyPerformance = ({
   const [financialSummary, setFinancialSummary] = useState(null);
 
   useEffect(() => {
-    if (roomId && user?.id && token) {
+    if (roomId && effectiveUserId && token) {
       fetchAllWeeksData();
       fetchFinancialSummary();
     }
-  }, [roomId, user?.id, token, selectedWeek]);
+  }, [roomId, effectiveUserId, token, selectedWeek]);
 
   const handleFinancialButtonClick = () => {
     toggleFinancialModal();
@@ -54,7 +57,7 @@ const WeeklyPerformance = ({
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/rooms/${roomId}/weekly-performance-all/${user?.id}`, {
+      const response = await api.get(`/rooms/${roomId}/weekly-performance-all/${effectiveUserId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -83,7 +86,7 @@ const WeeklyPerformance = ({
 
   const fetchFinancialSummary = async () => {
     try {
-      const response = await api.get(`/ship-bays/financial-summary/${roomId}/${user?.id}`, {
+      const response = await api.get(`/ship-bays/financial-summary/${roomId}/${effectiveUserId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

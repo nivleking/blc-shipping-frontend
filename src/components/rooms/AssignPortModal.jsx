@@ -24,11 +24,11 @@ const AssignPortModal = ({ users, origins, ports, setPorts, onClose, onConfirm }
 
     // THIS IS FOR LOCAL
     // newPorts = {
-    //   1: "BPN",
-    //   2: "SBY",
-    //   3: "MDN",
+    //   // 1: "BPN",
+    //   1: "SBY",
+    //   2: "MDN",
+    //   3: "MKS",
     //   4: "JYP",
-    //   5: "MKS",
     // };
 
     setPorts(newPorts);

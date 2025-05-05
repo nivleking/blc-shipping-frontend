@@ -10,10 +10,13 @@ const CapacityUptake = ({
   currentRound,
   totalRounds,
   containers,
-  unfulfilledContainers, //
+  unfulfilledContainers,
+  userId = null,
+  isAdminView = false, //
 }) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
+  const effectiveUserId = isAdminView ? userId : user?.id;
   const [isLoading, setIsLoading] = useState(false);
   const [capacityData, setCapacityData] = useState(null);
   const [selectedWeek, setSelectedWeek] = useState(currentRound);
@@ -142,15 +145,16 @@ const CapacityUptake = ({
   }, [pointA, pointB, pointC, pointD]);
 
   useEffect(() => {
-    if (roomId && user?.id && token) {
+    if (roomId && effectiveUserId && token) {
       fetchCapacityData(selectedWeek);
     }
-  }, [roomId, user?.id, token, selectedWeek]);
+  }, [roomId, effectiveUserId, token, selectedWeek]);
 
   const fetchCapacityData = async (week) => {
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await api.get(`/capacity-uptakes/${roomId}/${user.id}/${week}`, {
+      const response = await api.get(`/capacity-uptakes/${roomId}/${effectiveUserId}/${week}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

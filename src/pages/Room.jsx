@@ -89,7 +89,10 @@ const Room = () => {
   useEffect(() => {
     socket.on("user_added", ({ roomId: receivedRoomId, newUser }) => {
       if (receivedRoomId === roomId) {
-        setUsers((prevUsers) => [...prevUsers, newUser]);
+        setUsers((prevUsers) => {
+          const userExists = prevUsers.some((existingUser) => existingUser.id === newUser.id);
+          return userExists ? prevUsers : [...prevUsers, newUser];
+        });
       }
     });
 
