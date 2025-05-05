@@ -1,9 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-const SalesCallCardPreview = ({ card, containers }) => {
+const SalesCallCardPreview = ({ card, containers, mousePosition }) => {
   const [position, setPosition] = useState({});
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (mousePosition) {
+      setPosition(mousePosition);
+      setMounted(true);
+      return;
+    }
+
+    // Otherwise, track mouse position internally
+    function updatePosition(e) {
+      setPosition({ x: e.clientX, y: e.clientY });
+    }
+
+    document.addEventListener("mousemove", updatePosition);
+    setMounted(true);
+
+    return () => {
+      document.removeEventListener("mousemove", updatePosition);
+    };
+  }, [mousePosition]);
 
   // Effect to calculate position based on mouse position
   useEffect(() => {
@@ -48,6 +68,7 @@ const SalesCallCardPreview = ({ card, containers }) => {
       style={{
         top: `${Math.max(position.y - 300, 10)}px`, // Position above cursor with a minimum top margin
         left: `${xPos}px`,
+        transition: "top 0.1s ease, left 0.1s ease",
       }}
     >
       <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-[270px]">

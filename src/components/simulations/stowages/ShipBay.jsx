@@ -1,7 +1,8 @@
 import ContainerBay from "./ContainerBay";
 import DroppableCell from "./DroppableCell";
 import DraggableContainer from "./DraggableContainer";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
+import SalesCallCardPreview from "../capacity_uptake/SalesCallCardPreview";
 
 const isValidPlacement = (droppedItems, baySize, cellId) => {
   const [type, bayIndex, cellIndex] = cellId.split("-");
@@ -31,6 +32,7 @@ const ShipBay = ({
   restowageContainers = [],
   containerDestinationsCache,
   hoveredCardId = null, //
+  hoveredCard = null, //
   onContainerHover, //
 }) => {
   // Normalize port code for consistency
@@ -87,6 +89,21 @@ const ShipBay = ({
     const container = containers.find((c) => c.id.toString() === containerInCell.id.toString());
     return container && container.card_id === hoveredCardId;
   };
+
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Track mouse position for hover preview
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
 
   return (
     <div className="p-1" style={{ height: "100%", backgroundColor: "#f0f0f0", overflowX: "auto" }}>
@@ -181,6 +198,8 @@ const ShipBay = ({
                   );
                 })}
               </ContainerBay>
+
+              {hoveredCard && <SalesCallCardPreview card={hoveredCard.card} containers={containers} mousePosition={mousePosition} />}
             </div>
           );
         })}

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import React, { useState, useEffect, useContext } from "react";
 import { api, socket } from "../axios/axios";
 import { useParams, useNavigate } from "react-router-dom";
@@ -90,53 +91,61 @@ const Simulation = () => {
   const [restowageMoves, setRestowageMoves] = useState(0);
 
   const [hoveredCardId, setHoveredCardId] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState(null);
 
-  const [financialSummary, setFinancialSummary] = useState(null);
   const [showFinancialModal, setShowFinancialModal] = useState(false);
 
-  // Add this function to fetch financial summary
-  const fetchFinancialSummary = async () => {
-    try {
-      setIsLoading(true);
-      const response = await api.get(`/ship-bays/financial-summary/${roomId}/${user.id}`, {
+  const { data: cardTemporariesData, isLoading: isLoadingCardTemporaries } = useQuery({
+    queryKey: ["cardTemporaries", roomId, deckId],
+    queryFn: async () => {
+      if (!roomId || !deckId || !token) {
+        return { cards: [] };
+      }
+
+      const response = await api.get(`card-temporary/all-cards/${roomId}/${deckId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setFinancialSummary(response.data);
-    } catch (error) {
-      console.error("Error fetching financial summary:", error);
-      showError("Failed to fetch financial data");
-    } finally {
-      setIsLoading(false);
+
+      return response.data;
+    },
+    enabled: !!roomId && !!deckId && !!token,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+
+  const allCardTemporaries = cardTemporariesData?.cards || [];
+
+  // Tambahkan function handler untuk hover container
+  const handleContainerHover = (containerId, isHovering) => {
+    if (draggingItem || isLoadingCardTemporaries) return;
+
+    if (isHovering) {
+      const container = containers.find((c) => c.id.toString() === containerId.toString());
+
+      if (container && container.card_id) {
+        setHoveredCardId(container.card_id);
+
+        const cardTemp = allCardTemporaries.find((ct) => ct.card_id?.toString() === container.card_id.toString());
+
+        if (cardTemp) {
+          setHoveredCard(cardTemp);
+        } else {
+          setHoveredCard(null);
+        }
+      }
+    } else {
+      setHoveredCardId(null);
+      setHoveredCard(null);
     }
   };
 
   // Add a function to toggle the financial modal visibility
   const toggleFinancialModal = () => {
     setSelectedTab(2);
-
-    if (!showFinancialModal) {
-      // fetchFinancialSummary();
-    }
-
     // Toggle modal visibility
     setShowFinancialModal(!showFinancialModal);
-  };
-
-  // Tambahkan function handler untuk hover container
-  const handleContainerHover = (containerId, isHovering) => {
-    if (draggingItem) return;
-
-    if (isHovering) {
-      // Cari card_id untuk container yang dihover
-      const container = containers.find((c) => c.id.toString() === containerId.toString());
-      if (container && container.card_id) {
-        setHoveredCardId(container.card_id);
-      }
-    } else {
-      setHoveredCardId(null);
-    }
   };
 
   const [selectedHistoricalWeek, setSelectedHistoricalWeek] = useState(currentRound);
@@ -1519,6 +1528,7 @@ const Simulation = () => {
                 containerDestinationsCache={containerDestinationsCache}
                 unfulfilledContainers={unfulfilledContainers}
                 hoveredCardId={hoveredCardId}
+                hoveredCard={hoveredCard}
                 onContainerHover={handleContainerHover}
                 toggleFinancialModal={toggleFinancialModal}
                 isBayFull={isBayFull}

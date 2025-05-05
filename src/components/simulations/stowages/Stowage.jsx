@@ -59,6 +59,7 @@ const Stowage = ({
   containerDestinationsCache,
   unfulfilledContainers = [],
   hoveredCardId,
+  hoveredCard,
   onContainerHover,
   toggleFinancialModal,
   isBayFull,
@@ -194,6 +195,7 @@ const Stowage = ({
                 restowageContainers={restowageContainers}
                 containerDestinationsCache={containerDestinationsCache}
                 hoveredCardId={hoveredCardId}
+                hoveredCard={hoveredCard}
                 onContainerHover={onContainerHover}
               />
             </div>
@@ -289,6 +291,7 @@ const Stowage = ({
                     containerDestinationsCache={containerDestinationsCache}
                     onContainerHover={onContainerHover}
                     hoveredCardId={hoveredCardId}
+                    hoveredCard={hoveredCard}
                     unfulfilledContainers={unfulfilledContainers}
                   />
                 </div>
