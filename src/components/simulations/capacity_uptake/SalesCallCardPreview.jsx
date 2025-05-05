@@ -31,7 +31,7 @@ const SalesCallCardPreview = ({ card, containers, mousePosition }) => {
       // Position the card above the cursor, centered horizontally
       setPosition({
         x: e.clientX,
-        y: e.clientY - 20,
+        y: e.clientY - 80,
       });
     }
 
@@ -68,7 +68,7 @@ const SalesCallCardPreview = ({ card, containers, mousePosition }) => {
       style={{
         top: `${Math.max(position.y - 300, 10)}px`, // Position above cursor with a minimum top margin
         left: `${xPos}px`,
-        transition: "top 0.1s ease, left 0.1s ease",
+        // transition: "top 0.1s ease, left 0.1s ease",
       }}
     >
       <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-[270px]">
