@@ -21,7 +21,7 @@ const PenaltyTable = ({ penalties = {}, onPenaltyChange }) => {
   const safePenalties = penalties || {};
   return (
     <div className="bg-red-50 rounded-lg shadow-sm p-4 mb-2">
-      <h3 className="text-sm font-semibold text-red-800 mb-3">Unrolled Container Penalties</h3>
+      <h3 className="text-sm font-semibold text-red-800 mb-3">Rolled Container Penalties</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-red-200">
           <thead className="bg-red-100">

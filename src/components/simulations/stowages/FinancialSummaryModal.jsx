@@ -92,7 +92,7 @@ const FinancialSummaryModal = ({
               <th className="px-2 py-1.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b border-r">Container Type</th>
               <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b border-r w-1/5">
                 <div className="flex flex-col items-center">
-                  <span className="bg-red-100 text-red-800 px-1.5 rounded text-[9px] w-full text-center">Unrolled</span>
+                  <span className="bg-red-100 text-red-800 px-1.5 rounded text-[9px] w-full text-center">Rolled</span>
                 </div>
               </th>
               <th className="px-2 py-1.5 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b border-r w-1/5">
@@ -238,7 +238,7 @@ const FinancialSummaryModal = ({
                       <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
-                      Unrolled Penalty Rates
+                      Rolled Penalty Rates
                     </h4>
                   </div>
                   <table className="min-w-full text-sm">
@@ -362,7 +362,7 @@ const FinancialSummaryModal = ({
                                 clipRule="evenodd"
                               />
                             </svg>
-                            Unrolled Cards
+                            Rolled Cards
                           </div>
                         </td>
                         <td className="px-3 py-2 text-[10px] text-center text-gray-500 border-r">{unrolled_container_counts.total}</td>

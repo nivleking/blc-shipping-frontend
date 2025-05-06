@@ -167,7 +167,16 @@ const OrderProcessing = ({
                 return (
                   <tr key={card.id} className={`${isHovered ? highlightColor : baseColor} relative transition-colors duration-150`} onMouseEnter={() => setHoveredCard(card)} onMouseLeave={() => setHoveredCard(null)}>
                     <td className="px-2 py-1 whitespace-nowrap text-xs text-center font-medium border">{card.id}</td>
-                    <td className={`px-2 py-1 whitespace-nowrap text-xs text-center border ${card.status === "accepted" ? "text-green-600" : "text-red-600"}`}>{card.status === "accepted" ? "Accepted" : "Rejected"}</td>
+                    <td className={`px-2 py-1 whitespace-nowrap text-xs text-center border ${card.status === "accepted" ? "text-green-600" : "text-red-600"}`}>
+                      {card.status === "accepted" ? (
+                        "Accepted"
+                      ) : (
+                        <div>
+                          <div>Rejected</div>
+                          <div className="text-[8px] italic mt-0.5 font-medium">Rolled Container</div>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-2 py-1 whitespace-nowrap text-xs text-center border">
                       {card.priority}
                       {card.isBacklog ? " (Backlog)" : ""}

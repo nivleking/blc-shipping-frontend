@@ -17,10 +17,13 @@ const WeeklyPerformance = ({
   totalMoves = 0,
   showFinancialModal,
   toggleFinancialModal,
+  userId = null,
+  isAdminView = false,
   //
 }) => {
   const { roomId } = useParams();
   const { user, token } = useContext(AppContext);
+  const effectiveUserId = isAdminView ? userId : user?.id;
   const [isLoading, setIsLoading] = useState(false);
   const [performanceData, setPerformanceData] = useState(null);
   const [selectedWeek, setSelectedWeek] = useState(currentRound);
@@ -30,11 +33,11 @@ const WeeklyPerformance = ({
   const [financialSummary, setFinancialSummary] = useState(null);
 
   useEffect(() => {
-    if (roomId && user?.id && token) {
+    if (roomId && effectiveUserId && token) {
       fetchAllWeeksData();
       fetchFinancialSummary();
     }
-  }, [roomId, user?.id, token, selectedWeek]);
+  }, [roomId, effectiveUserId, token, selectedWeek]);
 
   const handleFinancialButtonClick = () => {
     toggleFinancialModal();
@@ -54,7 +57,7 @@ const WeeklyPerformance = ({
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/rooms/${roomId}/weekly-performance-all/${user?.id}`, {
+      const response = await api.get(`/rooms/${roomId}/weekly-performance-all/${effectiveUserId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -83,7 +86,7 @@ const WeeklyPerformance = ({
 
   const fetchFinancialSummary = async () => {
     try {
-      const response = await api.get(`/ship-bays/financial-summary/${roomId}/${user?.id}`, {
+      const response = await api.get(`/ship-bays/financial-summary/${roomId}/${effectiveUserId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -194,7 +197,7 @@ const WeeklyPerformance = ({
                   <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  Unrolled Penalty Rates
+                  Rolled Penalty Rates
                 </h4>
               </div>
               <table className="min-w-full text-sm">
@@ -277,7 +280,7 @@ const WeeklyPerformance = ({
                 </th>
                 {/* Unrolled Heading Group */}
                 <th colSpan="4" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">
-                  Unrolled
+                  Rolled
                 </th>
                 {/* Dock Warehouse Heading Group */}
                 <th colSpan="4" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">
@@ -326,7 +329,7 @@ const WeeklyPerformance = ({
                   Moves
                 </th>
                 <th rowSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-red-50">
-                  Unrolled
+                  Rolled
                 </th>
                 <th rowSpan="2" className="px-3 py-1 text-center text-xs font-medium text-gray-700 uppercase border bg-blue-50">
                   Dock Werehouse

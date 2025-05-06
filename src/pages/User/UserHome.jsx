@@ -76,8 +76,8 @@ const UserHome = () => {
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="px-8 py-12">
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Welcome Back!</h2>
-            <p className="text-xl text-gray-600 mb-8">{user?.name || user?.email}</p>
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Welcome Back!</h2>
+            <p className="text-1xl text-gray-600 mb-8">{user?.name}</p>
           </div>
 
           <form onSubmit={handleJoinRoom} className="space-y-6">

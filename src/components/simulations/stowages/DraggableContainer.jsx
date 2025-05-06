@@ -105,7 +105,9 @@ const DraggableContainer = React.memo(
 
     const handleMouseLeave = () => {
       if (isDragging) return;
-      if (onHover) onHover(id, false);
+      if (onHover) {
+        onHover(id, false);
+      }
       if (tooltipContent) setShowTooltip(false);
     };
 

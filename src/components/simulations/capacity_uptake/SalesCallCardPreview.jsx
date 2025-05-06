@@ -1,29 +1,51 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 
-const SalesCallCardPreview = ({ card, containers }) => {
+const SalesCallCardPreview = ({ card, containers, mousePosition, isDragging }) => {
   const [position, setPosition] = useState({});
   const [mounted, setMounted] = useState(false);
+  const previewRef = useRef(null);
+  const timeoutRef = useRef(null);
 
-  // Effect to calculate position based on mouse position
+  // Consolidate mouse position tracking
   useEffect(() => {
+    if (isDragging) return;
+
+    // Function to handle mouse movement with throttling
+    let lastUpdate = 0;
+    const THROTTLE_MS = 50; // Only update every 50ms
+
     function updatePosition(e) {
-      // Position the card above the cursor, centered horizontally
-      setPosition({
-        x: e.clientX,
-        y: e.clientY - 20,
-      });
+      const now = Date.now();
+      if (now - lastUpdate > THROTTLE_MS) {
+        const x = e.clientX;
+        const y = Math.max(e.clientY - 320, 10); // Position well above cursor
+        setPosition({ x, y });
+        lastUpdate = now;
+      }
     }
 
-    document.addEventListener("mousemove", updatePosition);
-    setMounted(true);
+    // Use existing mousePosition if provided, otherwise track mouse
+    if (mousePosition) {
+      setPosition(mousePosition);
+    } else {
+      document.addEventListener("mousemove", updatePosition);
+    }
+
+    // Set mounted with a slight delay to avoid flicker
+    if (!mounted) {
+      timeoutRef.current = setTimeout(() => setMounted(true), 50);
+    }
 
     return () => {
       document.removeEventListener("mousemove", updatePosition);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, []);
+  }, [mousePosition, isDragging, mounted]);
 
-  if (!card) return null;
+  if (!card || isDragging) {
+    return null;
+  }
 
   // Format revenue as IDR
   const formatIDR = (value) => {
@@ -44,14 +66,18 @@ const SalesCallCardPreview = ({ card, containers }) => {
   // Render the card in a portal
   return createPortal(
     <div
+      ref={previewRef}
       className="fixed z-[9999] pointer-events-none"
       style={{
         top: `${Math.max(position.y - 300, 10)}px`, // Position above cursor with a minimum top margin
         left: `${xPos}px`,
+        transition: "transform 0.1s ease-out",
+        transform: "translate3d(0,0,0)", // Force hardware acceleration
+        willChange: "transform", // Optimize for animations
       }}
     >
       <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-[270px]">
-        {/* Indicator if this is a backlog committed card */}
+        {/* Rest of your card content remains the same */}
         {isBacklog && (
           <div className="mb-2 p-1.5 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-center">
@@ -64,6 +90,7 @@ const SalesCallCardPreview = ({ card, containers }) => {
         )}
 
         <table className="min-w-full divide-y divide-gray-200 text-[9px]">
+          {/* Table content remains the same */}
           <tbody>
             <tr className="font-bold">
               <td>{card.origin}</td>
@@ -121,8 +148,6 @@ const SalesCallCardPreview = ({ card, containers }) => {
                         className="p-1 border border-dashed border-gray-300 rounded text-center text-[6px]"
                         style={{
                           backgroundColor: container.color,
-                          backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 0.5px, black 1px, black 1px)",
-                          backgroundSize: "8px 8px",
                           color: container.color === "yellow" ? "black" : "white",
                         }}
                       >
