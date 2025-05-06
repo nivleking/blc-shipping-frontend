@@ -119,21 +119,19 @@ const Simulation = () => {
 
   // Tambahkan function handler untuk hover container
   const handleContainerHover = (containerId, isHovering) => {
-    if (draggingItem || isLoadingCardTemporaries) return;
+    // Don't show preview if currently dragging anything
+    if (draggingItem !== null) {
+      return;
+    }
 
     if (isHovering) {
+      // Find the container object
       const container = containers.find((c) => c.id.toString() === containerId.toString());
-
       if (container && container.card_id) {
+        // Find the associated card
+        const card = allCardTemporaries.find((c) => c.card_id === container.card_id);
         setHoveredCardId(container.card_id);
-
-        const cardTemp = allCardTemporaries.find((ct) => ct.card_id?.toString() === container.card_id.toString());
-
-        if (cardTemp) {
-          setHoveredCard(cardTemp);
-        } else {
-          setHoveredCard(null);
-        }
+        setHoveredCard(card);
       }
     } else {
       setHoveredCardId(null);
@@ -921,9 +919,9 @@ const Simulation = () => {
       }
     }
 
-    setHoveredCardId(null);
-
     setDraggingItem(event.active.id);
+    setHoveredCardId(null);
+    setHoveredCard(null);
   };
 
   const checkAbove = (droppedItems, baySize, targetArea) => {
@@ -1122,6 +1120,7 @@ const Simulation = () => {
                 count: 1,
                 bay_index: sourceBayIndex,
                 container_id: active.id,
+                isLog: true,
               });
 
               // Request updated stats

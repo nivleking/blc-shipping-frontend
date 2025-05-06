@@ -199,7 +199,14 @@ const ShipBay = ({
                 })}
               </ContainerBay>
 
-              {hoveredCard && <SalesCallCardPreview card={hoveredCard.card} containers={containers} mousePosition={mousePosition} />}
+              {hoveredCard && (
+                <SalesCallCardPreview
+                  card={hoveredCard.card}
+                  containers={containers}
+                  mousePosition={mousePosition} 
+                  isDragging={draggingItem !== null} //
+                />
+              )}
             </div>
           );
         })}

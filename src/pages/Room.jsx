@@ -33,6 +33,7 @@ const Room = () => {
   const [currentRound, setCurrentRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(1);
   const [showStartConfirmation, setShowStartConfirmation] = useState(false);
+  const [showEndConfirmation, setShowEndConfirmation] = useState(false);
   const [missingUsersCount, setMissingUsersCount] = useState(0);
   const [room, setRoom] = useState({});
 
@@ -295,8 +296,9 @@ const Room = () => {
   };
 
   async function endSimulation() {
-    if (currentRound <= totalRounds) {
-      showError(`Simulation can only be ended after the final discharging phase (Week ${totalRounds + 1})`);
+    if (currentRound < totalRounds) {
+      // showError(`Simulation can only be ended after the final discharging phase (Week ${totalRounds + 1})`);
+      showError(`Simulation can only be ended at week ${totalRounds}`);
       return;
     }
 
@@ -777,20 +779,26 @@ const Room = () => {
 
                 {/* End Simulation Button */}
                 <button
-                  onClick={endSimulation}
-                  disabled={currentRound <= totalRounds}
+                  onClick={() => {
+                    if (currentRound >= totalRounds) {
+                      setShowEndConfirmation(true); // Show confirmation instead of ending directly
+                    } else {
+                      showError(`Simulation can only be ended at week ${totalRounds}`);
+                    }
+                  }}
+                  disabled={currentRound < totalRounds}
                   className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-md transition-all duration-200 ${
-                    currentRound > totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    currentRound >= totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   }`}
-                  title={currentRound <= totalRounds ? `Can only end simulation after the final discharging phase (Week ${totalRounds + 1})` : "End simulation"}
+                  title={currentRound < totalRounds ? `Can only end simulation after the final discharging phase (Week ${totalRounds + 1})` : "End simulation"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
                   </svg>
                   END
-                  {currentRound <= totalRounds && (
+                  {currentRound == totalRounds && (
                     <span className="text-xs ml-1">
-                      (Week {currentRound}/{totalRounds + 1})
+                      (Week {currentRound}/{totalRounds})
                     </span>
                   )}
                 </button>
@@ -934,6 +942,42 @@ const Room = () => {
                 className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
               >
                 Start Simulation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEndConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl p-6 shadow-2xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">End Simulation</h3>
+
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-red-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="text-sm text-red-700">
+                  <span className="font-medium">Warning:</span> This action will permanently end the simulation for all participants. This cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-gray-600 mb-6">Are you sure you want to end this simulation?</p>
+
+            <div className="flex justify-end space-x-2 text-sm">
+              <button onClick={() => setShowEndConfirmation(false)} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowEndConfirmation(false);
+                  endSimulation();
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+              >
+                End Simulation
               </button>
             </div>
           </div>
