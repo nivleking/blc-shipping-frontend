@@ -1,63 +1,54 @@
-import { useState, useEffect, useContext } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { api } from "../../../axios/axios";
+import { api } from "../../axios/axios";
 import { AiOutlineArrowLeft } from "react-icons/ai";
-import { AppContext } from "../../../context/AppContext";
-import { PORT_COLORS, getPortColor } from "../../../assets/Colors";
-import LeaderboardPanel from "./LeaderboardPanel";
-import MarketIntelligencePanel from "./MarketIntelligencePanel";
-import CapacityUptakePanel from "./CapacityUptakePanel";
-import WeeklyPerformancePanel from "./WeeklyPerformancePanel";
-import StowageLogPanel from "./StowageLogPanel";
+import { AppContext } from "../../context/AppContext";
 import { useQuery } from "@tanstack/react-query";
+import LeaderboardPanel from "../simulations/simulation_details/LeaderboardPanel";
+import CapacityUptakePanel from "../simulations/simulation_details/CapacityUptakePanel";
+import StowageLogPanel from "../simulations/simulation_details/StowageLogPanel";
+import WeeklyPerformancePanel from "../simulations/simulation_details/WeeklyPerformancePanel";
+import MarketIntelligencePanel from "../simulations/simulation_details/MarketIntelligencePanel";
+import LoadingSpinner from "../simulations/LoadingSpinner";
 
-const formatIDR = (value) => {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-  }).format(value);
-};
-
-const RoomDetail = () => {
+const PreviousSimulationDetail = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  const { token } = useContext(AppContext);
+  const { token, user } = useContext(AppContext);
   const [room, setRoom] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Add container query here
-  const containersQuery = useQuery({
+  // Fetch room details
+  const { data: roomData, isLoading: isLoadingRoom } = useQuery({
+    queryKey: ["roomDetail", roomId],
+    queryFn: async () => {
+      const response = await api.get(`/rooms/${roomId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    },
+    enabled: !!roomId && !!token,
+  });
+
+  // Fetch containers for the room
+  const { data: containersData, isLoading: isLoadingContainers } = useQuery({
     queryKey: ["roomContainers", roomId],
     queryFn: async () => {
       const response = await api.get(`/rooms/${roomId}/containers`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data; // Returns array of containers
+      return response.data;
     },
     enabled: !!roomId && !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
-    const fetchRoomDetails = async () => {
-      try {
-        setIsLoading(true);
-        const response = await api.get(`/rooms/${roomId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setRoom(response.data);
-      } catch (error) {
-        console.error("Error fetching room details:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (roomId && token) {
-      fetchRoomDetails();
+    if (roomData) {
+      setRoom(roomData);
     }
-  }, [roomId, token]);
+  }, [roomData]);
+
+  const isLoading = isLoadingRoom || isLoadingContainers;
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
@@ -65,7 +56,7 @@ const RoomDetail = () => {
         {/* Header */}
         <div className="flex justify-between items-center bg-white rounded-xl shadow-lg p-4 mb-4">
           <div className="flex items-center">
-            <button onClick={() => navigate("/admin-home")} className="p-2 rounded-full hover:bg-gray-100">
+            <button onClick={() => navigate("/previous-simulations")} className="p-2 rounded-full hover:bg-gray-100">
               <AiOutlineArrowLeft size={20} />
             </button>
             {isLoading ? (
@@ -142,7 +133,7 @@ const RoomDetail = () => {
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
               ) : (
-                <CapacityUptakePanel roomId={roomId} totalRounds={room.total_rounds} containers={containersQuery.data} isAdminView={true} />
+                <CapacityUptakePanel roomId={roomId} totalRounds={room.total_rounds} containers={containersData} userId={user.id} isAdminView={false} />
               )}
             </TabPanel>
 
@@ -152,16 +143,23 @@ const RoomDetail = () => {
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
               ) : (
-                <StowageLogPanel roomId={roomId} totalRounds={room?.total_rounds} bayTypes={room?.bay_types} containers={containersQuery.data} isAdminView={true} />
+                <StowageLogPanel
+                  roomId={roomId}
+                  totalRounds={room?.total_rounds}
+                  bayTypes={room?.bay_types}
+                  containers={containersData}
+                  userId={user.id} // Force to only show current user's data
+                />
               )}
             </TabPanel>
+
             <TabPanel>
               {isLoading ? (
                 <div className="w-full flex justify-center p-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
               ) : (
-                <WeeklyPerformancePanel totalRounds={room.total_rounds} roomId={roomId} isAdminView={true} />
+                <WeeklyPerformancePanel totalRounds={room.total_rounds} roomId={roomId} userId={user.id} isAdminView={false} />
               )}
             </TabPanel>
 
@@ -175,4 +173,4 @@ const RoomDetail = () => {
   );
 };
 
-export default RoomDetail;
+export default PreviousSimulationDetail;

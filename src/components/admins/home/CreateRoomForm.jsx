@@ -723,7 +723,7 @@ const CreateRoomForm = ({ token, decks, layouts, availableUsers, setRooms, refre
         <div className="flex flex-col lg:col-span-3 border border-amber-200 rounded-lg p-4 bg-amber-50">
           <div className="flex items-center justify-between pb-2 border-b border-amber-200 mb-3">
             <div className="flex items-center">
-              <label className="block text-amber-800 font-semibold">Unrolled Container Penalties</label>
+              <label className="block text-amber-800 font-semibold">Rolled Container Penalties</label>
               <Tooltip>Penalties for containers that aren't loaded by their committed deadline (from Market Intelligence)</Tooltip>
             </div>
             <Link
