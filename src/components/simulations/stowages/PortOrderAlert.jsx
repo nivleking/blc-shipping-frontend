@@ -1,52 +1,50 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import { getPortColor } from "../../../assets/Colors";
 import { api, socket } from "../../../axios/axios";
 import { useParams } from "react-router-dom";
 import { AppContext } from "../../../context/AppContext";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const PortOrderAlert = ({ currentPort }) => {
   const { roomId } = useParams();
   const { token } = useContext(AppContext);
-  const [portSequence, setPortSequence] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  // Function to fetch port sequence
-  const fetchPortSequence = async () => {
-    if (!currentPort || !roomId) return;
+  // Use React Query for fetching port sequence
+  const {
+    data: portSequence = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["portSequence", roomId, currentPort],
+    queryFn: async () => {
+      if (!currentPort || !roomId) return [];
 
-    try {
-      setIsLoading(true);
       const response = await api.get(`/rooms/${roomId}/port-sequence/${currentPort}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setPortSequence(response.data.recommended_stacking_order || []);
-    } catch (error) {
-      console.error("Error fetching port sequence:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return response.data.recommended_stacking_order || [];
+    },
+    enabled: !!currentPort && !!roomId && !!token,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  // Fetch on mount and when port changes
+  // Listen for port_config_updated events to invalidate cache
   useEffect(() => {
-    if (currentPort && roomId && token) {
-      fetchPortSequence();
-    }
-  }, [currentPort, roomId, token]);
-
-  // Listen for port_config_updated events
-  useEffect(() => {
-    socket.on("port_config_updated", ({ roomId: updatedRoomId }) => {
+    const handlePortConfigUpdate = ({ roomId: updatedRoomId }) => {
       if (updatedRoomId === roomId) {
-        fetchPortSequence();
+        queryClient.invalidateQueries(["portSequence", roomId, currentPort]);
       }
-    });
+    };
+
+    socket.on("port_config_updated", handlePortConfigUpdate);
 
     return () => {
-      socket.off("port_config_updated");
+      socket.off("port_config_updated", handlePortConfigUpdate);
     };
-  }, [roomId, currentPort]);
+  }, [roomId, currentPort, queryClient]);
 
   if (isLoading || !currentPort || !portSequence || portSequence.length === 0) {
     return null;

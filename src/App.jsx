@@ -14,12 +14,13 @@ import AdminCreateCards from "./pages/Admin/AdminCreateCards";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import AdminDecks from "./pages/Admin/AdminDecks";
-import RoomDetail from "./pages/Admin/RoomDetail";
+import RoomDetail from "./components/simulations/simulation_details/RoomDetail";
 import AdminCreateLayouts from "./pages/Admin/AdminCreateLayouts";
 import NotFound from "./pages/NotFound";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import PreviousSimulations from "./components/users/PreviousSimulations";
+import PreviousSimulationDetail from "./components/users/PreviousSimulationDetail";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -80,64 +81,105 @@ const App = () => {
             }
           />
 
+          <Route
+            path="/previous-simulations/:roomId/detail"
+            element={
+              user ? (
+                <UserLayout>
+                  <PreviousSimulationDetail />
+                </UserLayout>
+              ) : (
+                <Login />
+              )
+            }
+          />
+
           {/* Admin Routes */}
           <Route
             path="/admin-home"
             element={
-              <AdminLayout>
-                <AdminHome />
-              </AdminLayout>
+              user ? (
+                <AdminLayout>
+                  <AdminHome />
+                </AdminLayout>
+              ) : (
+                <Login />
+              )
             }
           />
           <Route
             path="/admin-create-admin"
             element={
-              <AdminLayout>
-                <AdminCreateAdmin />
-              </AdminLayout>
+              user ? (
+                <AdminLayout>
+                  <AdminCreateAdmin />
+                </AdminLayout>
+              ) : (
+                <Login />
+              )
             }
           />
           <Route
             path="/admin-create-user"
             element={
-              <AdminLayout>
-                <AdminCreateUser />
-              </AdminLayout>
+              user ? (
+                <AdminLayout>
+                  <AdminCreateUser />
+                </AdminLayout>
+              ) : (
+                <Login />
+              )
             }
           />
           <Route
             path="/admin-create-sales-call-cards/:deckId"
             element={
-              <AdminLayout>
-                <AdminCreateCards />
-              </AdminLayout>
+              user ? (
+                <AdminLayout>
+                  <AdminCreateCards />
+                </AdminLayout>
+              ) : (
+                <Login />
+              )
             }
           />
 
           <Route
             path="/admin-decks"
             element={
-              <AdminLayout>
-                <AdminDecks />
-              </AdminLayout>
+              user ? (
+                <AdminLayout>
+                  <AdminDecks />
+                </AdminLayout>
+              ) : (
+                <Login />
+              )
             }
           />
 
           <Route
             path="/rooms/:roomId/detail"
             element={
-              <AdminLayout>
-                <RoomDetail />
-              </AdminLayout>
+              user ? (
+                <AdminLayout>
+                  <RoomDetail />
+                </AdminLayout>
+              ) : (
+                <Login />
+              )
             }
           />
 
           <Route
             path="/bay-layouts"
             element={
-              <AdminLayout>
-                <AdminCreateLayouts />
-              </AdminLayout>
+              user ? (
+                <AdminLayout>
+                  <AdminCreateLayouts />
+                </AdminLayout>
+              ) : (
+                <Login />
+              )
             }
           />
         </Routes>

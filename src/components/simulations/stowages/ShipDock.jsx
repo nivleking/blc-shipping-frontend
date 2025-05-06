@@ -3,6 +3,7 @@ import ContainerDock from "./ContainerDock";
 import DroppableCell from "./DroppableCell";
 import DraggableContainer from "./DraggableContainer";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import SalesCallCardPreview from "../capacity_uptake/SalesCallCardPreview";
 import { BiErrorCircle } from "react-icons/bi";
 import Tooltip from "../../Tooltip";
 
@@ -16,6 +17,7 @@ const ShipDock = ({
   draggingTargetContainer,
   containerDestinationsCache,
   hoveredCardId,
+  hoveredCard,
   onContainerHover,
   unfulfilledContainers = {}, //
 }) => {
@@ -100,6 +102,21 @@ const ShipDock = ({
   // Total stats for informational purposes
   const totalContainers = dockItems.length;
   const visibleGridCapacity = visibleSize.rows * visibleSize.columns;
+
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Track mouse position for hover preview
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
 
   // Auto-navigate to first page with containers if current page is empty
   useEffect(() => {
@@ -383,6 +400,15 @@ const ShipDock = ({
             />
           ))}
         </div>
+      )}
+
+      {hoveredCard && (
+        <SalesCallCardPreview
+          card={hoveredCard.card}
+          containers={containers}
+          mousePosition={mousePosition}
+          isDragging={draggingItem !== null} //
+        />
       )}
     </div>
   );

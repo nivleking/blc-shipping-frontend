@@ -13,7 +13,7 @@ const formatPrice = (price) => {
 
 const PenaltyTable = ({ penalties = {} }) => (
   <div className="bg-red-50 rounded-lg shadow-sm p-3 w-full lg:max-w-md">
-    <h3 className="text-sm font-semibold text-red-800 mb-2">Unrolled Container Penalties</h3>
+    <h3 className="text-sm font-semibold text-red-800 mb-2">Rolled Container Penalties</h3>
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-red-200">
         <thead className="bg-red-100">
