@@ -64,12 +64,14 @@ const PreviousSimulationDetail = () => {
               <div className="ml-4 animate-pulse h-6 w-40 bg-gray-200 rounded"></div>
             ) : (
               <div className="ml-4">
-                <h1 className="text-lg font-bold">{room?.name || "Room Detail"}</h1>
-                <p className="text-sm text-gray-500">{room?.description || ""}</p>
+                <h1 className="text-lg font-bold">{room?.id || ""}</h1>
+                <p className="text-sm text-gray-500">
+                  {room?.name || ""} - {room?.description || ""}
+                </p>
               </div>
             )}
           </div>
-          {!isLoading && room && <div className="bg-blue-50 px-3 py-1 rounded-full text-xs font-medium text-blue-700">{room.status === "finished" ? "SIMULATION COMPLETED!" : room.status.toUpperCase()}</div>}
+          {!isLoading && room && <div className="bg-blue-50 px-3 py-1 rounded-full text-xs font-medium text-blue-700">{room?.status === "finished" ? "SIMULATION COMPLETED!" : room?.status.toUpperCase()}</div>}
         </div>
 
         {/* Main Content */}
@@ -82,14 +84,6 @@ const PreviousSimulationDetail = () => {
               }
             >
               Description
-            </Tab>
-            <Tab
-              className={({ selected }) =>
-                `w-full rounded-lg py-2.5 text-xs font-medium leading-5 
-              ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
-              }
-            >
-              Leaderboard
             </Tab>
             <Tab
               className={({ selected }) =>
@@ -141,17 +135,7 @@ const PreviousSimulationDetail = () => {
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
               ) : (
-                <LeaderboardPanel roomId={roomId} />
-              )}
-            </TabPanel>
-
-            <TabPanel>
-              {isLoading ? (
-                <div className="w-full flex justify-center p-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
-              ) : (
-                <CapacityUptakePanel roomId={roomId} totalRounds={room.total_rounds} containers={containersData} userId={user.id} isAdminView={false} />
+                <CapacityUptakePanel roomId={roomId} totalRounds={room?.total_rounds} containers={containersData} userId={user.id} isAdminView={false} />
               )}
             </TabPanel>
 
@@ -177,7 +161,7 @@ const PreviousSimulationDetail = () => {
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
               ) : (
-                <WeeklyPerformancePanel totalRounds={room.total_rounds} roomId={roomId} userId={user.id} isAdminView={false} />
+                <WeeklyPerformancePanel totalRounds={room?.total_rounds} roomId={roomId} userId={user.id} isAdminView={false} />
               )}
             </TabPanel>
 
