@@ -9,6 +9,7 @@ import LeaderboardPanel from "../simulations/simulation_details/LeaderboardPanel
 import CapacityUptakePanel from "../simulations/simulation_details/CapacityUptakePanel";
 import StowageLogPanel from "../simulations/simulation_details/StowageLogPanel";
 import WeeklyPerformancePanel from "../simulations/simulation_details/WeeklyPerformancePanel";
+import DescriptionPanel from "../simulations/simulation_details/DescriptionPanel";
 import MarketIntelligencePanel from "../simulations/simulation_details/MarketIntelligencePanel";
 import LoadingSpinner from "../simulations/LoadingSpinner";
 
@@ -77,6 +78,14 @@ const PreviousSimulationDetail = () => {
             <Tab
               className={({ selected }) =>
                 `w-full rounded-lg py-2.5 text-xs font-medium leading-5 
+    ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+              }
+            >
+              Description
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-xs font-medium leading-5 
               ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
@@ -117,6 +126,15 @@ const PreviousSimulationDetail = () => {
           </TabList>
 
           <TabPanels>
+            <TabPanel>
+              {isLoading ? (
+                <div className="w-full flex justify-center p-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <DescriptionPanel room={room} roomId={roomId} />
+              )}
+            </TabPanel>
             <TabPanel>
               {isLoading ? (
                 <div className="w-full flex justify-center p-12">

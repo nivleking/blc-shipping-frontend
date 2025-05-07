@@ -10,6 +10,7 @@ import MarketIntelligencePanel from "./MarketIntelligencePanel";
 import CapacityUptakePanel from "./CapacityUptakePanel";
 import WeeklyPerformancePanel from "./WeeklyPerformancePanel";
 import StowageLogPanel from "./StowageLogPanel";
+import DescriptionPanel from "./DescriptionPanel"; // Import the new component
 import { useQuery } from "@tanstack/react-query";
 
 const formatIDR = (value) => {
@@ -89,6 +90,14 @@ const RoomDetail = () => {
               ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
+              Description
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-xs font-medium leading-5 
+              ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+              }
+            >
               Leaderboard
             </Tab>
             <Tab
@@ -126,6 +135,15 @@ const RoomDetail = () => {
           </TabList>
 
           <TabPanels>
+            <TabPanel>
+              {isLoading ? (
+                <div className="w-full flex justify-center p-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <DescriptionPanel room={room} roomId={roomId} />
+              )}
+            </TabPanel>
             <TabPanel>
               {isLoading ? (
                 <div className="w-full flex justify-center p-12">
