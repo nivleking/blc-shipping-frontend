@@ -138,39 +138,6 @@ const BayStatisticsTable = ({
                 ))}
               </tr>
 
-              {/* Restowage Containers Row */}
-              <tr>
-                <td className="px-1 py-1 font-medium border border-gray-200 sticky left-0 bg-white z-10">Restow Containers</td>
-                {bayNumbers.map((_, index) => (
-                  <td key={`restowage-containers-${index}`} className="px-1 py-1 text-center border border-gray-200">
-                    {displayData.bayMoves[index]?.restowage_container_count || 0}
-                  </td>
-                ))}
-              </tr>
-
-              {/* Restowage Moves Row */}
-              <tr>
-                <td className="px-1 py-1 font-medium border border-gray-200 sticky left-0 bg-white z-10">Restow Moves</td>
-                {bayNumbers.map((_, index) => (
-                  <td key={`restowage-moves-${index}`} className="px-1 py-1 text-center border border-gray-200">
-                    {displayData.bayMoves[index]?.restowage_moves || 0}
-                  </td>
-                ))}
-              </tr>
-
-              {/* Total Moves Row */}
-              <tr className="bg-gray-50">
-                <td className="px-1 py-1 font-medium border border-gray-200 sticky left-0 bg-gray-50 z-10">Total Moves</td>
-                {bayNumbers.map((_, index) => {
-                  const totalBayMoves = (displayData.bayMoves[index]?.discharge_moves || 0) + (displayData.bayMoves[index]?.load_moves || 0);
-                  return (
-                    <td key={`total-${index}`} className="px-1 py-1 text-center font-medium border border-gray-200">
-                      {totalBayMoves}
-                    </td>
-                  );
-                })}
-              </tr>
-
               {/* Bay-Pair Row */}
               {/* <tr className="bg-blue-50">
                 <td className="px-1 py-1 font-medium border border-gray-200 sticky left-0 bg-blue-50 z-10">Bay-Pair</td>

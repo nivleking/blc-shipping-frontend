@@ -1192,16 +1192,46 @@ const Simulation = () => {
 
     showSuccess("Container placed successfully!");
 
-    const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
-      return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
-        return Array.from({ length: baySize.columns }).map((_, colIndex) => {
-          const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
-          const item = updatedDroppedItems.find((item) => item.area === cellId);
-          return item ? item.id : null;
-        });
-      });
-    });
-    setBayData(newBayData);
+    const newBayData = [];
+    for (let bayIdx = 0; bayIdx < bayCount; bayIdx++) {
+      for (let rowIdx = 0; rowIdx < baySize.rows; rowIdx++) {
+        for (let colIdx = 0; colIdx < baySize.columns; colIdx++) {
+          const cellId = `bay-${bayIdx}-${rowIdx * baySize.columns + colIdx}`;
+          const containerItem = updatedDroppedItems.find((item) => item.area === cellId);
+          if (containerItem) {
+            const containerObj = containers.find((c) => c.id === containerItem.id);
+            if (containerObj) {
+              newBayData.push({
+                bay: bayIdx,
+                row: rowIdx,
+                col: colIdx,
+                id: containerItem.id,
+                cardId: containerObj.card_id,
+                type: containerObj.type || "dry",
+                origin: containerObj.origin,
+                destination: containerObj.destination,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const flatBayData = {
+      containers: newBayData.map((item) => ({
+        id: item.id,
+        position: item.bay * baySize.rows * baySize.columns + item.row * baySize.columns + item.col,
+        bay: item.bay,
+        row: item.row,
+        col: item.col,
+        type: item.type,
+        cardId: item.cardId,
+        origin: item.origin,
+        destination: item.destination,
+      })),
+      totalContainers: newBayData.length,
+    };
+    setBayData(flatBayData);
 
     const dockItems = updatedDroppedItems
       .filter((item) => item.area && item.area.startsWith("docks-"))
@@ -1238,7 +1268,7 @@ const Simulation = () => {
 
       try {
         const resBay = await api.post("/ship-bays", {
-          arena: newBayData,
+          arena: flatBayData,
           user_id: user.id,
           room_id: roomId,
           moved_container: {
