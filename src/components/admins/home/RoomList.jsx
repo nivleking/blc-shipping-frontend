@@ -173,14 +173,10 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
 
               {/* Right section with action buttons */}
               <div className="flex flex-col space-y-1 sm:mt-0 min-w-[120px]">
-                {room.status === "finished" && (
-                  <button
-                    onClick={() => navigate(`/rooms/${room.id}/detail`)}
-                    className="inline-flex items-center px-4 py-2 border border-indigo-300 rounded-md shadow-sm text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
-                  >
-                    <AiFillEye className="mr-2 h-4 w-4" /> View
-                  </button>
-                )}
+                <button onClick={() => navigate(`/rooms/${room.id}/detail`)} className="inline-flex items-center px-4 py-2 border border-indigo-300 rounded-md shadow-sm text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100">
+                  <AiFillEye className="mr-2 h-4 w-4" /> View
+                </button>
+
                 {user && room.status !== "finished" && (
                   <button
                     onClick={() => handleOpenRoom(room.id)}

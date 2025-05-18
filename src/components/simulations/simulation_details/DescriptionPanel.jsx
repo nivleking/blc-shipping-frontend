@@ -31,8 +31,21 @@ const DescriptionPanel = ({ room, roomId }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Query to fetch users who participated in this room - using the provided query pattern
-  const usersQuery = useQuery({
+  // New query to fetch ALL users in the system
+  const allUsersQuery = useQuery({
+    queryKey: ["allUsers"],
+    queryFn: async () => {
+      const response = await api.get(`/users/all-users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    },
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Query to fetch active users in this specific room
+  const roomUsersQuery = useQuery({
     queryKey: ["roomUsers", roomId],
     queryFn: async () => {
       const response = await api.get(`/rooms/${roomId}/users`, {
@@ -44,21 +57,40 @@ const DescriptionPanel = ({ room, roomId }) => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Process users data when query returns
+  // Di useEffect yang memproses users data:
   useEffect(() => {
-    if (usersQuery.data && room) {
-      // Parse assigned users and active users from room data
+    if (room && allUsersQuery.data) {
+      // Parse assigned user IDs from string JSON
       const assignedUserIds = typeof room.assigned_users === "string" ? JSON.parse(room.assigned_users || "[]") : room.assigned_users || [];
 
+      // Parse active user IDs from string JSON
       const activeUserIds = typeof room.users === "string" ? JSON.parse(room.users || "[]") : room.users || [];
 
-      // Find matching users from the query data
-      const usersList = usersQuery.data || [];
+      // Get full list of all users from our all-users query
+      const allUsersList = allUsersQuery.data || [];
 
-      setAssignedUsers(assignedUserIds);
-      setActiveUsers(usersList);
+      // Get active users from room-specific query
+      const roomUsersList = roomUsersQuery.data || [];
+
+      // Convert IDs to numbers if they're strings to ensure consistent comparison
+      const normalizedAssignedIds = assignedUserIds.map((id) => Number(id));
+      const normalizedActiveIds = activeUserIds.map((id) => Number(id));
+
+      // Filter allUsersList to get assigned users with complete info
+      const assignedUserObjects = allUsersList.filter((user) => normalizedAssignedIds.includes(Number(user.id)));
+
+      // Filter roomUsersList to get active users
+      const activeUserObjects = roomUsersList.filter((user) => normalizedActiveIds.includes(Number(user.id)));
+
+      // Update state with complete user objects
+      setAssignedUsers(assignedUserObjects);
+      setActiveUsers(activeUserObjects);
+
+      // Debug logging
+      console.log("Assigned User IDs:", normalizedAssignedIds);
+      console.log("Assigned User Objects:", assignedUserObjects);
     }
-  }, [usersQuery.data, room]);
+  }, [allUsersQuery.data, roomUsersQuery.data, room]);
 
   // Find the matching deck from the decks list
   useEffect(() => {
@@ -116,7 +148,7 @@ const DescriptionPanel = ({ room, roomId }) => {
     );
   };
 
-  if (usersQuery.isLoading) {
+  if (allUsersQuery.isLoading) {
     return (
       <div className="bg-white rounded-lg shadow p-4 flex justify-center">
         <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
@@ -206,17 +238,15 @@ const DescriptionPanel = ({ room, roomId }) => {
             <h4 className="text-xs text-gray-500 uppercase tracking-wider mb-2">Assigned Users</h4>
             {assignedUsers && assignedUsers.length > 0 ? (
               <div className="grid gap-2">
-                {activeUsers
-                  .filter((user) => assignedUsers.includes(user.id))
-                  .map((user) => (
-                    <div key={user.id} className="flex items-center bg-blue-50 p-2 rounded">
-                      <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-medium">{user.name.charAt(0).toUpperCase()}</div>
-                      <div className="ml-2">
-                        <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
-                      </div>
+                {assignedUsers.map((user) => (
+                  <div key={user.id} className="flex items-center bg-blue-50 p-2 rounded">
+                    <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-medium">{user.name.charAt(0).toUpperCase()}</div>
+                    <div className="ml-2">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-sm text-gray-500 italic">No users assigned</p>
@@ -227,20 +257,15 @@ const DescriptionPanel = ({ room, roomId }) => {
             <h4 className="text-xs text-gray-500 uppercase tracking-wider mb-2">Active Participants</h4>
             {activeUsers && activeUsers.length > 0 ? (
               <div className="grid gap-2">
-                {activeUsers
-                  .filter((user) => {
-                    const activeUserIds = typeof room.users === "string" ? JSON.parse(room.users || "[]") : room.users || [];
-                    return activeUserIds.includes(user.id);
-                  })
-                  .map((user) => (
-                    <div key={user.id} className="flex items-center bg-green-50 p-2 rounded">
-                      <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-medium">{user.name.charAt(0).toUpperCase()}</div>
-                      <div className="ml-2">
-                        <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
-                      </div>
+                {activeUsers.map((user) => (
+                  <div key={user.id} className="flex items-center bg-green-50 p-2 rounded">
+                    <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-medium">{user.name.charAt(0).toUpperCase()}</div>
+                    <div className="ml-2">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-sm text-gray-500 italic">No active participants</p>
