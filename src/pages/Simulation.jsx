@@ -427,6 +427,18 @@ const Simulation = () => {
 
     setIsLoading(true);
     try {
+      const containerResponse = await api.get(`rooms/${roomId}/containers`);
+      let containerData = containerResponse.data;
+
+      if (!Array.isArray(containerData)) {
+        console.error("Container data is not an array:", containerData);
+        containerData = [];
+      } else {
+        console.log(`Loaded ${containerData.length} containers successfully`);
+      }
+
+      setContainers(containerData);
+
       // Single API call to get all arena data
       const response = await api.get(`/arena-data/${roomId}/${user.id}`, {
         headers: {
@@ -526,10 +538,6 @@ const Simulation = () => {
       // Initialize bay data
       const initialBayData = Array.from({ length: bayCount }).map(() => Array.from({ length: baySize.rows }).map(() => Array(baySize.columns).fill(null)));
 
-      // Get container data
-      const containerData = data.containers;
-      setContainers(containerData);
-
       // Process arena data for ship bay
       const savedArena = typeof shipBayData.arena === "string" ? JSON.parse(shipBayData.arena) : shipBayData.arena;
 
@@ -582,7 +590,7 @@ const Simulation = () => {
                   newDroppedItems.push({
                     id: item,
                     area: `bay-${bayIndex}-${rowIndex * bay[0].length + colIndex}`,
-                    color: containerObj.color,
+                    color: containerObj?.color || getContainerColorByDestination(containerObj?.destination),
                   });
                 }
               }
