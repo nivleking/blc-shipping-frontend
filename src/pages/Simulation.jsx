@@ -300,9 +300,6 @@ const Simulation = () => {
     socket.on("swap_bays", async ({ roomId: receivedRoomId }) => {
       if (receivedRoomId === roomId) {
         try {
-          // This is where we need to ensure comprehensive config is fetched
-          await fetchArenaData();
-
           setShowSwapAlert(true);
           let timer = 10;
           setCountdown(timer);
@@ -317,6 +314,8 @@ const Simulation = () => {
               handleSwapProcess();
             }
           }, 1000);
+
+          await fetchArenaData();
         } catch (error) {
           console.error("Error handling swap_bays event:", error);
         }

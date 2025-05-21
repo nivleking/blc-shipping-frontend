@@ -382,6 +382,10 @@ const Room = () => {
       setBaySwapMessageIndex(0);
     }
 
+    socket.emit("swap_bays", { roomId });
+
+    await new Promise(resolve => setTimeout(resolve, 8000));
+
     try {
       await api.put(
         `/rooms/${roomId}/swap-bays`,
@@ -399,8 +403,6 @@ const Room = () => {
       userPortsResponse.data.forEach((shipBay) => {
         newPortAssignments[shipBay.user_id] = shipBay.port;
       });
-
-      socket.emit("swap_bays", { roomId });
 
       setCurrentRound((prev) => prev + 1);
 
@@ -745,7 +747,7 @@ const Room = () => {
                 {/* Configure Port Swap Button */}
                 <button
                   onClick={() => setShowSwapConfigModal(true)}
-                  // disabled={currentRound > totalRounds}
+                  disabled={currentRound > totalRounds}
                   className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-400" : "bg-yellow-400 border-2 border-yellow-500 text-white hover:bg-yellow-500"} 
     shadow-sm`}
@@ -893,7 +895,7 @@ const Room = () => {
               <button onClick={() => setShowSwapConfirmation(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                 Cancel
               </button>
-              <button onClick={executeSwap} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+              <button onClick={executeSwap} disabled={currentRound > totalRounds} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
                 Confirm Swap
               </button>
             </div>
