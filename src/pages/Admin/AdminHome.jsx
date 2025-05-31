@@ -190,6 +190,9 @@ const AdminHome = () => {
       return;
     }
 
+    const currentDeck = decks.find((d) => d.id === room.deck_id);
+
+    setSelectedDeck(currentDeck);
     setEditingRoom({
       ...room,
       assigned_users: typeof room.assigned_users === "string" ? JSON.parse(room.assigned_users) : room.assigned_users,
@@ -206,22 +209,36 @@ const AdminHome = () => {
   };
 
   const confirmUpdateRoom = () => {
+    // Extract dock warehouse costs from editingRoom
+    const dockCosts = editingRoom.dock_warehouse_costs || {};
+
+    // Format in the way backend validation expects
     const updatedFields = {
       name: editingRoom.name,
       description: editingRoom.description,
-      total_rounds: editingRoom.total_rounds,
-      cards_limit_per_round: editingRoom.cards_limit_per_round,
-      cards_must_process_per_round: editingRoom.cards_must_process_per_round,
-      move_cost: editingRoom.move_cost,
-      extra_moves_cost: editingRoom.extra_moves_cost,
-      ideal_crane_split: editingRoom.ideal_crane_split,
-      dock_warehouse_cost: editingRoom.dock_warehouse_cost,
-      restowage_cost: editingRoom.restowage_cost,
-      swap_config: editingRoom.swap_config,
+      total_rounds: parseInt(editingRoom.total_rounds),
+      cards_limit_per_round: parseInt(editingRoom.cards_limit_per_round),
+      cards_must_process_per_round: parseInt(editingRoom.cards_must_process_per_round),
+      move_cost: parseInt(editingRoom.move_cost),
+      restowage_cost: parseInt(editingRoom.restowage_cost || 3500000),
+      dock_warehouse_costs: {
+        dry: {
+          committed: parseInt(dockCosts.dry?.committed || 8000000),
+          non_committed: parseInt(dockCosts.dry?.non_committed || 4000000),
+        },
+        reefer: {
+          committed: parseInt(dockCosts.reefer?.committed || 15000000),
+          non_committed: parseInt(dockCosts.reefer?.non_committed || 9000000),
+        },
+        default: parseInt(dockCosts.default || 9000000),
+      },
+      swap_config: typeof editingRoom.swap_config === "string" ? JSON.parse(editingRoom.swap_config) : editingRoom.swap_config || {},
       assigned_users: editingRoom.assigned_users,
       deck: editingRoom.deck,
       ship_layout: editingRoom.ship_layout,
     };
+
+    console.log("Updating room with data:", updatedFields);
 
     updateMutation.mutate(updatedFields);
   };
