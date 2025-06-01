@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { api } from "../../axios/axios";
 import ReactPaginate from "react-paginate";
 import LoadingOverlay from "../../components/LoadingOverlay";
@@ -7,8 +7,10 @@ import DecksTableView from "../../components/cards/decks/DecksTableView";
 import DecksGridView from "../../components/cards/decks/DecksGridView";
 import useToast from "../../toast/useToast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AppContext } from "../../context/AppContext";
 
 const AdminDecks = () => {
+  const { user, token } = useContext(AppContext);
   const { showSuccess, showError } = useToast();
   const [formData, setFormData] = useState({ name: "" });
   const [currentPage, setCurrentPage] = useState(0);
@@ -30,7 +32,9 @@ const AdminDecks = () => {
   } = useQuery({
     queryKey: ["decks"],
     queryFn: async () => {
-      const response = await api.get("/decks");
+      const response = await api.get("/decks", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       return response.data;
     },
   });
@@ -38,7 +42,9 @@ const AdminDecks = () => {
   const createDeckMutation = useMutation({
     mutationFn: async (newDeck) => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return api.post("/decks", newDeck);
+      return api.post("/decks", newDeck, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
     },
     onMutate: () => {
       setLoadingMessageIndex(0);
@@ -59,7 +65,11 @@ const AdminDecks = () => {
   const deleteDeckMutation = useMutation({
     mutationFn: async (deckId) => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return api.delete(`/decks/${deckId}`);
+      return api.delete(`/decks/${deckId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, //
+        },
+      });
     },
     onMutate: () => {
       setDeleteLoadingMessageIndex(0);

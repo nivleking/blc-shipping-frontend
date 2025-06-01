@@ -13,7 +13,7 @@ const formatIDR = (value) => {
 };
 
 const DescriptionPanel = ({ room, roomId }) => {
-  const { token } = useContext(AppContext);
+  const { user, token } = useContext(AppContext);
   const [assignedUsers, setAssignedUsers] = useState([]);
   const [activeUsers, setActiveUsers] = useState([]);
   const [deck, setDeck] = useState(null);
@@ -27,9 +27,19 @@ const DescriptionPanel = ({ room, roomId }) => {
       });
       return response.data;
     },
-    enabled: !!token,
+    enabled: !!token && !!user?.is_admin,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Run when admin
+  useEffect(() => {
+    if (user?.is_admin && decksData && room && room.deck_id) {
+      const matchingDeck = decksData.find((d) => d.id === room.deck_id);
+      if (matchingDeck) {
+        setDeck((prev) => ({ ...prev, name: matchingDeck.name, id: matchingDeck.id }));
+      }
+    }
+  }, [decksData, room, user]);
 
   // New query to fetch ALL users in the system
   const allUsersQuery = useQuery({
@@ -192,19 +202,21 @@ const DescriptionPanel = ({ room, roomId }) => {
           </div>
 
           <div>
-            <h4 className="text-xs text-gray-500 uppercase tracking-wider">Deck</h4>
-            <div className="flex items-center">
-              {deck?.id ? (
-                <Link to={`/admin-decks/${deck.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center">
-                  {deck?.name || "No deck information"}
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </Link>
-              ) : (
-                <p className="text-sm font-medium">{deck?.name || "No deck information"}</p>
-              )}
-            </div>
+            {user && user.is_admin && deck?.id && (
+              <div className="flex flex-col">
+                <h4 className="text-xs text-gray-500 uppercase tracking-wider">Deck</h4>
+                {deck?.id ? (
+                  <Link to={`/admin-create-sales-call-cards/${deck.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center mt-1">
+                    {deck?.name || "No deck information"}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </Link>
+                ) : (
+                  <p className="text-sm font-medium mt-1">{deck?.name || "No deck information"}</p>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

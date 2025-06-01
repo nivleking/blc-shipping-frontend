@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { api } from "../../../axios/axios";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,8 +7,10 @@ import ManualEntryPanel from "./ManualEntryPanel";
 import UploadDataPanel from "./UploadDataPanel";
 import useToast from "../../../toast/useToast";
 import { getUnrolledPenalties, getDefaultBasePriceMap, availablePorts } from "../../../assets/PortUtilities";
+import { AppContext } from "../../../context/AppContext";
 
 const MarketIntelligencePanel = ({ deckId }) => {
+  const { token } = useContext(AppContext);
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const queryClient = useQueryClient();
   const [selectedPorts, setSelectedPorts] = useState(5);
@@ -32,7 +34,9 @@ const MarketIntelligencePanel = ({ deckId }) => {
     queryFn: async () => {
       if (!deckId) return null;
       try {
-        const response = await api.get(`/market-intelligence/deck/${deckId}`);
+        const response = await api.get(`/market-intelligence/deck/${deckId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         console.log("Market Intelligence API Response:", response.data);
         return response.data;
       } catch (error) {
@@ -75,7 +79,9 @@ const MarketIntelligencePanel = ({ deckId }) => {
 
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
-      return api.post(`/market-intelligence/deck/${deckId}`, payload);
+      return api.post(`/market-intelligence/deck/${deckId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
     },
     onSuccess: (response) => {
       showSuccess("Market intelligence saved successfully");
@@ -90,7 +96,9 @@ const MarketIntelligencePanel = ({ deckId }) => {
   // Generate default data mutation
   const generateDefaultMutation = useMutation({
     mutationFn: async () => {
-      return api.post(`/market-intelligence/deck/${deckId}/generate-default`);
+      return api.post(`/market-intelligence/deck/${deckId}/generate-default`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
     },
     onSuccess: (response) => {
       showSuccess("Default market intelligence data generated");

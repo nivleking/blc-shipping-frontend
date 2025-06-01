@@ -427,7 +427,11 @@ const Simulation = () => {
 
     setIsLoading(true);
     try {
-      const containerResponse = await api.get(`rooms/${roomId}/containers`);
+      const containerResponse = await api.get(`rooms/${roomId}/containers`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       let containerData = containerResponse.data;
 
       if (!Array.isArray(containerData)) {
@@ -440,7 +444,7 @@ const Simulation = () => {
       setContainers(containerData);
 
       // Single API call to get all arena data
-      const response = await api.get(`/arena-data/${roomId}/${user.id}`, {
+      const response = await api.get(`/rooms/${roomId}/ship-bays/arena-data/${user.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -775,7 +779,7 @@ const Simulation = () => {
       };
 
       const cardResponse = await api.post(
-        `/ship-bays/${roomId}/${user.id}/cards`,
+        `/rooms/${roomId}/ship-bays/${user.id}/cards`,
         {
           card_action: "accept",
           count: 1,
@@ -856,7 +860,7 @@ const Simulation = () => {
       setIsCardVisible(false);
 
       const response = await api.post(
-        `/ship-bays/${roomId}/${user.id}/cards`,
+        `/rooms/${roomId}/ship-bays/${user.id}/cards`,
         {
           card_action: "reject",
           count: 1,
@@ -1113,22 +1117,30 @@ const Simulation = () => {
 
             try {
               // Save updated bay state
-              const bayResponse = await api.post("/ship-bays", {
-                arena: flatBayData,
-                user_id: user.id,
-                room_id: roomId,
-                section: "section1",
-                moved_container: {
-                  id: container.id,
-                  from: activeItem.area,
-                  to: over.id,
+              const bayResponse = await api.post(
+                `/rooms/${roomId}/ship-bays`,
+                {
+                  arena: flatBayData,
+                  user_id: user.id,
+                  room_id: roomId,
+                  section: "section1",
+                  moved_container: {
+                    id: container.id,
+                    from: activeItem.area,
+                    to: over.id,
+                  },
+                  move_type: "discharge",
+                  count: 1,
+                  bay_index: sourceBayIndex,
+                  container_id: active.id,
+                  isLog: true,
                 },
-                move_type: "discharge",
-                count: 1,
-                bay_index: sourceBayIndex,
-                container_id: active.id,
-                isLog: true,
-              });
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
 
               // Request updated stats
               socket.emit("stats_requested", {
@@ -1274,32 +1286,48 @@ const Simulation = () => {
       const isBayInvolved = fromArea.startsWith("bay") || toArea.startsWith("bay");
 
       try {
-        const resBay = await api.post("/ship-bays", {
-          arena: flatBayData,
-          user_id: user.id,
-          room_id: roomId,
-          moved_container: {
-            id: container.id,
-            from: fromArea,
-            to: toArea,
+        const resBay = await api.post(
+          `/rooms/${roomId}/ship-bays`,
+          {
+            arena: flatBayData,
+            user_id: user.id,
+            room_id: roomId,
+            moved_container: {
+              id: container.id,
+              from: fromArea,
+              to: toArea,
+            },
+            section: section === 1 ? "section1" : "section2",
+            ...(isBayInvolved && relevantBayIndex !== null
+              ? {
+                  move_type: moveType,
+                  count: 1,
+                  bay_index: relevantBayIndex,
+                  container_id: containerId,
+                }
+              : {}),
           },
-          section: section === 1 ? "section1" : "section2",
-          ...(isBayInvolved && relevantBayIndex !== null
-            ? {
-                move_type: moveType,
-                count: 1,
-                bay_index: relevantBayIndex,
-                container_id: containerId,
-              }
-            : {}),
-        });
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-        const resDock = await api.post("/ship-docks", {
-          arena: dockArenaData, // Send new format
-          user_id: user.id,
-          room_id: roomId,
-          dock_size: dockSize,
-        });
+        const resDock = await api.post(
+          `/rooms/${roomId}/ship-docks`,
+          {
+            arena: dockArenaData, // Send new format
+            user_id: user.id,
+            room_id: roomId,
+            dock_size: dockSize,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const fromDock = fromArea.startsWith("docks-");
         const toDock = toArea.startsWith("docks-");
@@ -1359,7 +1387,7 @@ const Simulation = () => {
 
     try {
       await api.put(
-        `/ship-bays/${roomId}/${user.id}/section`,
+        `/rooms/${roomId}/ship-bays/${user.id}/section`,
         {
           section: "section2",
         },

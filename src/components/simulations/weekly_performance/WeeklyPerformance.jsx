@@ -86,7 +86,7 @@ const WeeklyPerformance = ({
 
   const fetchFinancialSummary = async () => {
     try {
-      const response = await api.get(`/ship-bays/financial-summary/${roomId}/${effectiveUserId}`, {
+      const response = await api.get(`/rooms/${roomId}/ship-bays/financial-summary/${effectiveUserId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

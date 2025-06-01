@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { BsCloudUpload, BsDownload } from "react-icons/bs";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -6,12 +6,14 @@ import { api } from "../../../axios/axios";
 import LoadingOverlay from "../../LoadingOverlay";
 import ExcelPreviewModal from "./ExcelPreviewModal";
 import useToast from "../../../toast/useToast";
+import { AppContext } from "../../../context/AppContext";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
 };
 
 const FileGeneratePanel = ({ deckId, refreshData }) => {
+  const { user, token } = useContext(AppContext);
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -223,7 +225,8 @@ const FileGeneratePanel = ({ deckId, refreshData }) => {
     try {
       const response = await api.post(`/decks/${deckId}/import-cards`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data", //
         },
       });
 
