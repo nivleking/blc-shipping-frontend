@@ -146,42 +146,6 @@ const Simulation = () => {
     setShowFinancialModal(!showFinancialModal);
   };
 
-  const [selectedHistoricalWeek, setSelectedHistoricalWeek] = useState(currentRound);
-  const [historicalStats, setHistoricalStats] = useState(null);
-  const [showHistorical, setShowHistorical] = useState(false);
-
-  const fetchHistoricalStats = async (week) => {
-    try {
-      setIsLoading(true);
-      console.log("Fetching historical statistics for week:", week);
-
-      const url = `/rooms/${roomId}/users/${user.id}/bay-statistics-history/${week}`;
-      const response = await api.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data && Object.keys(response.data).length > 0) {
-        setHistoricalStats(response.data);
-      } else {
-        console.warn("No historical data found or empty response:", response.data);
-        setHistoricalStats(null);
-      }
-    } catch (error) {
-      console.error("Error fetching historical statistics:", error);
-      setHistoricalStats(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (showHistorical && selectedHistoricalWeek && selectedHistoricalWeek !== currentRound) {
-      fetchHistoricalStats(selectedHistoricalWeek);
-    } else {
-      setHistoricalStats(null);
-    }
-  }, [selectedHistoricalWeek, showHistorical, currentRound, roomId, user?.id, token]);
-
   const [weekSalesCalls, setWeekSalesCalls] = useState([]);
   const [weekRevenueTotal, setWeekRevenueTotal] = useState(0);
 
@@ -338,27 +302,9 @@ const Simulation = () => {
       if (roomId === requestedRoomId && user.id === requestedUserId) {
         const response = await fetchArenaData();
 
-        // Extract the stats from current state
-        // const stats = {
-        //   load_moves: moveStats.loadMoves,
-        //   discharge_moves: moveStats.dischargeMoves,
-        //   accepted_cards: moveStats.acceptedCards,
-        //   rejected_cards: moveStats.rejectedCards,
-        //   penalty: penalties,
-        // };
-
-        // const stats = {
-        //   load_moves: response.data.load_moves || 0,
-        //   discharge_moves: response.data.discharge_moves || 0,
-        //   accepted_cards: response.data.accepted_cards || 0,
-        //   rejected_cards: response.data.rejected_cards || 0,
-        //   penalty: response.data.penalty || 0,
-        // };
-
         socket.emit("stats_updated", {
           roomId,
           userId: user.id,
-          // stats,
         });
       }
     });
@@ -1065,7 +1011,7 @@ const Simulation = () => {
       if (isFromBay && isToDock) {
         // Check if container destination matches current port
         try {
-          const containerResponse = await api.get(`/containers/${active.id}`, {
+          const containerResponse = await api.get(`/rooms/${roomId}/containers/${active.id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -1345,6 +1291,7 @@ const Simulation = () => {
         console.error("Error during container movement:", error);
         showError("Failed to move container. Please try again.");
       } finally {
+        await fetchArenaData();
         setIsLoading(false);
       }
     } catch (error) {
@@ -1579,11 +1526,6 @@ const Simulation = () => {
                 port={port}
                 bayMoves={bayMoves}
                 totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
-                selectedHistoricalWeek={selectedHistoricalWeek}
-                setSelectedHistoricalWeek={setSelectedHistoricalWeek}
-                historicalStats={historicalStats}
-                showHistorical={showHistorical}
-                setShowHistorical={setShowHistorical}
                 onRefreshCards={handleRefreshCards}
                 dockWarehouseContainers={dockWarehouseContainers}
                 restowageContainers={restowageContainers}
