@@ -297,19 +297,39 @@ const AdminHome = () => {
   }
 
   function sortedRooms() {
-    let sortableRooms = [...rooms];
-    if (sortConfig !== null) {
-      sortableRooms.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === "ascending" ? -1 : 1;
-        }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === "ascending" ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableRooms;
+    // Create a copy of rooms to avoid mutation
+    const sortedData = [...rooms];
+
+    // Status priority mapping (lower number = higher priority)
+    const statusPriority = {
+      active: 1,
+      created: 2,
+      finished: 3,
+    };
+
+    return sortedData.sort((a, b) => {
+      // First sort by status priority
+      const statusA = a.status.toLowerCase();
+      const statusB = b.status.toLowerCase();
+
+      const priorityA = statusPriority[statusA] || 999; // Unknown statuses get lowest priority
+      const priorityB = statusPriority[statusB] || 999;
+
+      // If statuses are different, sort by priority
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // If statuses are the same, use the existing sort config
+      const key = sortConfig.key;
+      if (a[key] < b[key]) {
+        return sortConfig.direction === "ascending" ? -1 : 1;
+      }
+      if (a[key] > b[key]) {
+        return sortConfig.direction === "ascending" ? 1 : -1;
+      }
+      return 0;
+    });
   }
 
   const handlePageClick = (event) => {
