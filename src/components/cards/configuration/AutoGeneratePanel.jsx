@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { BsLightning, BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { api } from "../../../axios/axios";
 import useToast from "../../../toast/useToast";
 import { availablePorts } from "../../../assets/PortUtilities";
+import { AppContext } from "../../../context/AppContext";
 
 const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, handlePortSelect, handleRevenueSelect, handleQuantitySelect, deckId, onGenerate }) => {
   const { showSuccess, showError } = useToast();
   const [marketIntelligenceData, setMarketIntelligenceData] = useState(null);
   const [isLoadingMI, setIsLoadingMI] = useState(false);
   const [miPortCount, setMiPortCount] = useState(0);
+  const { token } = useContext(AppContext);
 
   // Fetch market intelligence data when component mounts or useMarketIntelligence changes
   useEffect(() => {
@@ -23,7 +25,9 @@ const AutoGeneratePanel = ({ formatIDR, generateFormData, handleGenerateChange, 
 
     setIsLoadingMI(true);
     try {
-      const response = await api.get(`/market-intelligence/deck/${deckId}`);
+      const response = await api.get(`/market-intelligence/deck/${deckId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setMarketIntelligenceData(response.data);
 
       // Count unique ports in the market intelligence data

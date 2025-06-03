@@ -190,6 +190,9 @@ const AdminHome = () => {
       return;
     }
 
+    const currentDeck = decks.find((d) => d.id === room.deck_id);
+
+    setSelectedDeck(currentDeck);
     setEditingRoom({
       ...room,
       assigned_users: typeof room.assigned_users === "string" ? JSON.parse(room.assigned_users) : room.assigned_users,
@@ -206,22 +209,36 @@ const AdminHome = () => {
   };
 
   const confirmUpdateRoom = () => {
+    // Extract dock warehouse costs from editingRoom
+    const dockCosts = editingRoom.dock_warehouse_costs || {};
+
+    // Format in the way backend validation expects
     const updatedFields = {
       name: editingRoom.name,
       description: editingRoom.description,
-      total_rounds: editingRoom.total_rounds,
-      cards_limit_per_round: editingRoom.cards_limit_per_round,
-      cards_must_process_per_round: editingRoom.cards_must_process_per_round,
-      move_cost: editingRoom.move_cost,
-      extra_moves_cost: editingRoom.extra_moves_cost,
-      ideal_crane_split: editingRoom.ideal_crane_split,
-      dock_warehouse_cost: editingRoom.dock_warehouse_cost,
-      restowage_cost: editingRoom.restowage_cost,
-      swap_config: editingRoom.swap_config,
+      total_rounds: parseInt(editingRoom.total_rounds),
+      cards_limit_per_round: parseInt(editingRoom.cards_limit_per_round),
+      cards_must_process_per_round: parseInt(editingRoom.cards_must_process_per_round),
+      move_cost: parseInt(editingRoom.move_cost),
+      restowage_cost: parseInt(editingRoom.restowage_cost || 3500000),
+      dock_warehouse_costs: {
+        dry: {
+          committed: parseInt(dockCosts.dry?.committed || 8000000),
+          non_committed: parseInt(dockCosts.dry?.non_committed || 4000000),
+        },
+        reefer: {
+          committed: parseInt(dockCosts.reefer?.committed || 15000000),
+          non_committed: parseInt(dockCosts.reefer?.non_committed || 9000000),
+        },
+        default: parseInt(dockCosts.default || 9000000),
+      },
+      swap_config: typeof editingRoom.swap_config === "string" ? JSON.parse(editingRoom.swap_config) : editingRoom.swap_config || {},
       assigned_users: editingRoom.assigned_users,
       deck: editingRoom.deck,
       ship_layout: editingRoom.ship_layout,
     };
+
+    console.log("Updating room with data:", updatedFields);
 
     updateMutation.mutate(updatedFields);
   };
@@ -280,19 +297,39 @@ const AdminHome = () => {
   }
 
   function sortedRooms() {
-    let sortableRooms = [...rooms];
-    if (sortConfig !== null) {
-      sortableRooms.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === "ascending" ? -1 : 1;
-        }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === "ascending" ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableRooms;
+    // Create a copy of rooms to avoid mutation
+    const sortedData = [...rooms];
+
+    // Status priority mapping (lower number = higher priority)
+    const statusPriority = {
+      active: 1,
+      created: 2,
+      finished: 3,
+    };
+
+    return sortedData.sort((a, b) => {
+      // First sort by status priority
+      const statusA = a.status.toLowerCase();
+      const statusB = b.status.toLowerCase();
+
+      const priorityA = statusPriority[statusA] || 999; // Unknown statuses get lowest priority
+      const priorityB = statusPriority[statusB] || 999;
+
+      // If statuses are different, sort by priority
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // If statuses are the same, use the existing sort config
+      const key = sortConfig.key;
+      if (a[key] < b[key]) {
+        return sortConfig.direction === "ascending" ? -1 : 1;
+      }
+      if (a[key] > b[key]) {
+        return sortConfig.direction === "ascending" ? 1 : -1;
+      }
+      return 0;
+    });
   }
 
   const handlePageClick = (event) => {

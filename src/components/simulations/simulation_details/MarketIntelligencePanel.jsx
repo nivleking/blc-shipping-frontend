@@ -41,7 +41,9 @@ const MarketIntelligencePanel = ({ roomId }) => {
   const marketQuery = useQuery({
     queryKey: ["marketIntelligence", deckId],
     queryFn: async () => {
-      const response = await api.get(`/market-intelligence/deck/${deckId}`);
+      const response = await api.get(`/market-intelligence/deck/${deckId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.data.penalties) setPenalties(response.data.penalties);
       return response.data.price_data;
     },

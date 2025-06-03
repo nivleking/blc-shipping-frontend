@@ -48,7 +48,9 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId }) => {
   const marketQuery = useQuery({
     queryKey: ["marketIntelligence", effectiveDeckId],
     queryFn: async () => {
-      const response = await api.get(`/market-intelligence/deck/${effectiveDeckId}`);
+      const response = await api.get(`/market-intelligence/deck/${effectiveDeckId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.data.penalties) setPenalties(response.data.penalties);
       return response.data.price_data;
     },

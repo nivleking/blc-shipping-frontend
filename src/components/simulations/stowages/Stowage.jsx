@@ -5,11 +5,8 @@ import ShipDock from "./ShipDock";
 import SalesCallCard from "./SalesCallCard";
 import DraggableContainer from "./DraggableContainer";
 import PortLegendSimulation from "./PortLegendSimulation";
-import BayStatisticsTable from "./BayStatisticsTable";
 import RestowageAlert from "./RestowageAlert";
 import PortOrderAlert from "./PortOrderAlert";
-import ContainerLegend from "./ContainerLegend";
-import FinancialSummaryModal from "./FinancialSummaryModal";
 import { FiLifeBuoy } from "react-icons/fi";
 import GuideModal from "../../../pages/Admin/GuideModal";
 import "./Stowage.css";
@@ -46,14 +43,6 @@ const Stowage = ({
   restowageContainers = [],
   restowagePenalty = 0,
   restowageMoves = 0,
-  bayMoves = {},
-  bayPairs = [],
-  totalMoves = 0,
-  selectedHistoricalWeek,
-  setSelectedHistoricalWeek,
-  historicalStats,
-  showHistorical,
-  setShowHistorical,
   onRefreshCards,
   dockWarehouseContainers = [],
   containerDestinationsCache,
@@ -63,9 +52,6 @@ const Stowage = ({
   onContainerHover,
   toggleFinancialModal,
   isBayFull,
-  // idealCraneSplit = 2,
-  // longCraneMoves = 0,
-  // extraMovesOnLongCrane = 0,
 }) => {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
@@ -95,11 +81,8 @@ const Stowage = ({
     });
   };
 
-  // console.log(containerDestinationsCache);
   return (
     <>
-      {/* <PortLegendSimulation /> */}
-
       {/* Add loading overlay when transitioning */}
       {isSectionTransitioning && <LoadingSpinner />}
 
@@ -179,8 +162,6 @@ const Stowage = ({
                 formatIDR={formatIDR} //
               />
             </div>
-
-            {/* <ContainerLegend /> */}
 
             <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
               <ShipBay
@@ -296,36 +277,6 @@ const Stowage = ({
                   />
                 </div>
               </div>
-
-              {/* Bay Statistics - Below Ship Dock */}
-              {/* <div className="bg-white rounded-lg shadow-md p-2 border border-gray-200">
-                <h3 className="text-xs font-semibold mb-2 text-gray-800 flex items-center">
-                  <svg className="w-3.5 h-3.5 mr-1.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                  Bay Stats
-                </h3>
-
-                <div className="bg-gray-50 p-1 rounded-lg border border-gray-200 overflow-auto text-xs" style={{ maxHeight: "200px" }}>
-                  <BayStatisticsTable
-                    bayCount={bayCount}
-                    bayMoves={bayMoves}
-                    bayPairs={bayPairs}
-                    totalMoves={totalMoves}
-                    currentRound={currentRound}
-                    selectedWeek={selectedHistoricalWeek}
-                    setSelectedWeek={setSelectedHistoricalWeek}
-                    historicalStats={historicalStats}
-                    showHistorical={showHistorical}
-                    setShowHistorical={setShowHistorical}
-                    onRefreshCards={onRefreshCards}
-                    restowageMoves={restowageMoves}
-                    restowagePenalty={restowagePenalty}
-                    restowageContainerCount={restowageContainers.length}
-                    formatIDR={formatIDR}
-                  />
-                </div>
-              </div> */}
             </div>
           </div>
 

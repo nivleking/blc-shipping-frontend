@@ -154,7 +154,7 @@ const CapacityUptake = ({
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get(`/capacity-uptakes/${roomId}/${effectiveUserId}/${week}`, {
+      const response = await api.get(`/rooms/${roomId}/capacity-uptakes/${effectiveUserId}/${week}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

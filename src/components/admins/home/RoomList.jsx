@@ -190,11 +190,11 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
                   </button>
                 )}
 
-                {/* {room.status !== "active" && room.status !== "finished" && (
+                {room.status !== "active" && room.status !== "finished" && (
                   <button onClick={() => handleEditRoom(room)} className="inline-flex items-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-xs font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100">
                     <HiPencilAlt className="mr-2 h-4 w-4" /> Edit
                   </button>
-                )} */}
+                )}
                 {/* {room.status !== "active" && ()} */}
                 <button onClick={(e) => handleDeleteRoom(room.id)(e)} className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100">
                   <AiFillDelete className="mr-2 h-4 w-4" /> Delete

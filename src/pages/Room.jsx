@@ -384,7 +384,7 @@ const Room = () => {
 
     socket.emit("swap_bays", { roomId });
 
-    await new Promise(resolve => setTimeout(resolve, 8000));
+    await new Promise((resolve) => setTimeout(resolve, 8000));
 
     try {
       await api.put(
@@ -394,15 +394,6 @@ const Room = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      const userPortsResponse = await api.get(`/rooms/${roomId}/user-port2`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const newPortAssignments = {};
-      userPortsResponse.data.forEach((shipBay) => {
-        newPortAssignments[shipBay.user_id] = shipBay.port;
-      });
 
       setCurrentRound((prev) => prev + 1);
 
@@ -895,7 +886,7 @@ const Room = () => {
               <button onClick={() => setShowSwapConfirmation(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                 Cancel
               </button>
-              <button onClick={executeSwap} disabled={currentRound > totalRounds} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+              <button onClick={executeSwap} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
                 Confirm Swap
               </button>
             </div>
