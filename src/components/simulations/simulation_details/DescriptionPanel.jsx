@@ -28,7 +28,6 @@ const DescriptionPanel = ({ room, roomId }) => {
       return response.data;
     },
     enabled: !!token && !!user?.is_admin,
-    staleTime: 5 * 60 * 1000,
   });
 
   // Run when admin
@@ -51,7 +50,6 @@ const DescriptionPanel = ({ room, roomId }) => {
       return response.data;
     },
     enabled: !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   // Query to fetch active users in this specific room
@@ -64,7 +62,6 @@ const DescriptionPanel = ({ room, roomId }) => {
       return response.data;
     },
     enabled: !!roomId && !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   // Di useEffect yang memproses users data:

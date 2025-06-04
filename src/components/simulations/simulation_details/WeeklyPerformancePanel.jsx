@@ -21,7 +21,6 @@ const WeeklyPerformancePanel = ({ roomId, totalRounds = 1, userId = null, isAdmi
       return response.data;
     },
     enabled: !!roomId && !!token && isAdminView, // Only fetch users in admin view
-    staleTime: 5 * 60 * 1000,
   });
 
   // Set first user as selected when data loads

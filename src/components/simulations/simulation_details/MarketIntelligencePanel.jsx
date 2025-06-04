@@ -31,7 +31,6 @@ const MarketIntelligencePanel = ({ roomId }) => {
       return response.data;
     },
     enabled: !!roomId && !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   // The effective deck ID to use
@@ -48,7 +47,6 @@ const MarketIntelligencePanel = ({ roomId }) => {
       return response.data.price_data;
     },
     enabled: !!deckId,
-    staleTime: 5 * 60 * 1000,
   });
 
   // Loading state

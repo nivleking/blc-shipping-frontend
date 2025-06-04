@@ -111,8 +111,6 @@ const Simulation = () => {
       return response.data;
     },
     enabled: !!roomId && !!deckId && !!token,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
   });
 
   const allCardTemporaries = cardTemporariesData?.cards || [];
@@ -300,7 +298,7 @@ const Simulation = () => {
 
     socket.on("stats_requested", async ({ roomId: requestedRoomId, userId: requestedUserId }) => {
       if (roomId === requestedRoomId && user.id === requestedUserId) {
-        const response = await fetchArenaData();
+        // const response = await fetchArenaData();
 
         socket.emit("stats_updated", {
           roomId,
@@ -763,6 +761,7 @@ const Simulation = () => {
       console.error("Error accepting card:", error);
       showError("Failed to process card");
     } finally {
+      await fetchArenaData();
       setIsProcessingCard(false);
       setSelectedTab(0);
       showInfo("Redirecting to Capacity Uptake to check available capacity");

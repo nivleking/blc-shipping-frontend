@@ -8,6 +8,7 @@ import useToast from "../toast/useToast";
 import ConfirmationModal from "../components/ConfirmationModal";
 import LoadingOverlay from "../components/LoadingOverlay";
 import { PORT_COLORS, getPortColor } from "../assets/Colors";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
@@ -15,6 +16,7 @@ const formatIDR = (value) => {
 
 const Room = () => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
+  const queryClient = useQueryClient();
   const { roomId } = useParams();
   const [users, setUsers] = useState([]);
   const [adminName, setAdminName] = useState("");
@@ -263,6 +265,7 @@ const Room = () => {
 
       showSuccess("Simulation started");
       setRoomStatus("active");
+      queryClient.invalidateQueries(["rooms"]);
       socket.emit("start_simulation", { roomId });
     } catch (error) {
       console.error("There was an error starting the simulation!", error);
@@ -322,6 +325,7 @@ const Room = () => {
       socket.emit("end_simulation", { roomId });
 
       setRoomStatus("finished");
+      queryClient.invalidateQueries(["rooms"]);
       showSuccess("Simulation has been successfully completed!");
     } catch (error) {
       console.error("There was an error ending the simulation!", error);

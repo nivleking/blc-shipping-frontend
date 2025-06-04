@@ -26,7 +26,6 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
       return response.data;
     },
     enabled: !!roomId && !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   // Set selected user based on userId prop or first available user
@@ -72,7 +71,6 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
       return response.data;
     },
     enabled: !!roomId && !!selectedUserId && !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   // Event handlers
