@@ -1098,6 +1098,7 @@ const Simulation = () => {
                 rankings: bayResponse.data.rankings,
               });
 
+              await fetchArenaData();
               return;
             } catch (error) {
               console.error("API call failed", error);
