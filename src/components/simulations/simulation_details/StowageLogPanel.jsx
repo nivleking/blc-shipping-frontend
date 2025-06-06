@@ -16,11 +16,15 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
   const [selectedRound, setSelectedRound] = useState(null);
   const [selectedLog, setSelectedLog] = useState(null);
 
-  // Query to fetch users who participated in this room
+  // Manual state management untuk logs
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [logsData, setLogsData] = useState(null);
+  const [logsError, setLogsError] = useState(null);
+
   const usersQuery = useQuery({
-    queryKey: ["stowageLogUsers", roomId],
+    queryKey: ["roomUsers", roomId],
     queryFn: async () => {
-      const response = await api.get(`/simulation-logs/rooms/${roomId}`, {
+      const response = await api.get(`/rooms/${roomId}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;
@@ -35,21 +39,25 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
       setSelectedUserId(userId);
 
       // Find user data if available
-      if (usersQuery.data?.users?.length > 0) {
-        const userData = usersQuery.data.users.find((u) => u.id === userId);
+      if (usersQuery.data?.length > 0) {
+        const userData = usersQuery.data.find((u) => u.id === userId);
         setSelectedUser(userData || { id: userId, name: "Current User" });
       }
-    } else if (usersQuery.data?.users?.length > 0 && !selectedUserId) {
+    } else if (usersQuery.data?.length > 0 && !selectedUserId) {
       // If no userId provided and we're in admin view, set to first user
-      setSelectedUserId(usersQuery.data.users[0].id);
-      setSelectedUser(usersQuery.data.users[0]);
+      setSelectedUserId(usersQuery.data[0].id);
+      setSelectedUser(usersQuery.data[0]);
     }
   }, [usersQuery.data, selectedUserId, userId]);
 
-  // Query to fetch logs for the selected user
-  const logsQuery = useQuery({
-    queryKey: ["stowageLogs", roomId, selectedUserId, selectedSection, selectedRound],
-    queryFn: async () => {
+  // Manual fetch function untuk logs
+  const fetchLogs = async () => {
+    if (!roomId || !selectedUserId || !token) return;
+
+    setIsLoadingLogs(true);
+    setLogsError(null);
+
+    try {
       let url = `/simulation-logs/rooms/${roomId}/users/${selectedUserId}`;
       const params = new URLSearchParams();
 
@@ -68,10 +76,31 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
       const response = await api.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data;
-    },
-    enabled: !!roomId && !!selectedUserId && !!token,
-  });
+      setLogsData(response.data);
+    } catch (err) {
+      console.error("Error fetching logs:", err);
+      setLogsError(err.response?.data?.message || "Failed to load logs data");
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  // Refresh function - bisa dipanggil secara manual
+  const handleRefreshLogs = () => {
+    if (selectedUserId) {
+      fetchLogs();
+    }
+  };
+
+  // Fetch logs when filters change
+  useEffect(() => {
+    if (selectedUserId) {
+      fetchLogs();
+    } else {
+      // Clear logs data when no user is selected
+      setLogsData(null);
+    }
+  }, [selectedUserId, selectedSection, selectedRound]);
 
   // Event handlers
   const handleUserChange = (newUserId) => {
@@ -79,11 +108,12 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
     if (!isAdminView || userId) return;
 
     setSelectedUserId(newUserId);
-    const user = usersQuery.data?.users?.find((u) => u.id === Number(newUserId));
+    const user = usersQuery.data?.find((u) => u.id === Number(newUserId));
     setSelectedUser(user);
     setSelectedSection(null);
     setSelectedRound(null);
     setSelectedLog(null);
+    setLogsData(null); // Clear previous logs data
   };
 
   const handleSectionChange = (section) => {
@@ -100,7 +130,7 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
     setSelectedLog(log);
   };
 
-  // Loading state
+  // Loading state - hanya untuk users query
   if (usersQuery.isLoading) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
@@ -115,19 +145,32 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
     );
   }
 
-  // Error state
+  // Error state - untuk users query
   if (usersQuery.isError) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-        <p className="font-medium">Error loading stowage log data</p>
+        <p className="font-medium">Error loading room users</p>
         <p className="text-sm">{usersQuery.error?.message || "An unknown error occurred"}</p>
       </div>
     );
   }
 
-  const users = usersQuery.data?.users || [];
-  const logs = logsQuery.data?.logs || [];
-  const filters = logsQuery.data?.filters || { available_rounds: [], available_sections: [] };
+  // Error state untuk logs
+  if (logsError) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <p className="font-medium">Error loading logs data</p>
+        <p className="text-sm">{logsError}</p>
+        <button onClick={handleRefreshLogs} className="mt-2 bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded text-sm transition-colors">
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  const users = usersQuery.data || [];
+  const logs = logsData?.logs || [];
+  const filters = logsData?.filters || { available_rounds: [], available_sections: [] };
 
   const parseBayTypes = (bayTypesStr) => {
     try {
@@ -145,10 +188,28 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
 
   return (
     <div className="space-y-4">
-      {/* Header with gradient style */}
+      {/* Header with gradient style and refresh button */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white">
-        <h2 className="text-sm font-bold">Stowage Logs</h2>
-        <p className="text-sm text-blue-100">View historical snapshots of bay and dock configurations</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-sm font-bold">Stowage Logs</h2>
+            <p className="text-sm text-blue-100">View historical snapshots of bay and dock configurations</p>
+          </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefreshLogs}
+            disabled={isLoadingLogs || !selectedUserId}
+            className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+              isLoadingLogs || !selectedUserId ? "bg-blue-400 text-blue-200 cursor-not-allowed" : "bg-white text-blue-600 hover:bg-blue-50 hover:scale-105 shadow-sm"
+            }`}
+          >
+            <svg className={`w-3 h-3 ${isLoadingLogs ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>{isLoadingLogs ? "Refreshing..." : "Refresh"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Summary section at the top */}
@@ -199,13 +260,19 @@ const StowageLogPanel = ({ roomId, totalRounds = 1, containers = [], bayTypes, u
               <div className="text-center">
                 <p className="text-gray-500 mb-2">Select a stowage log to view details</p>
                 <p className="text-xs text-gray-400">Use the filters to find logs based on section and round</p>
+                {selectedUserId && (
+                  <button onClick={handleRefreshLogs} className="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm transition-colors">
+                    Load Logs
+                  </button>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {logsQuery.isLoading && <LoadingSpinner />}
+      {/* Show loading spinner when logs are being fetched */}
+      {isLoadingLogs && <LoadingSpinner />}
     </div>
   );
 };
