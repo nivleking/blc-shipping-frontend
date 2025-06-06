@@ -112,7 +112,13 @@ const StowageLogSelector = ({
                     </span>
                     <div className="flex gap-2 mt-1">
                       <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-xs">Port: {log.port}</span>
-                      <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-800 text-xs">Revenue: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(log.revenue)}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-xs ${log.total_revenue < 0 ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
+                        Total Revenue:{" "}
+                        {new Intl.NumberFormat("id-ID", {
+                          style: "currency",
+                          currency: "IDR",
+                        }).format(log.total_revenue)}
+                      </span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-500">{formatTimestamp(log.created_at)}</div>

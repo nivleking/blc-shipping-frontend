@@ -31,13 +31,12 @@ const RoomDetail = () => {
   const containersQuery = useQuery({
     queryKey: ["roomContainers", roomId],
     queryFn: async () => {
-      const response = await api.get(`/rooms/${roomId}/containers`, {
+      const response = await api.get(`/rooms/${roomId}/containers?useCache=false`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data; // Returns array of containers
     },
     enabled: !!roomId && !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {

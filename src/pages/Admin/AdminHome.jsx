@@ -128,7 +128,7 @@ const AdminHome = () => {
     },
     onError: (error) => {
       console.error("Error deleting room:", error);
-      showError("Failed to delete room");
+      showError("Failed to delete room: " + (error.response?.data?.message || "Unknown error"));
       setIsDeleting(false);
       setRoomToDelete(null);
     },

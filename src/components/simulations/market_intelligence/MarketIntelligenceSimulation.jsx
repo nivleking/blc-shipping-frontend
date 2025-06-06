@@ -38,7 +38,6 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId }) => {
       return response.data?.deck_id;
     },
     enabled: !!roomId && !deckId,
-    staleTime: 5 * 60 * 1000,
   });
 
   // The effective deck ID to use (either from props or query)
@@ -55,7 +54,6 @@ const MarketIntelligenceSimulation = ({ port, roomId, deckId }) => {
       return response.data.price_data;
     },
     enabled: !!effectiveDeckId,
-    staleTime: 5 * 60 * 1000,
   });
 
   // Handle loading states for both queries

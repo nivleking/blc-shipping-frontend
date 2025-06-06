@@ -21,7 +21,6 @@ const CapacityUptakePanel = ({ roomId, totalRounds = 1, containers, userId = nul
       return response.data;
     },
     enabled: !!roomId && !!token && isAdminView, // Only fetch users list in admin view
-    staleTime: 5 * 60 * 1000,
   });
 
   // Set first user as selected when data loads or set to forced userId in non-admin view
