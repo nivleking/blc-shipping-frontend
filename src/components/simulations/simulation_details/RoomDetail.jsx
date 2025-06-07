@@ -72,7 +72,7 @@ const RoomDetail = () => {
               <div className="ml-4 animate-pulse h-6 w-40 bg-gray-200 rounded"></div>
             ) : (
               <div className="ml-4">
-                <h1 className="text-lg font-bold">{room?.name || "Room Detail"}</h1>
+                <h1 className="text-lg font-bold">{roomId} - {room?.name || "Room Detail"}</h1>
                 <p className="text-sm text-gray-500">{room?.description || ""}</p>
               </div>
             )}
