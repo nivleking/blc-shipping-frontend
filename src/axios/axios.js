@@ -9,7 +9,21 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true,
+  withXSRFToken: true,
 });
+
+api.interceptors.request.use(
+  (config) => {
+    const token = sessionStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Websocket connection config
 const websocket = import.meta.env.VITE_WEBSOCKET_URL;

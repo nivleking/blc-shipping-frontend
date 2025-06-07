@@ -1,6 +1,8 @@
 import { useContext, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../axios/axios";
+import axios from "axios";
+import ActiveSessionModal from "./ActiveSessionModal";
 import { AppContext } from "../context/AppContext";
 import LoadingOverlay from "../components/LoadingOverlay";
 import useToast from "../toast/useToast";
@@ -14,6 +16,10 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const { setToken } = useContext(AppContext);
+
+  // State untuk modal sesi aktif
+  const [showActiveSessionModal, setShowActiveSessionModal] = useState(false);
+  const [activeSessionInfo, setActiveSessionInfo] = useState(null);
 
   useEffect(() => {
     if (Object.keys(errors).length > 0) {
@@ -29,17 +35,78 @@ const Login = () => {
 
     try {
       setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const response = await api.post("users/login", {
+      // 1. Get CSRF cookie - use absolute URL to avoid path issues
+      const baseUrl = import.meta.env.VITE_API_URL.replace("/api", "");
+      await axios.get(`${baseUrl}/sanctum/csrf-cookie`, {
+        withCredentials: true,
+      });
+
+      // 2. Make login request - properly awaited
+      try {
+        const response = await api.post("users/login", {
+          name: formData.name,
+          password: formData.password,
+        });
+
+        // 3. Now we can safely check the response
+        if (response.status === 200) {
+          // For cookie-based auth, no need to store token in sessionStorage
+          // But if your API still returns tokens, keep this for backward compatibility
+          if (response.data.token) {
+            sessionStorage.setItem("token", response.data.token);
+            setToken(response.data.token);
+          }
+
+          showSuccess("Login successful!");
+          if (response.data.is_admin === 1 || response.data.is_admin === true) {
+            navigate("/admin-home");
+          } else {
+            navigate("/user-home");
+          }
+        }
+      } catch (error) {
+        // Check if this is a "session conflict" error (409 status)
+        if (error.response && error.response.status === 409) {
+          // Show modal with active session info
+          setActiveSessionInfo(error.response.data.active_session);
+          setShowActiveSessionModal(true);
+        } else {
+          // Handle other errors
+          if (error.response && error.response.data && error.response.data.errors) {
+            setErrors(error.response.data.errors);
+          } else {
+            showError("Login failed: " + (error.response?.data?.message || "An unexpected error occurred"));
+            console.error("Login error:", error);
+          }
+        }
+      }
+    } catch (error) {
+      showError("Login failed: " + (error.response?.data?.message || "An unexpected error occurred"));
+      console.error("Login error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Handler for forcing logout of other sessions
+  async function handleForceLogout() {
+    try {
+      setIsLoading(true);
+
+      // Force logout API call
+      const response = await api.post("users/force-logout", {
         name: formData.name,
         password: formData.password,
       });
 
-      if (response.status === 200) {
+      // Handle successful login after force logout
+      if (response.data.token) {
         sessionStorage.setItem("token", response.data.token);
-        sessionStorage.setItem("refreshToken", response.data.refresh_token);
         setToken(response.data.token);
+        showSuccess("Successfully logged in and terminated other sessions");
+        setShowActiveSessionModal(false);
+
         if (response.data.is_admin === 1 || response.data.is_admin === true) {
           navigate("/admin-home");
         } else {
@@ -47,11 +114,7 @@ const Login = () => {
         }
       }
     } catch (error) {
-      if (error.response && error.response.data && error.response.data.errors) {
-        setErrors(error.response.data.errors);
-      } else {
-        showError("An unexpected error occurred. Please try again.");
-      }
+      showError(error.response?.data?.message || "Failed to terminate other sessions");
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +141,10 @@ const Login = () => {
   return (
     <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-gradient-to-tr from-black to-[#3b82f6]">
       {isLoading && <LoadingOverlay messages={loadingMessages} currentMessageIndex={currentMessageIndex} title="Logging in..." />}
+
+      {/* Render ActiveSessionModal */}
+      <ActiveSessionModal isOpen={showActiveSessionModal} onClose={() => setShowActiveSessionModal(false)} onForceLogout={handleForceLogout} sessionInfo={activeSessionInfo} />
+
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
