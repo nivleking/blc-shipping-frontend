@@ -187,8 +187,8 @@ const PreviousSimulations = () => {
               return (
                 <tr key={room.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{room.name}</div>
-                    <div className="text-sm text-gray-500 truncate max-w-xs">{room.description}</div>
+                    <div className="text-sm font-medium text-gray-900">{room.id}</div>
+                    <div className="text-sm text-gray-500 truncate max-w-xs">{room.name} - {room.description}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bg} ${statusInfo.text}`}>{statusInfo.label}</span>

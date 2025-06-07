@@ -97,7 +97,6 @@ const PortLegendSimulation = ({ compact = false }) => {
       };
     },
     enabled: !!user && !!token && !!roomId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   useEffect(() => {

@@ -10,6 +10,7 @@ import MarketIntelligencePanel from "./MarketIntelligencePanel";
 import CapacityUptakePanel from "./CapacityUptakePanel";
 import WeeklyPerformancePanel from "./WeeklyPerformancePanel";
 import StowageLogPanel from "./StowageLogPanel";
+import DescriptionPanel from "./DescriptionPanel"; // Import the new component
 import { useQuery } from "@tanstack/react-query";
 
 const formatIDR = (value) => {
@@ -30,13 +31,12 @@ const RoomDetail = () => {
   const containersQuery = useQuery({
     queryKey: ["roomContainers", roomId],
     queryFn: async () => {
-      const response = await api.get(`/rooms/${roomId}/containers`, {
+      const response = await api.get(`/rooms/${roomId}/containers?useCache=false`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data; // Returns array of containers
     },
     enabled: !!roomId && !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -72,7 +72,7 @@ const RoomDetail = () => {
               <div className="ml-4 animate-pulse h-6 w-40 bg-gray-200 rounded"></div>
             ) : (
               <div className="ml-4">
-                <h1 className="text-lg font-bold">{room?.name || "Room Detail"}</h1>
+                <h1 className="text-lg font-bold">{roomId} - {room?.name || "Room Detail"}</h1>
                 <p className="text-sm text-gray-500">{room?.description || ""}</p>
               </div>
             )}
@@ -83,6 +83,14 @@ const RoomDetail = () => {
         {/* Main Content */}
         <TabGroup>
           <TabList className="flex space-x-2 rounded-xl bg-blue-900/20 p-1 mb-4">
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-xs font-medium leading-5 
+              ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+              }
+            >
+              Description
+            </Tab>
             <Tab
               className={({ selected }) =>
                 `w-full rounded-lg py-2.5 text-xs font-medium leading-5 
@@ -126,6 +134,15 @@ const RoomDetail = () => {
           </TabList>
 
           <TabPanels>
+            <TabPanel>
+              {isLoading ? (
+                <div className="w-full flex justify-center p-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <DescriptionPanel room={room} roomId={roomId} />
+              )}
+            </TabPanel>
             <TabPanel>
               {isLoading ? (
                 <div className="w-full flex justify-center p-12">
