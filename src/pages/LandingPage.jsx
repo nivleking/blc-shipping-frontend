@@ -56,7 +56,7 @@ const LandingPage = () => {
           </div>
           <div className="text-center">
             <h1 className="text-5xl font-semibold tracking-tight text-gray-100 sm:text-7xl">BLC Shipping</h1>
-            <p className="mt-8 text-lg font-medium text-gray-400 sm:text-xl">Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo. Elit sunt amet fugiat veniam occaecat.</p>
+            <p className="mt-8 text-lg font-medium text-gray-400 sm:text-xl">Interactive web-based simulation that transforms complex maritime container logistics into an engaging learning experience</p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Link
                 to={"/login"}
