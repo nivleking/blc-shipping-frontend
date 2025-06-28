@@ -1147,7 +1147,7 @@ const Simulation = () => {
     }
 
     if (!isSpaceValid) {
-      showError("Invalid placement - container cannot float");
+      showError("Cannot place container - insufficient space");
       setIsLoading(false);
       return;
     }
