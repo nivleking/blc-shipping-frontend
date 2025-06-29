@@ -8,6 +8,7 @@ import useToast from "../toast/useToast";
 import ConfirmationModal from "../components/ConfirmationModal";
 import LoadingOverlay from "../components/LoadingOverlay";
 import { PORT_COLORS, getPortColor } from "../assets/Colors";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
@@ -15,6 +16,7 @@ const formatIDR = (value) => {
 
 const Room = () => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
+  const queryClient = useQueryClient();
   const { roomId } = useParams();
   const [users, setUsers] = useState([]);
   const [adminName, setAdminName] = useState("");
@@ -263,6 +265,7 @@ const Room = () => {
 
       showSuccess("Simulation started");
       setRoomStatus("active");
+      queryClient.invalidateQueries(["rooms"]);
       socket.emit("start_simulation", { roomId });
     } catch (error) {
       console.error("There was an error starting the simulation!", error);
@@ -296,7 +299,7 @@ const Room = () => {
   };
 
   async function endSimulation() {
-    if (currentRound < totalRounds) {
+    if (currentRound <= totalRounds) {
       // showError(`Simulation can only be ended after the final discharging phase (Week ${totalRounds + 1})`);
       showError(`Simulation can only be ended at week ${totalRounds}`);
       return;
@@ -322,6 +325,7 @@ const Room = () => {
       socket.emit("end_simulation", { roomId });
 
       setRoomStatus("finished");
+      queryClient.invalidateQueries(["rooms"]);
       showSuccess("Simulation has been successfully completed!");
     } catch (error) {
       console.error("There was an error ending the simulation!", error);
@@ -382,6 +386,10 @@ const Room = () => {
       setBaySwapMessageIndex(0);
     }
 
+    socket.emit("swap_bays", { roomId });
+
+    await new Promise((resolve) => setTimeout(resolve, 8000));
+
     try {
       await api.put(
         `/rooms/${roomId}/swap-bays`,
@@ -390,17 +398,6 @@ const Room = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      const userPortsResponse = await api.get(`/rooms/${roomId}/user-port2`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const newPortAssignments = {};
-      userPortsResponse.data.forEach((shipBay) => {
-        newPortAssignments[shipBay.user_id] = shipBay.port;
-      });
-
-      socket.emit("swap_bays", { roomId });
 
       setCurrentRound((prev) => prev + 1);
 
@@ -745,7 +742,7 @@ const Room = () => {
                 {/* Configure Port Swap Button */}
                 <button
                   onClick={() => setShowSwapConfigModal(true)}
-                  // disabled={currentRound > totalRounds}
+                  disabled={currentRound > totalRounds}
                   className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-400" : "bg-yellow-400 border-2 border-yellow-500 text-white hover:bg-yellow-500"} 
     shadow-sm`}
@@ -780,23 +777,23 @@ const Room = () => {
                 {/* End Simulation Button */}
                 <button
                   onClick={() => {
-                    if (currentRound >= totalRounds) {
+                    if (currentRound > totalRounds) {
                       setShowEndConfirmation(true); // Show confirmation instead of ending directly
                     } else {
-                      showError(`Simulation can only be ended at week ${totalRounds}`);
+                      showError(`Simulation can only be ended at week ${totalRounds + 1}`);
                     }
                   }}
                   disabled={currentRound < totalRounds}
                   className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-md transition-all duration-200 ${
-                    currentRound >= totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    currentRound > totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   }`}
-                  title={currentRound < totalRounds ? `Can only end simulation after the final discharging phase (Week ${totalRounds + 1})` : "End simulation"}
+                  title={currentRound > totalRounds ? `Can only end simulation after the final discharging phase (Week ${totalRounds + 1})` : "End simulation"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
                   </svg>
                   END
-                  {currentRound == totalRounds && (
+                  {currentRound <= totalRounds && (
                     <span className="text-xs ml-1">
                       (Week {currentRound}/{totalRounds})
                     </span>

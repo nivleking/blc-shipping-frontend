@@ -111,8 +111,6 @@ const Simulation = () => {
       return response.data;
     },
     enabled: !!roomId && !!deckId && !!token,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
   });
 
   const allCardTemporaries = cardTemporariesData?.cards || [];
@@ -145,42 +143,6 @@ const Simulation = () => {
     // Toggle modal visibility
     setShowFinancialModal(!showFinancialModal);
   };
-
-  const [selectedHistoricalWeek, setSelectedHistoricalWeek] = useState(currentRound);
-  const [historicalStats, setHistoricalStats] = useState(null);
-  const [showHistorical, setShowHistorical] = useState(false);
-
-  const fetchHistoricalStats = async (week) => {
-    try {
-      setIsLoading(true);
-      console.log("Fetching historical statistics for week:", week);
-
-      const url = `/rooms/${roomId}/users/${user.id}/bay-statistics-history/${week}`;
-      const response = await api.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data && Object.keys(response.data).length > 0) {
-        setHistoricalStats(response.data);
-      } else {
-        console.warn("No historical data found or empty response:", response.data);
-        setHistoricalStats(null);
-      }
-    } catch (error) {
-      console.error("Error fetching historical statistics:", error);
-      setHistoricalStats(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (showHistorical && selectedHistoricalWeek && selectedHistoricalWeek !== currentRound) {
-      fetchHistoricalStats(selectedHistoricalWeek);
-    } else {
-      setHistoricalStats(null);
-    }
-  }, [selectedHistoricalWeek, showHistorical, currentRound, roomId, user?.id, token]);
 
   const [weekSalesCalls, setWeekSalesCalls] = useState([]);
   const [weekRevenueTotal, setWeekRevenueTotal] = useState(0);
@@ -300,9 +262,6 @@ const Simulation = () => {
     socket.on("swap_bays", async ({ roomId: receivedRoomId }) => {
       if (receivedRoomId === roomId) {
         try {
-          // This is where we need to ensure comprehensive config is fetched
-          await fetchArenaData();
-
           setShowSwapAlert(true);
           let timer = 10;
           setCountdown(timer);
@@ -317,6 +276,8 @@ const Simulation = () => {
               handleSwapProcess();
             }
           }, 1000);
+
+          await fetchArenaData();
         } catch (error) {
           console.error("Error handling swap_bays event:", error);
         }
@@ -337,29 +298,11 @@ const Simulation = () => {
 
     socket.on("stats_requested", async ({ roomId: requestedRoomId, userId: requestedUserId }) => {
       if (roomId === requestedRoomId && user.id === requestedUserId) {
-        const response = await fetchArenaData();
-
-        // Extract the stats from current state
-        // const stats = {
-        //   load_moves: moveStats.loadMoves,
-        //   discharge_moves: moveStats.dischargeMoves,
-        //   accepted_cards: moveStats.acceptedCards,
-        //   rejected_cards: moveStats.rejectedCards,
-        //   penalty: penalties,
-        // };
-
-        // const stats = {
-        //   load_moves: response.data.load_moves || 0,
-        //   discharge_moves: response.data.discharge_moves || 0,
-        //   accepted_cards: response.data.accepted_cards || 0,
-        //   rejected_cards: response.data.rejected_cards || 0,
-        //   penalty: response.data.penalty || 0,
-        // };
+        // const response = await fetchArenaData();
 
         socket.emit("stats_updated", {
           roomId,
           userId: user.id,
-          // stats,
         });
       }
     });
@@ -428,8 +371,24 @@ const Simulation = () => {
 
     setIsLoading(true);
     try {
+      const containerResponse = await api.get(`rooms/${roomId}/containers`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      let containerData = containerResponse.data;
+
+      if (!Array.isArray(containerData)) {
+        console.error("Container data is not an array:", containerData);
+        containerData = [];
+      } else {
+        console.log(`Loaded ${containerData.length} containers successfully`);
+      }
+
+      setContainers(containerData);
+
       // Single API call to get all arena data
-      const response = await api.get(`/arena-data/${roomId}/${user.id}`, {
+      const response = await api.get(`/rooms/${roomId}/ship-bays/arena-data/${user.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -527,10 +486,6 @@ const Simulation = () => {
       // Initialize bay data
       const initialBayData = Array.from({ length: bayCount }).map(() => Array.from({ length: baySize.rows }).map(() => Array(baySize.columns).fill(null)));
 
-      // Get container data
-      const containerData = data.containers;
-      setContainers(containerData);
-
       // Process arena data for ship bay
       const savedArena = typeof shipBayData.arena === "string" ? JSON.parse(shipBayData.arena) : shipBayData.arena;
 
@@ -583,7 +538,7 @@ const Simulation = () => {
                   newDroppedItems.push({
                     id: item,
                     area: `bay-${bayIndex}-${rowIndex * bay[0].length + colIndex}`,
-                    color: containerObj.color,
+                    color: containerObj?.color || getContainerColorByDestination(containerObj?.destination),
                   });
                 }
               }
@@ -768,7 +723,7 @@ const Simulation = () => {
       };
 
       const cardResponse = await api.post(
-        `/ship-bays/${roomId}/${user.id}/cards`,
+        `/rooms/${roomId}/ship-bays/${user.id}/cards`,
         {
           card_action: "accept",
           count: 1,
@@ -806,6 +761,7 @@ const Simulation = () => {
       console.error("Error accepting card:", error);
       showError("Failed to process card");
     } finally {
+      await fetchArenaData();
       setIsProcessingCard(false);
       setSelectedTab(0);
       showInfo("Redirecting to Capacity Uptake to check available capacity");
@@ -849,7 +805,7 @@ const Simulation = () => {
       setIsCardVisible(false);
 
       const response = await api.post(
-        `/ship-bays/${roomId}/${user.id}/cards`,
+        `/rooms/${roomId}/ship-bays/${user.id}/cards`,
         {
           card_action: "reject",
           count: 1,
@@ -1054,7 +1010,7 @@ const Simulation = () => {
       if (isFromBay && isToDock) {
         // Check if container destination matches current port
         try {
-          const containerResponse = await api.get(`/containers/${active.id}`, {
+          const containerResponse = await api.get(`/rooms/${roomId}/containers/${active.id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -1106,22 +1062,30 @@ const Simulation = () => {
 
             try {
               // Save updated bay state
-              const bayResponse = await api.post("/ship-bays", {
-                arena: flatBayData,
-                user_id: user.id,
-                room_id: roomId,
-                section: "section1",
-                moved_container: {
-                  id: container.id,
-                  from: activeItem.area,
-                  to: over.id,
+              const bayResponse = await api.post(
+                `/rooms/${roomId}/ship-bays`,
+                {
+                  arena: flatBayData,
+                  user_id: user.id,
+                  room_id: roomId,
+                  section: "section1",
+                  moved_container: {
+                    id: container.id,
+                    from: activeItem.area,
+                    to: over.id,
+                  },
+                  move_type: "discharge",
+                  count: 1,
+                  bay_index: sourceBayIndex,
+                  container_id: active.id,
+                  isLog: true,
                 },
-                move_type: "discharge",
-                count: 1,
-                bay_index: sourceBayIndex,
-                container_id: active.id,
-                isLog: true,
-              });
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
 
               // Request updated stats
               socket.emit("stats_requested", {
@@ -1134,6 +1098,7 @@ const Simulation = () => {
                 rankings: bayResponse.data.rankings,
               });
 
+              await fetchArenaData();
               return;
             } catch (error) {
               console.error("API call failed", error);
@@ -1182,7 +1147,7 @@ const Simulation = () => {
     }
 
     if (!isSpaceValid) {
-      showError("Invalid placement - container cannot float");
+      showError("Cannot place container - insufficient space");
       setIsLoading(false);
       return;
     }
@@ -1192,16 +1157,46 @@ const Simulation = () => {
 
     showSuccess("Container placed successfully!");
 
-    const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
-      return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
-        return Array.from({ length: baySize.columns }).map((_, colIndex) => {
-          const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
-          const item = updatedDroppedItems.find((item) => item.area === cellId);
-          return item ? item.id : null;
-        });
-      });
-    });
-    setBayData(newBayData);
+    const newBayData = [];
+    for (let bayIdx = 0; bayIdx < bayCount; bayIdx++) {
+      for (let rowIdx = 0; rowIdx < baySize.rows; rowIdx++) {
+        for (let colIdx = 0; colIdx < baySize.columns; colIdx++) {
+          const cellId = `bay-${bayIdx}-${rowIdx * baySize.columns + colIdx}`;
+          const containerItem = updatedDroppedItems.find((item) => item.area === cellId);
+          if (containerItem) {
+            const containerObj = containers.find((c) => c.id === containerItem.id);
+            if (containerObj) {
+              newBayData.push({
+                bay: bayIdx,
+                row: rowIdx,
+                col: colIdx,
+                id: containerItem.id,
+                cardId: containerObj.card_id,
+                type: containerObj.type || "dry",
+                origin: containerObj.origin,
+                destination: containerObj.destination,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const flatBayData = {
+      containers: newBayData.map((item) => ({
+        id: item.id,
+        position: item.bay * baySize.rows * baySize.columns + item.row * baySize.columns + item.col,
+        bay: item.bay,
+        row: item.row,
+        col: item.col,
+        type: item.type,
+        cardId: item.cardId,
+        origin: item.origin,
+        destination: item.destination,
+      })),
+      totalContainers: newBayData.length,
+    };
+    setBayData(flatBayData);
 
     const dockItems = updatedDroppedItems
       .filter((item) => item.area && item.area.startsWith("docks-"))
@@ -1237,32 +1232,48 @@ const Simulation = () => {
       const isBayInvolved = fromArea.startsWith("bay") || toArea.startsWith("bay");
 
       try {
-        const resBay = await api.post("/ship-bays", {
-          arena: newBayData,
-          user_id: user.id,
-          room_id: roomId,
-          moved_container: {
-            id: container.id,
-            from: fromArea,
-            to: toArea,
+        const resBay = await api.post(
+          `/rooms/${roomId}/ship-bays`,
+          {
+            arena: flatBayData,
+            user_id: user.id,
+            room_id: roomId,
+            moved_container: {
+              id: container.id,
+              from: fromArea,
+              to: toArea,
+            },
+            section: section === 1 ? "section1" : "section2",
+            ...(isBayInvolved && relevantBayIndex !== null
+              ? {
+                  move_type: moveType,
+                  count: 1,
+                  bay_index: relevantBayIndex,
+                  container_id: containerId,
+                }
+              : {}),
           },
-          section: section === 1 ? "section1" : "section2",
-          ...(isBayInvolved && relevantBayIndex !== null
-            ? {
-                move_type: moveType,
-                count: 1,
-                bay_index: relevantBayIndex,
-                container_id: containerId,
-              }
-            : {}),
-        });
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-        const resDock = await api.post("/ship-docks", {
-          arena: dockArenaData, // Send new format
-          user_id: user.id,
-          room_id: roomId,
-          dock_size: dockSize,
-        });
+        const resDock = await api.post(
+          `/rooms/${roomId}/ship-docks`,
+          {
+            arena: dockArenaData, // Send new format
+            user_id: user.id,
+            room_id: roomId,
+            dock_size: dockSize,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const fromDock = fromArea.startsWith("docks-");
         const toDock = toArea.startsWith("docks-");
@@ -1280,6 +1291,7 @@ const Simulation = () => {
         console.error("Error during container movement:", error);
         showError("Failed to move container. Please try again.");
       } finally {
+        await fetchArenaData();
         setIsLoading(false);
       }
     } catch (error) {
@@ -1322,7 +1334,7 @@ const Simulation = () => {
 
     try {
       await api.put(
-        `/ship-bays/${roomId}/${user.id}/section`,
+        `/rooms/${roomId}/ship-bays/${user.id}/section`,
         {
           section: "section2",
         },
@@ -1514,11 +1526,6 @@ const Simulation = () => {
                 port={port}
                 bayMoves={bayMoves}
                 totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
-                selectedHistoricalWeek={selectedHistoricalWeek}
-                setSelectedHistoricalWeek={setSelectedHistoricalWeek}
-                historicalStats={historicalStats}
-                showHistorical={showHistorical}
-                setShowHistorical={setShowHistorical}
                 onRefreshCards={handleRefreshCards}
                 dockWarehouseContainers={dockWarehouseContainers}
                 restowageContainers={restowageContainers}
