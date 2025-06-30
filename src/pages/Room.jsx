@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api, socket } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
@@ -116,10 +116,20 @@ const Room = () => {
 
     socket.on("port_updated", ({ roomId: receivedRoomId, userId, port }) => {
       if (receivedRoomId === roomId) {
-        setAssignedPorts((prev) => ({
-          ...prev,
-          [userId]: port,
-        }));
+        setAssignedPorts((prev) => {
+          const newPorts = {
+            ...prev,
+            [userId]: port,
+          };
+
+          const allAssigned = users.every((user) => newPorts[user.id] && newPorts[user.id] !== "Not Assigned");
+
+          if (allAssigned) {
+            setPortsSet(true);
+          }
+
+          return newPorts;
+        });
       }
     });
 
@@ -524,6 +534,32 @@ const Room = () => {
             </div>
           )}
 
+          {portsSet && (
+            <div className="mb-4 bg-gray-50 rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-700">Ship Routes</h3>
+                {/* {currentSwapConfig && Object.keys(currentSwapConfig).length > 0 && <span className="text-xs text-gray-500">Ship routes</span>} */}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {Object.values(assignedPorts)
+                  .filter((port) => port !== "Not Assigned")
+                  .map((port, index, array) => (
+                    <Fragment key={`route-${index}`}>
+                      <div className="flex items-center">
+                        <span className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: getPortColor(port) }}></span>
+                        <span className="text-xs font-medium">{port}</span>
+                      </div>
+                      {index < array.length - 1 && (
+                        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </Fragment>
+                  ))}
+              </div>
+            </div>
+          )}
+
           {/* Enhanced Users Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
@@ -649,11 +685,14 @@ const Room = () => {
                     )
                   ) : users && users.length > 0 ? (
                     users.map((singleUser, index) => (
-                      <tr key={`user-${singleUser.id}-${index}`} className="hover:bg-gray-50 transition-colors">
+                      <tr key={`user-${singleUser.id}-${index}`} className={`${user && singleUser.id === user.id ? "bg-blue-50" : ""} hover:bg-gray-50 transition-colors`}>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="text-sm font-medium text-gray-900">{singleUser.name}</div>
+                            <div className={`text-sm font-medium ${user && singleUser.id === user.id ? "text-blue-600 font-bold" : "text-gray-900"}`}>
+                              {singleUser.name}
+                              {user && singleUser.id === user.id && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">You</span>}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{assignedPorts[singleUser.id] || "Not Assigned"}</td>
