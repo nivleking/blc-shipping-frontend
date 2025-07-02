@@ -855,6 +855,26 @@ const Simulation = () => {
   }
 
   const handleDragStart = (event) => {
+    const containerId = event.active.id;
+
+    // In section 1 (discharge), only allow dragging target containers or containers from dock
+    if (section === 1) {
+      // Check if this is a container in the bay (not in dock)
+      const containerInBay = droppedItems.some((item) => item.id === containerId && item.area?.startsWith("bay-"));
+
+      if (containerInBay) {
+        // Check if this container is in the target containers list (meant for current port)
+        const isTargetContainer = targetContainers.some((tc) => tc.id === containerId);
+
+        if (!isTargetContainer) {
+          // Show a warning to the user
+          showWarning(`You can only discharge containers for port ${port} in this phase.`);
+          event.preventDefault();
+          return; // Don't set draggingItem, effectively canceling the drag
+        }
+      }
+    }
+
     const sourceItem = droppedItems.find((item) => item.id === event.active.id);
 
     if (sourceItem) {
@@ -1352,6 +1372,122 @@ const Simulation = () => {
     }
   };
 
+  const handleDischargeAll = async () => {
+    if (!targetContainers || targetContainers.length === 0) return false;
+
+    try {
+      // Create a list of all containers to be discharged
+      const containersToDischarge = [...targetContainers];
+      const containerMoves = [];
+
+      // Track new positions for batch update
+      let firstAvailableDockPosition = 0;
+
+      // Find the first available position in the dock
+      for (let i = 0; i < 1000; i++) {
+        const position = `docks-${i}`;
+        if (!droppedItems.some((item) => item.area === position)) {
+          firstAvailableDockPosition = i;
+          break;
+        }
+      }
+
+      // Prepare the moves for all containers
+      for (let i = 0; i < containersToDischarge.length; i++) {
+        const container = containersToDischarge[i];
+        const item = droppedItems.find((item) => item.id === container.id);
+
+        if (item) {
+          const sourceArea = item.area;
+          const bayIndex = parseInt(sourceArea.split("-")[1]);
+          const dockPosition = firstAvailableDockPosition + i;
+          const targetArea = `docks-${dockPosition}`;
+
+          containerMoves.push({
+            containerId: String(container.id),
+            sourceArea,
+            targetArea,
+            bayIndex,
+          });
+        }
+      }
+
+      if (containerMoves.length === 0) {
+        showError("No containers could be moved");
+        return false;
+      }
+
+      // Immediately update UI to show containers moving from bay to dock
+      const updatedItems = droppedItems.map((item) => {
+        // If this item is one we're discharging, update its area to dock
+        const moveInfo = containerMoves.find((move) => move.containerId === String(item.id));
+        if (moveInfo) {
+          return { ...item, area: moveInfo.targetArea };
+        }
+        return item;
+      });
+
+      // Update the UI state
+      setDroppedItems(updatedItems);
+
+      // Send the API request with restowage checking flag
+      const response = await api.post(
+        `rooms/${roomId}/ship-bays/${user.id}/moves`,
+        {
+          move_type: "discharge",
+          count: containerMoves.length,
+          bay_index: containerMoves[0]?.bayIndex || 0,
+          create_log: true,
+          check_restowage: true,
+          batch_moves: containerMoves.map((move) => ({
+            container_id: String(move.containerId),
+            from: move.sourceArea,
+            to: move.targetArea,
+          })),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Handle response - if there's a restowage_error, show error and revert UI
+      if (response.data.restowage_error) {
+        showError(response.data.message || "Cannot discharge all containers while there are restowage issues.");
+        await fetchArenaData(); // Reload to revert UI changes
+        return false;
+      }
+
+      // Update move statistics
+      setMoveStats((prevStats) => ({
+        ...prevStats,
+        dischargeMoves: prevStats.dischargeMoves + containerMoves.length,
+      }));
+
+      // Clear target containers since they're now discharged
+      setTargetContainers([]);
+
+      showSuccess(`Successfully discharged ${containerMoves.length} containers`);
+
+      // Refresh arena data to ensure everything is in sync
+      await fetchArenaData();
+
+      return true;
+    } catch (error) {
+      console.error("Error discharging all containers:", error);
+
+      // Check if error has a specific restowage message
+      if (error.response?.data?.restowage_error) {
+        showError(error.response.data.message || "Cannot discharge containers due to restowage issues. Fix restowage problems first.");
+      } else {
+        showError("Failed to discharge all containers: " + (error.response?.data?.message || error.message));
+      }
+
+      // Refresh data to ensure UI is in sync with server state
+      await fetchArenaData();
+      return false;
+    }
+  };
+
   return (
     <div className="min-h-screen max-w-screen bg-gradient-to-br from-blue-50 to-blue-100 p-8">
       {showSwapAlert && swapInfo && (
@@ -1538,6 +1674,8 @@ const Simulation = () => {
                 onContainerHover={handleContainerHover}
                 toggleFinancialModal={toggleFinancialModal}
                 isBayFull={isBayFull}
+                handleDischargeAll={handleDischargeAll}
+                moveCost={moveCost}
                 // bayPairs={bayPairs}
                 // idealCraneSplit={idealCraneSplit}
                 // longCraneMoves={longCraneMoves}
