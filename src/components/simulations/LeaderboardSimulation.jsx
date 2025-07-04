@@ -42,7 +42,7 @@ const LeaderboardSimulation = ({ roomId, formatIDR, onRankingsUpdate }) => {
   const { user, token } = useContext(AppContext);
   const [rankings, setRankings] = useState([]);
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState(true);
-  const [viewMode, setViewMode] = useState("table"); // 'table' or 'chart'
+  const [viewMode, setViewMode] = useState("chart"); // 'table' or 'chart'
 
   const fetchRankings = async () => {
     try {

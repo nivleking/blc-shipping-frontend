@@ -45,7 +45,7 @@ const LeaderboardPanel = ({ roomId }) => {
   const { token, user } = useContext(AppContext);
   const [sortBy, setSortBy] = useState("rank"); // Default sort by rank
   const [sortOrder, setSortOrder] = useState("asc");
-  const [viewMode, setViewMode] = useState("table"); // 'table' or 'chart'
+  const [viewMode, setViewMode] = useState("chart"); // 'table' or 'chart'
 
   // Fetch leaderboard data using React Query
   const {
