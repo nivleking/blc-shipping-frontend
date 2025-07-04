@@ -146,7 +146,7 @@ const Simulation = () => {
 
   // Add a function to toggle the financial modal visibility
   const toggleFinancialModal = () => {
-    setSelectedTab(2);
+    setSelectedTab(3);
     // Toggle modal visibility
     setShowFinancialModal(!showFinancialModal);
   };
