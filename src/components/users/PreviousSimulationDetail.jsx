@@ -88,6 +88,14 @@ const PreviousSimulationDetail = () => {
             <Tab
               className={({ selected }) =>
                 `w-full rounded-lg py-2.5 text-xs font-medium leading-5 
+    ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
+              }
+            >
+              Leaderboard
+            </Tab>
+            <Tab
+              className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-xs font-medium leading-5 
               ${selected ? "bg-white shadow text-blue-700" : "text-blue-500 hover:bg-white/[0.12] hover:text-blue-600"}`
               }
             >
@@ -127,6 +135,15 @@ const PreviousSimulationDetail = () => {
                 </div>
               ) : (
                 <DescriptionPanel room={room} roomId={roomId} />
+              )}
+            </TabPanel>
+            <TabPanel>
+              {isLoading ? (
+                <div className="w-full flex justify-center p-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <LeaderboardPanel roomId={roomId} />
               )}
             </TabPanel>
             <TabPanel>

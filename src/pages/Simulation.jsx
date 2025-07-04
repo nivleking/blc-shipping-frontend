@@ -10,6 +10,7 @@ import WeeklyPerformance from "../components/simulations/weekly_performance/Week
 import MarketIntelligenceSimulation from "../components/simulations/market_intelligence/MarketIntelligenceSimulation";
 import Stowage from "../components/simulations/stowages/Stowage";
 import CapacityUptake from "../components/simulations/capacity_uptake/CapacityUptake";
+import LeaderboardSimulation from "../components/simulations/LeaderboardSimulation";
 import useToast from "../toast/useToast";
 import { PORT_COLORS, getPortColor } from "../assets/Colors";
 
@@ -94,6 +95,12 @@ const Simulation = () => {
   const [hoveredCard, setHoveredCard] = useState(null);
 
   const [showFinancialModal, setShowFinancialModal] = useState(false);
+
+  const [rankings, setRankings] = useState([]);
+
+  const handleRankingsUpdate = (updatedRankings) => {
+    setRankings(updatedRankings);
+  };
 
   const { data: cardTemporariesData, isLoading: isLoadingCardTemporaries } = useQuery({
     queryKey: ["cardTemporaries", roomId, deckId],
@@ -732,6 +739,7 @@ const Simulation = () => {
           port: port,
           dock_arena: dockArenaData,
           dock_size: dockSize,
+          is_backlog: currentCard?.is_backlog,
         },
         {
           headers: {
@@ -1600,6 +1608,19 @@ const Simulation = () => {
                 }
               >
                 <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <span>Leaderboard</span>
+              </Tab>
+
+              <Tab
+                className={({ selected }) =>
+                  `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                    selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                  }`
+                }
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>Weekly Performance</span>
@@ -1681,6 +1702,14 @@ const Simulation = () => {
                 // longCraneMoves={longCraneMoves}
                 // extraMovesOnLongCrane={extraMovesOnLongCrane}
               />
+            </TabPanel>
+
+            {/* Leaderboard Tab */}
+            <TabPanel>
+              <div className="bg-white rounded-lg shadow p-4">
+                <h2 className="text-lg font-bold mb-4">Current Rankings</h2>
+                <LeaderboardSimulation roomId={roomId} formatIDR={formatIDR} onRankingsUpdate={handleRankingsUpdate} />
+              </div>
             </TabPanel>
 
             {/* Weekly Performance Tab */}
