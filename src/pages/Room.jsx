@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api, socket } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
@@ -8,6 +8,7 @@ import useToast from "../toast/useToast";
 import ConfirmationModal from "../components/ConfirmationModal";
 import LoadingOverlay from "../components/LoadingOverlay";
 import { PORT_COLORS, getPortColor } from "../assets/Colors";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formatIDR = (value) => {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
@@ -15,6 +16,7 @@ const formatIDR = (value) => {
 
 const Room = () => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
+  const queryClient = useQueryClient();
   const { roomId } = useParams();
   const [users, setUsers] = useState([]);
   const [adminName, setAdminName] = useState("");
@@ -114,10 +116,20 @@ const Room = () => {
 
     socket.on("port_updated", ({ roomId: receivedRoomId, userId, port }) => {
       if (receivedRoomId === roomId) {
-        setAssignedPorts((prev) => ({
-          ...prev,
-          [userId]: port,
-        }));
+        setAssignedPorts((prev) => {
+          const newPorts = {
+            ...prev,
+            [userId]: port,
+          };
+
+          const allAssigned = users.every((user) => newPorts[user.id] && newPorts[user.id] !== "Not Assigned");
+
+          if (allAssigned) {
+            setPortsSet(true);
+          }
+
+          return newPorts;
+        });
       }
     });
 
@@ -263,6 +275,7 @@ const Room = () => {
 
       showSuccess("Simulation started");
       setRoomStatus("active");
+      queryClient.invalidateQueries(["rooms"]);
       socket.emit("start_simulation", { roomId });
     } catch (error) {
       console.error("There was an error starting the simulation!", error);
@@ -296,7 +309,7 @@ const Room = () => {
   };
 
   async function endSimulation() {
-    if (currentRound < totalRounds) {
+    if (currentRound <= totalRounds) {
       // showError(`Simulation can only be ended after the final discharging phase (Week ${totalRounds + 1})`);
       showError(`Simulation can only be ended at week ${totalRounds}`);
       return;
@@ -322,6 +335,7 @@ const Room = () => {
       socket.emit("end_simulation", { roomId });
 
       setRoomStatus("finished");
+      queryClient.invalidateQueries(["rooms"]);
       showSuccess("Simulation has been successfully completed!");
     } catch (error) {
       console.error("There was an error ending the simulation!", error);
@@ -382,6 +396,10 @@ const Room = () => {
       setBaySwapMessageIndex(0);
     }
 
+    socket.emit("swap_bays", { roomId });
+
+    await new Promise((resolve) => setTimeout(resolve, 8000));
+
     try {
       await api.put(
         `/rooms/${roomId}/swap-bays`,
@@ -390,17 +408,6 @@ const Room = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      const userPortsResponse = await api.get(`/rooms/${roomId}/user-port2`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const newPortAssignments = {};
-      userPortsResponse.data.forEach((shipBay) => {
-        newPortAssignments[shipBay.user_id] = shipBay.port;
-      });
-
-      socket.emit("swap_bays", { roomId });
 
       setCurrentRound((prev) => prev + 1);
 
@@ -524,6 +531,45 @@ const Room = () => {
               <h3 className="text-sm font-semibold text-blue-700">
                 Week {currentRound} of {totalRounds}
               </h3>
+            </div>
+          )}
+
+          {portsSet && (
+            <div className="mb-4 bg-gray-50 rounded-lg border border-gray-200 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-700">Ship Routes</h3>
+                {/* {currentSwapConfig && Object.keys(currentSwapConfig).length > 0 && <span className="text-xs text-gray-500">Ship routes</span>} */}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {Object.values(assignedPorts)
+                  .filter((port) => port !== "Not Assigned")
+                  .map((port, index, array) => (
+                    <Fragment key={`route-${index}`}>
+                      <div className="flex items-center">
+                        <span className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: getPortColor(port) }}></span>
+                        <span className="text-xs font-medium">{port}</span>
+                      </div>
+                      {index < array.length - 1 && (
+                        <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </Fragment>
+                  ))}
+
+                {/* Loop back to first port */}
+                {Object.values(assignedPorts).length > 0 && (
+                  <Fragment>
+                    <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <div className="flex items-center">
+                      <span className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: getPortColor(Object.values(assignedPorts)[0]) }}></span>
+                      <span className="text-xs font-medium">{Object.values(assignedPorts)[0]}</span>
+                    </div>
+                  </Fragment>
+                )}
+              </div>
             </div>
           )}
 
@@ -652,11 +698,14 @@ const Room = () => {
                     )
                   ) : users && users.length > 0 ? (
                     users.map((singleUser, index) => (
-                      <tr key={`user-${singleUser.id}-${index}`} className="hover:bg-gray-50 transition-colors">
+                      <tr key={`user-${singleUser.id}-${index}`} className={`${user && singleUser.id === user.id ? "bg-blue-50" : ""} hover:bg-gray-50 transition-colors`}>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="text-sm font-medium text-gray-900">{singleUser.name}</div>
+                            <div className={`text-sm font-medium ${user && singleUser.id === user.id ? "text-blue-600 font-bold" : "text-gray-900"}`}>
+                              {singleUser.name}
+                              {user && singleUser.id === user.id && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">You</span>}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{assignedPorts[singleUser.id] || "Not Assigned"}</td>
@@ -745,7 +794,7 @@ const Room = () => {
                 {/* Configure Port Swap Button */}
                 <button
                   onClick={() => setShowSwapConfigModal(true)}
-                  // disabled={currentRound > totalRounds}
+                  disabled={currentRound > totalRounds}
                   className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all duration-200 
     ${currentRound > totalRounds ? "bg-gray-300 text-gray-500 cursor-not-allowed border-gray-400" : "bg-yellow-400 border-2 border-yellow-500 text-white hover:bg-yellow-500"} 
     shadow-sm`}
@@ -780,23 +829,23 @@ const Room = () => {
                 {/* End Simulation Button */}
                 <button
                   onClick={() => {
-                    if (currentRound >= totalRounds) {
+                    if (currentRound > totalRounds) {
                       setShowEndConfirmation(true); // Show confirmation instead of ending directly
                     } else {
-                      showError(`Simulation can only be ended at week ${totalRounds}`);
+                      showError(`Simulation can only be ended at week ${totalRounds + 1}`);
                     }
                   }}
                   disabled={currentRound < totalRounds}
                   className={`text-xs flex items-center justify-center gap-2 px-4 py-3 rounded-lg shadow-md transition-all duration-200 ${
-                    currentRound >= totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    currentRound > totalRounds ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                   }`}
-                  title={currentRound < totalRounds ? `Can only end simulation after the final discharging phase (Week ${totalRounds + 1})` : "End simulation"}
+                  title={currentRound > totalRounds ? `Can only end simulation after the final discharging phase (Week ${totalRounds + 1})` : "End simulation"}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
                   </svg>
                   END
-                  {currentRound == totalRounds && (
+                  {currentRound <= totalRounds && (
                     <span className="text-xs ml-1">
                       (Week {currentRound}/{totalRounds})
                     </span>

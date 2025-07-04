@@ -20,6 +20,11 @@ const SalesCallCard = ({
   // Cek apakah tidak ada kartu yang tersedia
   const noCardsAvailable = !salesCallCards.length || currentCardIndex >= salesCallCards.length;
 
+  // Calculate committed cards remaining
+  const committedCards = salesCallCards.filter((card) => card.priority === "Committed");
+  const committedCount = committedCards.length;
+  const hasCommitted = committedCount > 0;
+
   // Tentukan jenis tampilan berdasarkan status kartu dan batas
   const showLimitExceededMessage = isLimitExceeded;
   const showNoCardsMessage = noCardsAvailable && !isLimitExceeded;
@@ -105,6 +110,14 @@ const SalesCallCard = ({
           <div className="text-[9px] text-green-600 bg-green-50 p-1 rounded">✓ Required cards processed - remaining cards are optional</div>
         ) : (
           <div className="text-[9px] text-blue-600">Need to process {mustProcessCards - processedCards} more required cards</div>
+        )}
+
+        {/* New: Committed Cards Info */}
+        {hasCommitted && (
+          <div className="mt-1 flex justify-between items-center bg-yellow-50 border border-yellow-200 rounded px-2 py-1">
+            <div className="text-[9px] font-medium text-yellow-700">Committed cards in queue:</div>
+            <span className="text-[9px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full font-bold border border-yellow-300">{committedCount} remaining</span>
+          </div>
         )}
       </div>
 

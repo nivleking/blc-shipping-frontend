@@ -41,9 +41,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
                   <h3 className="text-lg font-bold text-center text-blue-800 mb-4">{title}</h3>
 
                   {/* Message */}
-                  <div className="mt-4">
-                    <p className="text-center text-base text-gray-700">{message}</p>
-                  </div>
+                  <div className="mt-4">{message}</div>
 
                   {/* Buttons */}
                   <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 text-sm">

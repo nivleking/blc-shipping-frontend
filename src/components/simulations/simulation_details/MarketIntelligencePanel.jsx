@@ -31,7 +31,6 @@ const MarketIntelligencePanel = ({ roomId }) => {
       return response.data;
     },
     enabled: !!roomId && !!token,
-    staleTime: 5 * 60 * 1000,
   });
 
   // The effective deck ID to use
@@ -41,12 +40,13 @@ const MarketIntelligencePanel = ({ roomId }) => {
   const marketQuery = useQuery({
     queryKey: ["marketIntelligence", deckId],
     queryFn: async () => {
-      const response = await api.get(`/market-intelligence/deck/${deckId}`);
+      const response = await api.get(`/market-intelligence/deck/${deckId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.data.penalties) setPenalties(response.data.penalties);
       return response.data.price_data;
     },
     enabled: !!deckId,
-    staleTime: 5 * 60 * 1000,
   });
 
   // Loading state

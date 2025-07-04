@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { api } from "../../../axios/axios";
 import { FaShip } from "react-icons/fa";
 import LoadingOverlay from "../../LoadingOverlay";
 import useToast from "../../../toast/useToast";
 import { availablePorts } from "../../../assets/PortUtilities";
+import { AppContext } from "../../../context/AppContext";
 
 // Port to number mapping
 const PORT_TO_NUMBER = {
@@ -24,6 +25,7 @@ const validateId = (id) => {
 };
 
 const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
+  const { token } = useContext(AppContext);
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPorts, setSelectedPorts] = useState(5);
@@ -173,7 +175,9 @@ const ManualGeneratePanel = ({ formatIDR, deckId, refreshData }) => {
 
     setIsLoadingMI(true);
     try {
-      const response = await api.get(`/market-intelligence/deck/${deckId}`);
+      const response = await api.get(`/market-intelligence/deck/${deckId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = response.data;
 
       if (data && data.price_data) {

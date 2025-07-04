@@ -28,7 +28,6 @@ const PortOrderAlert = ({ currentPort }) => {
       return response.data.recommended_stacking_order || [];
     },
     enabled: !!currentPort && !!roomId && !!token,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Listen for port_config_updated events to invalidate cache

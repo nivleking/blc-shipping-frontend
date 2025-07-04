@@ -10,6 +10,7 @@ import WeeklyPerformance from "../components/simulations/weekly_performance/Week
 import MarketIntelligenceSimulation from "../components/simulations/market_intelligence/MarketIntelligenceSimulation";
 import Stowage from "../components/simulations/stowages/Stowage";
 import CapacityUptake from "../components/simulations/capacity_uptake/CapacityUptake";
+import LeaderboardSimulation from "../components/simulations/LeaderboardSimulation";
 import useToast from "../toast/useToast";
 import { PORT_COLORS, getPortColor } from "../assets/Colors";
 
@@ -95,6 +96,12 @@ const Simulation = () => {
 
   const [showFinancialModal, setShowFinancialModal] = useState(false);
 
+  const [rankings, setRankings] = useState([]);
+
+  const handleRankingsUpdate = (updatedRankings) => {
+    setRankings(updatedRankings);
+  };
+
   const { data: cardTemporariesData, isLoading: isLoadingCardTemporaries } = useQuery({
     queryKey: ["cardTemporaries", roomId, deckId],
     queryFn: async () => {
@@ -111,8 +118,6 @@ const Simulation = () => {
       return response.data;
     },
     enabled: !!roomId && !!deckId && !!token,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
   });
 
   const allCardTemporaries = cardTemporariesData?.cards || [];
@@ -141,46 +146,10 @@ const Simulation = () => {
 
   // Add a function to toggle the financial modal visibility
   const toggleFinancialModal = () => {
-    setSelectedTab(2);
+    setSelectedTab(3);
     // Toggle modal visibility
     setShowFinancialModal(!showFinancialModal);
   };
-
-  const [selectedHistoricalWeek, setSelectedHistoricalWeek] = useState(currentRound);
-  const [historicalStats, setHistoricalStats] = useState(null);
-  const [showHistorical, setShowHistorical] = useState(false);
-
-  const fetchHistoricalStats = async (week) => {
-    try {
-      setIsLoading(true);
-      console.log("Fetching historical statistics for week:", week);
-
-      const url = `/rooms/${roomId}/users/${user.id}/bay-statistics-history/${week}`;
-      const response = await api.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data && Object.keys(response.data).length > 0) {
-        setHistoricalStats(response.data);
-      } else {
-        console.warn("No historical data found or empty response:", response.data);
-        setHistoricalStats(null);
-      }
-    } catch (error) {
-      console.error("Error fetching historical statistics:", error);
-      setHistoricalStats(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (showHistorical && selectedHistoricalWeek && selectedHistoricalWeek !== currentRound) {
-      fetchHistoricalStats(selectedHistoricalWeek);
-    } else {
-      setHistoricalStats(null);
-    }
-  }, [selectedHistoricalWeek, showHistorical, currentRound, roomId, user?.id, token]);
 
   const [weekSalesCalls, setWeekSalesCalls] = useState([]);
   const [weekRevenueTotal, setWeekRevenueTotal] = useState(0);
@@ -300,9 +269,6 @@ const Simulation = () => {
     socket.on("swap_bays", async ({ roomId: receivedRoomId }) => {
       if (receivedRoomId === roomId) {
         try {
-          // This is where we need to ensure comprehensive config is fetched
-          await fetchArenaData();
-
           setShowSwapAlert(true);
           let timer = 10;
           setCountdown(timer);
@@ -317,6 +283,8 @@ const Simulation = () => {
               handleSwapProcess();
             }
           }, 1000);
+
+          await fetchArenaData();
         } catch (error) {
           console.error("Error handling swap_bays event:", error);
         }
@@ -337,29 +305,11 @@ const Simulation = () => {
 
     socket.on("stats_requested", async ({ roomId: requestedRoomId, userId: requestedUserId }) => {
       if (roomId === requestedRoomId && user.id === requestedUserId) {
-        const response = await fetchArenaData();
-
-        // Extract the stats from current state
-        // const stats = {
-        //   load_moves: moveStats.loadMoves,
-        //   discharge_moves: moveStats.dischargeMoves,
-        //   accepted_cards: moveStats.acceptedCards,
-        //   rejected_cards: moveStats.rejectedCards,
-        //   penalty: penalties,
-        // };
-
-        // const stats = {
-        //   load_moves: response.data.load_moves || 0,
-        //   discharge_moves: response.data.discharge_moves || 0,
-        //   accepted_cards: response.data.accepted_cards || 0,
-        //   rejected_cards: response.data.rejected_cards || 0,
-        //   penalty: response.data.penalty || 0,
-        // };
+        // const response = await fetchArenaData();
 
         socket.emit("stats_updated", {
           roomId,
           userId: user.id,
-          // stats,
         });
       }
     });
@@ -428,8 +378,24 @@ const Simulation = () => {
 
     setIsLoading(true);
     try {
+      const containerResponse = await api.get(`rooms/${roomId}/containers`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      let containerData = containerResponse.data;
+
+      if (!Array.isArray(containerData)) {
+        console.error("Container data is not an array:", containerData);
+        containerData = [];
+      } else {
+        console.log(`Loaded ${containerData.length} containers successfully`);
+      }
+
+      setContainers(containerData);
+
       // Single API call to get all arena data
-      const response = await api.get(`/arena-data/${roomId}/${user.id}`, {
+      const response = await api.get(`/rooms/${roomId}/ship-bays/arena-data/${user.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -527,10 +493,6 @@ const Simulation = () => {
       // Initialize bay data
       const initialBayData = Array.from({ length: bayCount }).map(() => Array.from({ length: baySize.rows }).map(() => Array(baySize.columns).fill(null)));
 
-      // Get container data
-      const containerData = data.containers;
-      setContainers(containerData);
-
       // Process arena data for ship bay
       const savedArena = typeof shipBayData.arena === "string" ? JSON.parse(shipBayData.arena) : shipBayData.arena;
 
@@ -583,7 +545,7 @@ const Simulation = () => {
                   newDroppedItems.push({
                     id: item,
                     area: `bay-${bayIndex}-${rowIndex * bay[0].length + colIndex}`,
-                    color: containerObj.color,
+                    color: containerObj?.color || getContainerColorByDestination(containerObj?.destination),
                   });
                 }
               }
@@ -768,7 +730,7 @@ const Simulation = () => {
       };
 
       const cardResponse = await api.post(
-        `/ship-bays/${roomId}/${user.id}/cards`,
+        `/rooms/${roomId}/ship-bays/${user.id}/cards`,
         {
           card_action: "accept",
           count: 1,
@@ -777,6 +739,7 @@ const Simulation = () => {
           port: port,
           dock_arena: dockArenaData,
           dock_size: dockSize,
+          is_backlog: currentCard?.is_backlog,
         },
         {
           headers: {
@@ -806,6 +769,7 @@ const Simulation = () => {
       console.error("Error accepting card:", error);
       showError("Failed to process card");
     } finally {
+      await fetchArenaData();
       setIsProcessingCard(false);
       setSelectedTab(0);
       showInfo("Redirecting to Capacity Uptake to check available capacity");
@@ -849,7 +813,7 @@ const Simulation = () => {
       setIsCardVisible(false);
 
       const response = await api.post(
-        `/ship-bays/${roomId}/${user.id}/cards`,
+        `/rooms/${roomId}/ship-bays/${user.id}/cards`,
         {
           card_action: "reject",
           count: 1,
@@ -899,6 +863,26 @@ const Simulation = () => {
   }
 
   const handleDragStart = (event) => {
+    const containerId = event.active.id;
+
+    // In section 1 (discharge), only allow dragging target containers or containers from dock
+    if (section === 1) {
+      // Check if this is a container in the bay (not in dock)
+      const containerInBay = droppedItems.some((item) => item.id === containerId && item.area?.startsWith("bay-"));
+
+      if (containerInBay) {
+        // Check if this container is in the target containers list (meant for current port)
+        const isTargetContainer = targetContainers.some((tc) => tc.id === containerId);
+
+        if (!isTargetContainer) {
+          // Show a warning to the user
+          showWarning(`You can only discharge containers for port ${port} in this phase.`);
+          event.preventDefault();
+          return; // Don't set draggingItem, effectively canceling the drag
+        }
+      }
+    }
+
     const sourceItem = droppedItems.find((item) => item.id === event.active.id);
 
     if (sourceItem) {
@@ -1054,7 +1038,7 @@ const Simulation = () => {
       if (isFromBay && isToDock) {
         // Check if container destination matches current port
         try {
-          const containerResponse = await api.get(`/containers/${active.id}`, {
+          const containerResponse = await api.get(`/rooms/${roomId}/containers/${active.id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -1106,22 +1090,30 @@ const Simulation = () => {
 
             try {
               // Save updated bay state
-              const bayResponse = await api.post("/ship-bays", {
-                arena: flatBayData,
-                user_id: user.id,
-                room_id: roomId,
-                section: "section1",
-                moved_container: {
-                  id: container.id,
-                  from: activeItem.area,
-                  to: over.id,
+              const bayResponse = await api.post(
+                `/rooms/${roomId}/ship-bays`,
+                {
+                  arena: flatBayData,
+                  user_id: user.id,
+                  room_id: roomId,
+                  section: "section1",
+                  moved_container: {
+                    id: container.id,
+                    from: activeItem.area,
+                    to: over.id,
+                  },
+                  move_type: "discharge",
+                  count: 1,
+                  bay_index: sourceBayIndex,
+                  container_id: active.id,
+                  isLog: true,
                 },
-                move_type: "discharge",
-                count: 1,
-                bay_index: sourceBayIndex,
-                container_id: active.id,
-                isLog: true,
-              });
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
 
               // Request updated stats
               socket.emit("stats_requested", {
@@ -1134,6 +1126,7 @@ const Simulation = () => {
                 rankings: bayResponse.data.rankings,
               });
 
+              await fetchArenaData();
               return;
             } catch (error) {
               console.error("API call failed", error);
@@ -1182,7 +1175,7 @@ const Simulation = () => {
     }
 
     if (!isSpaceValid) {
-      showError("Invalid placement - container cannot float");
+      showError("Cannot place container - insufficient space");
       setIsLoading(false);
       return;
     }
@@ -1192,16 +1185,46 @@ const Simulation = () => {
 
     showSuccess("Container placed successfully!");
 
-    const newBayData = Array.from({ length: bayCount }).map((_, bayIndex) => {
-      return Array.from({ length: baySize.rows }).map((_, rowIndex) => {
-        return Array.from({ length: baySize.columns }).map((_, colIndex) => {
-          const cellId = `bay-${bayIndex}-${rowIndex * baySize.columns + colIndex}`;
-          const item = updatedDroppedItems.find((item) => item.area === cellId);
-          return item ? item.id : null;
-        });
-      });
-    });
-    setBayData(newBayData);
+    const newBayData = [];
+    for (let bayIdx = 0; bayIdx < bayCount; bayIdx++) {
+      for (let rowIdx = 0; rowIdx < baySize.rows; rowIdx++) {
+        for (let colIdx = 0; colIdx < baySize.columns; colIdx++) {
+          const cellId = `bay-${bayIdx}-${rowIdx * baySize.columns + colIdx}`;
+          const containerItem = updatedDroppedItems.find((item) => item.area === cellId);
+          if (containerItem) {
+            const containerObj = containers.find((c) => c.id === containerItem.id);
+            if (containerObj) {
+              newBayData.push({
+                bay: bayIdx,
+                row: rowIdx,
+                col: colIdx,
+                id: containerItem.id,
+                cardId: containerObj.card_id,
+                type: containerObj.type || "dry",
+                origin: containerObj.origin,
+                destination: containerObj.destination,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    const flatBayData = {
+      containers: newBayData.map((item) => ({
+        id: item.id,
+        position: item.bay * baySize.rows * baySize.columns + item.row * baySize.columns + item.col,
+        bay: item.bay,
+        row: item.row,
+        col: item.col,
+        type: item.type,
+        cardId: item.cardId,
+        origin: item.origin,
+        destination: item.destination,
+      })),
+      totalContainers: newBayData.length,
+    };
+    setBayData(flatBayData);
 
     const dockItems = updatedDroppedItems
       .filter((item) => item.area && item.area.startsWith("docks-"))
@@ -1237,32 +1260,48 @@ const Simulation = () => {
       const isBayInvolved = fromArea.startsWith("bay") || toArea.startsWith("bay");
 
       try {
-        const resBay = await api.post("/ship-bays", {
-          arena: newBayData,
-          user_id: user.id,
-          room_id: roomId,
-          moved_container: {
-            id: container.id,
-            from: fromArea,
-            to: toArea,
+        const resBay = await api.post(
+          `/rooms/${roomId}/ship-bays`,
+          {
+            arena: flatBayData,
+            user_id: user.id,
+            room_id: roomId,
+            moved_container: {
+              id: container.id,
+              from: fromArea,
+              to: toArea,
+            },
+            section: section === 1 ? "section1" : "section2",
+            ...(isBayInvolved && relevantBayIndex !== null
+              ? {
+                  move_type: moveType,
+                  count: 1,
+                  bay_index: relevantBayIndex,
+                  container_id: containerId,
+                }
+              : {}),
           },
-          section: section === 1 ? "section1" : "section2",
-          ...(isBayInvolved && relevantBayIndex !== null
-            ? {
-                move_type: moveType,
-                count: 1,
-                bay_index: relevantBayIndex,
-                container_id: containerId,
-              }
-            : {}),
-        });
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-        const resDock = await api.post("/ship-docks", {
-          arena: dockArenaData, // Send new format
-          user_id: user.id,
-          room_id: roomId,
-          dock_size: dockSize,
-        });
+        const resDock = await api.post(
+          `/rooms/${roomId}/ship-docks`,
+          {
+            arena: dockArenaData, // Send new format
+            user_id: user.id,
+            room_id: roomId,
+            dock_size: dockSize,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const fromDock = fromArea.startsWith("docks-");
         const toDock = toArea.startsWith("docks-");
@@ -1280,6 +1319,7 @@ const Simulation = () => {
         console.error("Error during container movement:", error);
         showError("Failed to move container. Please try again.");
       } finally {
+        await fetchArenaData();
         setIsLoading(false);
       }
     } catch (error) {
@@ -1322,7 +1362,7 @@ const Simulation = () => {
 
     try {
       await api.put(
-        `/ship-bays/${roomId}/${user.id}/section`,
+        `/rooms/${roomId}/ship-bays/${user.id}/section`,
         {
           section: "section2",
         },
@@ -1337,6 +1377,122 @@ const Simulation = () => {
     } catch (error) {
       console.error("Error updating section:", error);
       showError("Failed to update section");
+    }
+  };
+
+  const handleDischargeAll = async () => {
+    if (!targetContainers || targetContainers.length === 0) return false;
+
+    try {
+      // Create a list of all containers to be discharged
+      const containersToDischarge = [...targetContainers];
+      const containerMoves = [];
+
+      // Track new positions for batch update
+      let firstAvailableDockPosition = 0;
+
+      // Find the first available position in the dock
+      for (let i = 0; i < 1000; i++) {
+        const position = `docks-${i}`;
+        if (!droppedItems.some((item) => item.area === position)) {
+          firstAvailableDockPosition = i;
+          break;
+        }
+      }
+
+      // Prepare the moves for all containers
+      for (let i = 0; i < containersToDischarge.length; i++) {
+        const container = containersToDischarge[i];
+        const item = droppedItems.find((item) => item.id === container.id);
+
+        if (item) {
+          const sourceArea = item.area;
+          const bayIndex = parseInt(sourceArea.split("-")[1]);
+          const dockPosition = firstAvailableDockPosition + i;
+          const targetArea = `docks-${dockPosition}`;
+
+          containerMoves.push({
+            containerId: String(container.id),
+            sourceArea,
+            targetArea,
+            bayIndex,
+          });
+        }
+      }
+
+      if (containerMoves.length === 0) {
+        showError("No containers could be moved");
+        return false;
+      }
+
+      // Immediately update UI to show containers moving from bay to dock
+      const updatedItems = droppedItems.map((item) => {
+        // If this item is one we're discharging, update its area to dock
+        const moveInfo = containerMoves.find((move) => move.containerId === String(item.id));
+        if (moveInfo) {
+          return { ...item, area: moveInfo.targetArea };
+        }
+        return item;
+      });
+
+      // Update the UI state
+      setDroppedItems(updatedItems);
+
+      // Send the API request with restowage checking flag
+      const response = await api.post(
+        `rooms/${roomId}/ship-bays/${user.id}/moves`,
+        {
+          move_type: "discharge",
+          count: containerMoves.length,
+          bay_index: containerMoves[0]?.bayIndex || 0,
+          create_log: true,
+          check_restowage: true,
+          batch_moves: containerMoves.map((move) => ({
+            container_id: String(move.containerId),
+            from: move.sourceArea,
+            to: move.targetArea,
+          })),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Handle response - if there's a restowage_error, show error and revert UI
+      if (response.data.restowage_error) {
+        showError(response.data.message || "Cannot discharge all containers while there are restowage issues.");
+        await fetchArenaData(); // Reload to revert UI changes
+        return false;
+      }
+
+      // Update move statistics
+      setMoveStats((prevStats) => ({
+        ...prevStats,
+        dischargeMoves: prevStats.dischargeMoves + containerMoves.length,
+      }));
+
+      // Clear target containers since they're now discharged
+      setTargetContainers([]);
+
+      showSuccess(`Successfully discharged ${containerMoves.length} containers`);
+
+      // Refresh arena data to ensure everything is in sync
+      await fetchArenaData();
+
+      return true;
+    } catch (error) {
+      console.error("Error discharging all containers:", error);
+
+      // Check if error has a specific restowage message
+      if (error.response?.data?.restowage_error) {
+        showError(error.response.data.message || "Cannot discharge containers due to restowage issues. Fix restowage problems first.");
+      } else {
+        showError("Failed to discharge all containers: " + (error.response?.data?.message || error.message));
+      }
+
+      // Refresh data to ensure UI is in sync with server state
+      await fetchArenaData();
+      return false;
     }
   };
 
@@ -1452,6 +1608,19 @@ const Simulation = () => {
                 }
               >
                 <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <span>Leaderboard</span>
+              </Tab>
+
+              <Tab
+                className={({ selected }) =>
+                  `w-full flex items-center justify-center h-5 px-2 text-[11px] font-medium rounded-md transition-all duration-150 ${
+                    selected ? "bg-white text-blue-600 shadow-sm transform scale-105" : "text-gray-600 hover:text-blue-500 hover:bg-white/40"
+                  }`
+                }
+              >
+                <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>Weekly Performance</span>
@@ -1514,11 +1683,6 @@ const Simulation = () => {
                 port={port}
                 bayMoves={bayMoves}
                 totalMoves={moveStats.loadMoves + moveStats.dischargeMoves}
-                selectedHistoricalWeek={selectedHistoricalWeek}
-                setSelectedHistoricalWeek={setSelectedHistoricalWeek}
-                historicalStats={historicalStats}
-                showHistorical={showHistorical}
-                setShowHistorical={setShowHistorical}
                 onRefreshCards={handleRefreshCards}
                 dockWarehouseContainers={dockWarehouseContainers}
                 restowageContainers={restowageContainers}
@@ -1531,11 +1695,21 @@ const Simulation = () => {
                 onContainerHover={handleContainerHover}
                 toggleFinancialModal={toggleFinancialModal}
                 isBayFull={isBayFull}
+                handleDischargeAll={handleDischargeAll}
+                moveCost={moveCost}
                 // bayPairs={bayPairs}
                 // idealCraneSplit={idealCraneSplit}
                 // longCraneMoves={longCraneMoves}
                 // extraMovesOnLongCrane={extraMovesOnLongCrane}
               />
+            </TabPanel>
+
+            {/* Leaderboard Tab */}
+            <TabPanel>
+              <div className="bg-white rounded-lg shadow p-4">
+                <h2 className="text-lg font-bold mb-4">Current Rankings</h2>
+                <LeaderboardSimulation roomId={roomId} formatIDR={formatIDR} onRankingsUpdate={handleRankingsUpdate} />
+              </div>
             </TabPanel>
 
             {/* Weekly Performance Tab */}

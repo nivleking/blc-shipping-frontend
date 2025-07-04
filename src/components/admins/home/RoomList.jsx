@@ -173,14 +173,10 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
 
               {/* Right section with action buttons */}
               <div className="flex flex-col space-y-1 sm:mt-0 min-w-[120px]">
-                {room.status === "finished" && (
-                  <button
-                    onClick={() => navigate(`/rooms/${room.id}/detail`)}
-                    className="inline-flex items-center px-4 py-2 border border-indigo-300 rounded-md shadow-sm text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
-                  >
-                    <AiFillEye className="mr-2 h-4 w-4" /> View
-                  </button>
-                )}
+                <button onClick={() => navigate(`/rooms/${room.id}/detail`)} className="inline-flex items-center px-4 py-2 border border-indigo-300 rounded-md shadow-sm text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100">
+                  <AiFillEye className="mr-2 h-4 w-4" /> View
+                </button>
+
                 {user && room.status !== "finished" && (
                   <button
                     onClick={() => handleOpenRoom(room.id)}
@@ -194,11 +190,11 @@ const RoomList = ({ rooms, currentPageData, offset, user, admins, pageCount, cur
                   </button>
                 )}
 
-                {/* {room.status !== "active" && room.status !== "finished" && (
+                {room.status !== "active" && room.status !== "finished" && (
                   <button onClick={() => handleEditRoom(room)} className="inline-flex items-center px-4 py-2 border border-yellow-300 rounded-md shadow-sm text-xs font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100">
                     <HiPencilAlt className="mr-2 h-4 w-4" /> Edit
                   </button>
-                )} */}
+                )}
                 {/* {room.status !== "active" && ()} */}
                 <button onClick={(e) => handleDeleteRoom(room.id)(e)} className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100">
                   <AiFillDelete className="mr-2 h-4 w-4" /> Delete

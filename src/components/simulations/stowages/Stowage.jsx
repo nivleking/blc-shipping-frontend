@@ -5,13 +5,11 @@ import ShipDock from "./ShipDock";
 import SalesCallCard from "./SalesCallCard";
 import DraggableContainer from "./DraggableContainer";
 import PortLegendSimulation from "./PortLegendSimulation";
-import BayStatisticsTable from "./BayStatisticsTable";
 import RestowageAlert from "./RestowageAlert";
 import PortOrderAlert from "./PortOrderAlert";
-import ContainerLegend from "./ContainerLegend";
-import FinancialSummaryModal from "./FinancialSummaryModal";
 import { FiLifeBuoy } from "react-icons/fi";
 import GuideModal from "../../../pages/Admin/GuideModal";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 import "./Stowage.css";
 import LoadingSpinner from "../LoadingSpinner";
 
@@ -46,14 +44,6 @@ const Stowage = ({
   restowageContainers = [],
   restowagePenalty = 0,
   restowageMoves = 0,
-  bayMoves = {},
-  bayPairs = [],
-  totalMoves = 0,
-  selectedHistoricalWeek,
-  setSelectedHistoricalWeek,
-  historicalStats,
-  showHistorical,
-  setShowHistorical,
   onRefreshCards,
   dockWarehouseContainers = [],
   containerDestinationsCache,
@@ -63,13 +53,29 @@ const Stowage = ({
   onContainerHover,
   toggleFinancialModal,
   isBayFull,
-  // idealCraneSplit = 2,
-  // longCraneMoves = 0,
-  // extraMovesOnLongCrane = 0,
+  handleDischargeAll,
+  moveCost,
 }) => {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const draggingTargetContainer = targetContainers.some((target) => target.id === draggingItem);
   const [isSectionTransitioning, setIsSectionTransitioning] = useState(false);
+  const [isDischarging, setIsDischarging] = useState(false);
+  const [showDischargeConfirmation, setShowDischargeConfirmation] = useState(false);
+
+  const executeDischargeAll = () => {
+    setIsDischarging(true);
+    setShowDischargeConfirmation(false);
+
+    handleDischargeAll().finally(() => {
+      setTimeout(() => setIsDischarging(false), 1000);
+    });
+  };
+
+  const initiateDischargeAll = () => {
+    if (targetContainers.length > 0) {
+      setShowDischargeConfirmation(true);
+    }
+  };
 
   const handleFinancialButtonClick = () => {
     toggleFinancialModal();
@@ -95,13 +101,12 @@ const Stowage = ({
     });
   };
 
-  // console.log(containerDestinationsCache);
   return (
     <>
-      {/* <PortLegendSimulation /> */}
-
       {/* Add loading overlay when transitioning */}
       {isSectionTransitioning && <LoadingSpinner />}
+
+      {isDischarging && <LoadingSpinner message="Menurunkan semua kontainer..." />}
 
       {/* Section Header */}
       <div className="flex justify-between items-center mb-1 bg-white rounded-lg shadow-sm p-4">
@@ -119,6 +124,19 @@ const Stowage = ({
             <div className="text-xs text-red-600 font-medium">
               Remaining {port} containers to discharge: {targetContainers && targetContainers.length}
             </div>
+
+            {targetContainers.length > 0 && (
+              <button
+                onClick={initiateDischargeAll} // Changed from executeDischargeAll to initiateDischargeAll
+                disabled={isDischarging || targetContainers.length === 0}
+                className="text-xs font-bold px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-300 mr-2 flex items-center"
+              >
+                <svg className="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+                </svg>
+                Discharge All ({targetContainers.length})
+              </button>
+            )}
             <button
               onClick={handleNextSection}
               disabled={targetContainers.length > 0 || currentRound > totalRounds || isSectionTransitioning}
@@ -180,8 +198,6 @@ const Stowage = ({
               />
             </div>
 
-            {/* <ContainerLegend /> */}
-
             <div className="bg-gray-50 p-2 rounded-lg border border-gray-200">
               <ShipBay
                 bayCount={bayCount}
@@ -219,11 +235,7 @@ const Stowage = ({
               {/* Sales Calls content */}
               {section === 2 ? (
                 <div className="overflow-y-auto" style={{ maxHeight: "450px" }}>
-                  {isLimitExceeded ? (
-                    <div className="text-[9px] text-center p-2 bg-gray-50 rounded-lg">
-                      <p className="text-gray-600">You have reached the maximum number of cards for this round.</p>
-                    </div>
-                  ) : salesCallCards.length > 0 ? (
+                  {salesCallCards.length > 0 ? (
                     <div className={`transition-opacity duration-300 ${isCardVisible ? "opacity-100" : "opacity-0"}`}>
                       <SalesCallCard
                         salesCallCards={salesCallCards}
@@ -296,36 +308,6 @@ const Stowage = ({
                   />
                 </div>
               </div>
-
-              {/* Bay Statistics - Below Ship Dock */}
-              <div className="bg-white rounded-lg shadow-md p-2 border border-gray-200">
-                <h3 className="text-xs font-semibold mb-2 text-gray-800 flex items-center">
-                  <svg className="w-3.5 h-3.5 mr-1.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                  </svg>
-                  Bay Stats
-                </h3>
-
-                <div className="bg-gray-50 p-1 rounded-lg border border-gray-200 overflow-auto text-xs" style={{ maxHeight: "200px" }}>
-                  <BayStatisticsTable
-                    bayCount={bayCount}
-                    bayMoves={bayMoves}
-                    bayPairs={bayPairs}
-                    totalMoves={totalMoves}
-                    currentRound={currentRound}
-                    selectedWeek={selectedHistoricalWeek}
-                    setSelectedWeek={setSelectedHistoricalWeek}
-                    historicalStats={historicalStats}
-                    showHistorical={showHistorical}
-                    setShowHistorical={setShowHistorical}
-                    onRefreshCards={onRefreshCards}
-                    restowageMoves={restowageMoves}
-                    restowagePenalty={restowagePenalty}
-                    restowageContainerCount={restowageContainers.length}
-                    formatIDR={formatIDR}
-                  />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -350,6 +332,24 @@ const Stowage = ({
           )}
         </DragOverlay>
       </DndContext>
+
+      <ConfirmationModal
+        isOpen={showDischargeConfirmation}
+        onClose={() => setShowDischargeConfirmation(false)}
+        onConfirm={executeDischargeAll}
+        title="Confirm Discharge All"
+        message={
+          <>
+            <p className="mb-2">
+              You are about to discharge <span className="font-bold text-blue-600">{targetContainers.length}</span> containers for port <span className="font-bold text-blue-600">{port}</span>.
+            </p>
+            <div className="p-2 bg-yellow-50 rounded-md border border-yellow-100">
+              <p className="text-sm text-yellow-700 mb-2">This will incur discharge move penalties for each container.</p>
+              <p className="text-sm text-yellow-700">Total estimated cost: {formatIDR(targetContainers.length * (moveCost || 1000000))}</p>
+            </div>
+          </>
+        }
+      />
     </>
   );
 };
