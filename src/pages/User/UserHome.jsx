@@ -1,6 +1,6 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import { AppContext } from "../../context/AppContext";
-import { api, socket } from "../../axios/axios";
+import { api, getSocket } from "../../axios/axios";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import "./UserHome.css";
@@ -10,7 +10,7 @@ import useToast from "../../toast/useToast";
 const UserHome = () => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const { user, token } = useContext(AppContext);
-  const [roomId, setRoomId] = useState("");
+  const [roomId, setRoomId] = useState("001");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
@@ -27,6 +27,19 @@ const UserHome = () => {
     }
     return () => clearInterval(interval);
   }, [isLoading]);
+
+  const socketRef = useRef(null);
+  useEffect(() => {
+    socketRef.current = getSocket();
+    socketRef.current.connect();
+
+    return () => {
+      // Clean up socket when component unmounts
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
 
   async function handleJoinRoom(e) {
     e.preventDefault();
@@ -53,7 +66,7 @@ const UserHome = () => {
       );
 
       if (response.status === 200) {
-        socket.emit("user_added", { roomId, newUser: user });
+        socketRef.current.emit("user_added", { roomId, newUser: user });
 
         if (response.data.simulation_started) {
           navigate(`/simulation/${roomId}`);

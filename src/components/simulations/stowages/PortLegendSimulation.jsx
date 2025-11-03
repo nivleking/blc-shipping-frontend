@@ -1,6 +1,6 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { api, socket } from "../../../axios/axios";
+import { api, getSocket } from "../../../axios/axios";
 import { AppContext } from "../../../context/AppContext";
 import { PORT_COLORS, getPortColor } from "../../../assets/Colors";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -99,6 +99,22 @@ const PortLegendSimulation = ({ compact = false }) => {
     enabled: !!user && !!token && !!roomId,
   });
 
+  // Socket reference - only initialize when component mounts
+  const socketRef = useRef(null);
+
+  // Initialize socket only when component mounts
+  useEffect(() => {
+    socketRef.current = getSocket();
+    socketRef.current.connect();
+
+    return () => {
+      // Clean up socket when component unmounts
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const handlePortConfigUpdate = ({ roomId: updatedRoomId }) => {
       if (updatedRoomId === roomId) {
@@ -106,10 +122,10 @@ const PortLegendSimulation = ({ compact = false }) => {
       }
     };
 
-    socket.on("port_config_updated", handlePortConfigUpdate);
+    socketRef.current.on("port_config_updated", handlePortConfigUpdate);
 
     return () => {
-      socket.off("port_config_updated", handlePortConfigUpdate);
+      socketRef.current.off("port_config_updated", handlePortConfigUpdate);
     };
   }, [roomId, user?.id, queryClient]);
 

@@ -13,6 +13,30 @@ const api = axios.create({
 
 // Websocket connection config
 const websocket = import.meta.env.VITE_WEBSOCKET_URL;
-const socket = io.connect(websocket);
 
-export { api, socket, websocket };
+let socket = null;
+
+const getSocket = () => {
+  if (!socket) {
+    socket = io(websocket, {
+      autoConnect: false,
+      withCredentials: true,
+      transports: ["websocket"],
+      upgrade: false,
+      reconnectionAttempts: 5,
+      timeout: 10000,
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+      socket.disconnect();
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+    });
+  }
+  return socket;
+};
+
+export { api, getSocket, websocket };

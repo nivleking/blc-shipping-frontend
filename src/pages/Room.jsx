@@ -1,6 +1,6 @@
-import { useState, useEffect, useContext, Fragment } from "react";
+import { useState, useEffect, useContext, Fragment, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api, socket } from "../axios/axios";
+import { api, getSocket } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
 import AssignPortModal from "../components/rooms/AssignPortModal";
 import SwapConfigModal from "../components/rooms/SwapConfigModal";
@@ -48,6 +48,9 @@ const Room = () => {
   const [showKickConfirmation, setShowKickConfirmation] = useState(false);
   const [userToKick, setUserToKick] = useState(null);
 
+  // Socket reference - only initialize when component mounts
+  const socketRef = useRef(null);
+
   const [isAssigningPorts, setIsAssigningPorts] = useState(false);
   const [portAssignmentMessageIndex, setPortAssignmentMessageIndex] = useState(0);
   const portAssignmentMessages = ["Assigning ports to participants..."];
@@ -89,7 +92,24 @@ const Room = () => {
     return () => clearInterval(interval);
   }, [isSwappingBays, baySwapMessages.length]);
 
+  // Initialize socket only when component mounts
   useEffect(() => {
+    socketRef.current = getSocket();
+    socketRef.current.connect();
+
+    return () => {
+      // Clean up socket when component unmounts
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!socketRef.current) return;
+
+    const socket = socketRef.current;
+
     socket.on("user_added", ({ roomId: receivedRoomId, newUser }) => {
       if (receivedRoomId === roomId) {
         setUsers((prevUsers) => {
@@ -150,7 +170,7 @@ const Room = () => {
       socket.off("port_updated");
       socket.off("rankings_updated");
     };
-  }, [user, token, navigate, roomStatus]);
+  }, [user, token, navigate, roomStatus, roomId, users]);
 
   useEffect(() => {
     if (token && roomId) {
@@ -217,7 +237,9 @@ const Room = () => {
         },
       })
       .then(() => {
-        socket.emit("user_kicked", { roomId, userId: userToKick });
+        if (socketRef.current) {
+          socketRef.current.emit("user_kicked", { roomId, userId: userToKick });
+        }
         setShowKickConfirmation(false);
         setUserToKick(null);
         showSuccess("User kicked successfully");
@@ -245,7 +267,9 @@ const Room = () => {
           }
         )
         .then(() => {
-          socket.emit("user_kicked", { roomId, userId: user.id });
+          if (socketRef.current) {
+            socketRef.current.emit("user_kicked", { roomId, userId: user.id });
+          }
           navigate("/user-home");
         })
         .catch((error) => {
@@ -276,7 +300,9 @@ const Room = () => {
       showSuccess("Simulation started");
       setRoomStatus("active");
       queryClient.invalidateQueries(["rooms"]);
-      socket.emit("start_simulation", { roomId });
+      if (socketRef.current) {
+        socketRef.current.emit("start_simulation", { roomId });
+      }
     } catch (error) {
       console.error("There was an error starting the simulation!", error);
       showError("Failed to start simulation. Please try again.");
@@ -328,11 +354,13 @@ const Room = () => {
         }
       );
 
-      for (let i = 0; i < users.length; i++) {
-        socket.emit("user_kicked", { roomId, userId: users[i].id });
-      }
+      if (socketRef.current) {
+        for (let i = 0; i < users.length; i++) {
+          socketRef.current.emit("user_kicked", { roomId, userId: users[i].id });
+        }
 
-      socket.emit("end_simulation", { roomId });
+        socketRef.current.emit("end_simulation", { roomId });
+      }
 
       setRoomStatus("finished");
       queryClient.invalidateQueries(["rooms"]);
@@ -365,7 +393,9 @@ const Room = () => {
 
       setCurrentSwapConfig(newSwapConfig);
 
-      socket.emit("port_config_updated", { roomId });
+      if (socketRef.current) {
+        socketRef.current.emit("port_config_updated", { roomId });
+      }
 
       showSuccess("Port swap configuration saved successfully!");
     } catch (error) {
@@ -396,7 +426,9 @@ const Room = () => {
       setBaySwapMessageIndex(0);
     }
 
-    socket.emit("swap_bays", { roomId });
+    if (socketRef.current) {
+      socketRef.current.emit("swap_bays", { roomId });
+    }
 
     await new Promise((resolve) => setTimeout(resolve, 8000));
 
@@ -455,12 +487,14 @@ const Room = () => {
       );
 
       // Notify other users about port assignments
-      for (const [userId, port] of Object.entries(ports)) {
-        socket.emit("port_assigned", {
-          roomId,
-          userId,
-          port,
-        });
+      if (socketRef.current) {
+        for (const [userId, port] of Object.entries(ports)) {
+          socketRef.current.emit("port_assigned", {
+            roomId,
+            userId,
+            port,
+          });
+        }
       }
 
       setShipBay(res.data.shipbays);

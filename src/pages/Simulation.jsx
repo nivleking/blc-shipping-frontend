@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useState, useEffect, useContext } from "react";
-import { api, socket } from "../axios/axios";
+import React, { useState, useEffect, useContext, useRef } from "react";
+import { api, getSocket } from "../axios/axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import HeaderCards from "../components/simulations/stowages/HeaderCards";
@@ -97,6 +97,9 @@ const Simulation = () => {
   const [showFinancialModal, setShowFinancialModal] = useState(false);
 
   const [rankings, setRankings] = useState([]);
+
+  // Socket reference - only initialize when component mounts
+  const socketRef = useRef(null);
 
   const handleRankingsUpdate = (updatedRankings) => {
     setRankings(updatedRankings);
@@ -265,7 +268,24 @@ const Simulation = () => {
     }
   };
 
+  // Initialize socket only when component mounts
   useEffect(() => {
+    socketRef.current = getSocket();
+    socketRef.current.connect();
+
+    return () => {
+      // Clean up socket when component unmounts
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!socketRef.current) return;
+
+    const socket = socketRef.current;
+
     socket.on("swap_bays", async ({ roomId: receivedRoomId }) => {
       if (receivedRoomId === roomId) {
         try {
@@ -307,10 +327,12 @@ const Simulation = () => {
       if (roomId === requestedRoomId && user.id === requestedUserId) {
         // const response = await fetchArenaData();
 
-        socket.emit("stats_updated", {
-          roomId,
-          userId: user.id,
-        });
+        if (socketRef.current) {
+          socketRef.current.emit("stats_updated", {
+            roomId,
+            userId: user.id,
+          });
+        }
       }
     });
 
@@ -761,7 +783,7 @@ const Simulation = () => {
 
       showSuccess(`Card accepted! Move all containers to ship bay to earn revenue.`);
 
-      socket.emit("stats_requested", {
+      socketRef.current.emit("stats_requested", {
         roomId,
         userId: user.id,
       });
@@ -848,7 +870,7 @@ const Simulation = () => {
         setIsCardVisible(true);
       }, 1500);
 
-      socket.emit("stats_requested", {
+      socketRef.current.emit("stats_requested", {
         roomId,
         userId: user.id,
       });
@@ -1116,12 +1138,12 @@ const Simulation = () => {
               );
 
               // Request updated stats
-              socket.emit("stats_requested", {
+              socketRef.current.emit("stats_requested", {
                 roomId,
                 userId: user.id,
               });
 
-              socket.emit("rankings_updated", {
+              socketRef.current.emit("rankings_updated", {
                 roomId,
                 rankings: bayResponse.data.rankings,
               });
@@ -1308,13 +1330,13 @@ const Simulation = () => {
 
         if (!(fromDock && toDock)) {
           // If not a dock-to-dock move, request stats update
-          socket.emit("stats_requested", {
+          socketRef.current.emit("stats_requested", {
             roomId,
             userId: user.id,
           });
         }
 
-        socket.emit("rankings_updated", { roomId, rankings: resBay.data.rankings });
+        socketRef.current.emit("rankings_updated", { roomId, rankings: resBay.data.rankings });
       } catch (error) {
         console.error("Error during container movement:", error);
         showError("Failed to move container. Please try again.");

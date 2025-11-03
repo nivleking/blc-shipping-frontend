@@ -1,8 +1,8 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppContext } from "../../context/AppContext";
 import { useNavigate } from "react-router-dom";
-import { api, socket } from "../../axios/axios";
+import { api, getSocket } from "../../axios/axios";
 import "./AdminHome.css";
 import EditRoomModal from "../../components/admins/home/EditRoomModal";
 import CreateRoomForm from "../../components/admins/home/CreateRoomForm";
@@ -92,6 +92,20 @@ const AdminHome = () => {
     queryClient.invalidateQueries(["rooms"]);
   };
 
+  const socketRef = useRef(null);
+  // Initialize socket only when component mounts
+  useEffect(() => {
+    socketRef.current = getSocket();
+    socketRef.current.connect();
+
+    return () => {
+      // Clean up socket when component unmounts
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
   const deleteMutation = useMutation({
     mutationFn: async (roomId) => {
       setShowDeleteModal(false);
@@ -120,7 +134,7 @@ const AdminHome = () => {
       showSuccess("Room deleted successfully!");
 
       userIds.forEach((userId) => {
-        socket.emit("user_kicked", { roomId, userId });
+        socketRef.current.emit("user_kicked", { roomId, userId });
       });
 
       setIsDeleting(false);
