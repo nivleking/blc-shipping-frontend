@@ -86,6 +86,10 @@
   animation: fall 5s linear forwards;
 }
 
+.particle-container {
+  pointer-events: none;
+}
+
 @keyframes fall {
   0% {
     transform: translateY(-10vh);
@@ -106,10 +110,12 @@
   filter: blur(20px);
   opacity: 0.15;
   animation: float 8s ease-in-out infinite;
+  pointer-events: none;
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) scale(1);
   }
   50% {
@@ -148,4 +154,123 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.animated-border-green {
+  position: relative;
+  border: 5px solid transparent;
+  border-radius: 20px;
+  background: linear-gradient(#121213, #121213), linear-gradient(#121213 30%, rgba(18, 18, 19, 0.6) 80%, rgba(18, 18, 19, 0)), linear-gradient(90deg, #059669, #10b981, #ffffff, #10b981, #059669);
+  background-origin: border-box;
+  background-clip: padding-box, border-box, border-box;
+  background-size: 100%;
+  animation: animate-green 2s infinite linear;
+}
+
+.animated-border-green::after {
+  content: "";
+  background: linear-gradient(90deg, #059669, #10b981, #ffffff, #10b981, #059669);
+  background-size: 200%;
+  height: 50%;
+  width: 100%;
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  z-index: -1;
+  filter: blur(25px);
+  animation: animate-green 2s infinite linear;
+}
+
+@keyframes animate-green {
+  0% {
+    background-position: 0;
+  }
+  100% {
+    background-position: 200%;
+  }
+}
+
+.animated-border-green:hover,
+.animated-border-green:hover::after {
+  animation: animate-green 0.9s infinite linear;
+}
+
+/* Red button animation */
+.animated-border-red {
+  position: relative;
+  border: 5px solid transparent;
+  border-radius: 20px;
+  background: linear-gradient(#121213, #121213), linear-gradient(#121213 30%, rgba(18, 18, 19, 0.6) 80%, rgba(18, 18, 19, 0)), linear-gradient(90deg, #dc2626, #ef4444, #ffffff, #ef4444, #dc2626);
+  background-origin: border-box;
+  background-clip: padding-box, border-box, border-box;
+  background-size: 100%;
+  animation: animate-red 2s infinite linear;
+}
+
+.animated-border-red::after {
+  content: "";
+  background: linear-gradient(90deg, #dc2626, #ef4444, #ffffff, #ef4444, #dc2626);
+  background-size: 200%;
+  height: 50%;
+  width: 100%;
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  z-index: -1;
+  filter: blur(25px);
+  animation: animate-red 2s infinite linear;
+}
+
+@keyframes animate-red {
+  0% {
+    background-position: 0;
+  }
+  100% {
+    background-position: 200%;
+  }
+}
+
+.animated-border-red:hover,
+.animated-border-red:hover::after {
+  animation: animate-red 0.9s infinite linear;
+}
+
+/* Blue button animation */
+.animated-border-blue {
+  position: relative;
+  border: 5px solid transparent;
+  border-radius: 20px;
+  background: linear-gradient(#121213, #121213), linear-gradient(#121213 30%, rgba(18, 18, 19, 0.6) 80%, rgba(18, 18, 19, 0)), linear-gradient(90deg, #2563eb, #3b82f6, #ffffff, #3b82f6, #2563eb);
+  background-origin: border-box;
+  background-clip: padding-box, border-box, border-box;
+  background-size: 100%;
+  animation: animate-blue 2s infinite linear;
+}
+
+.animated-border-blue::after {
+  content: "";
+  background: linear-gradient(90deg, #2563eb, #3b82f6, #ffffff, #3b82f6, #2563eb);
+  background-size: 200%;
+  height: 50%;
+  width: 100%;
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  z-index: -1;
+  filter: blur(25px);
+  animation: animate-blue 2s infinite linear;
+}
+
+@keyframes animate-blue {
+  0% {
+    background-position: 0;
+  }
+  100% {
+    background-position: 200%;
+  }
+}
+
+.animated-border-blue:hover,
+.animated-border-blue:hover::after {
+  animation: animate-blue 0.9s infinite linear;
 }

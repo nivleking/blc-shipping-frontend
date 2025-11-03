@@ -21,6 +21,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import PreviousSimulations from "./components/users/PreviousSimulations";
 import PreviousSimulationDetail from "./components/users/PreviousSimulationDetail";
+import InteractiveTutorial from "./pages/InteractiveTutorial";
 
 const App = () => {
   const { user } = useContext(AppContext);
@@ -50,6 +51,7 @@ const App = () => {
           {/* Other Routes */}
           <Route path="*" element={<NotFound />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/demo" element={<InteractiveTutorial />} />
           <Route path="/rooms/:roomId" element={<Room />} />
           <Route path="/simulation/:roomId" element={<Simulation />} />
 

@@ -38,7 +38,7 @@ const DraggableContainer = React.memo(
     const containerStyle = {
       transform: CSS.Transform.toString(transform),
       zIndex: isDragging ? 9999 : "auto",
-      opacity: isDragging ? 0 : 1,
+      // opacity: isDragging ? 0 : 1,
       backgroundColor:
         color === "yellow"
           ? "#F59E0B"
