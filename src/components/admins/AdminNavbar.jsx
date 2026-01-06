@@ -91,7 +91,7 @@ const AdminNavbar = ({ toggleSidebar, isSidebarOpen }) => {
         <div className="flex items-center gap-3 pl-4 border-l border-gray-700">
           <div className="relative">
             <img
-              src="/blc_circle.png"
+              src="/blc-shipping/blc_circle.png"
               alt="Profile"
               className="w-12 h-12 rounded-full object-cover border-2 border-blue-400"
             />

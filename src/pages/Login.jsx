@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { api } from "../axios/axios";
+import { api, getCsrfToken } from "../axios/axios";
 import { AppContext } from "../context/AppContext";
 import LoadingOverlay from "../components/LoadingOverlay";
 import useToast from "../toast/useToast";
@@ -29,6 +29,9 @@ const Login = () => {
 
     try {
       setIsLoading(true);
+      
+      await getCsrfToken();
+
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const response = await api.post("users/login", {

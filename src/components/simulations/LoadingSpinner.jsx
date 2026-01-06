@@ -11,7 +11,7 @@ const LoadingSpinner = () => {
         <div className="absolute inset-0 rounded-full border-t-4 border-b-4 border-blue-500 animate-spin"></div>
 
         {/* BLC Logo */}
-        <img src="/blc_circle.png" alt="BLC Logo" className="w-24 h-24 relative z-10" />
+        <img src="/blc-shipping/blc_circle.png" alt="BLC Logo" className="w-24 h-24 relative z-10" />
       </div>
     </div>
   );

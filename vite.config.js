@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
-    // base: '/blc-shipping/',
+    base: '/blc-shipping/',
     plugins: [react()],
     server: {
       host: true,

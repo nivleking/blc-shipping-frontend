@@ -40,7 +40,7 @@ const LoadingOverlay = ({ messages, currentMessageIndex, title }) => {
               <motion.div className="absolute inset-0 rounded-full border-t-4 border-b-4 border-blue-500" animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}></motion.div>
 
               {/* BLC Logo */}
-              <img src="/blc_circle.png" alt="BLC Logo" className="w-20 h-20 relative z-10" />
+              <img src="/blc-shipping/blc_circle.png" alt="BLC Logo" className="w-20 h-20 relative z-10" />
             </div>
           </div>
 

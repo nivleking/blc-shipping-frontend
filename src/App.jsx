@@ -46,7 +46,7 @@ const App = () => {
         }}
       />
 
-      <BrowserRouter>
+      <BrowserRouter basename="/blc-shipping">
         <Routes>
           {/* Other Routes */}
           <Route path="*" element={<NotFound />} />
